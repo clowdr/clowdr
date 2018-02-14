@@ -2,10 +2,8 @@ from setuptools import setup
 
 VERSION = "0.5.5-1"
 DEPS = [
-         "simplejson",
-         "jsonschema",
-         "gitpython",
-         "PyGithub",
+         "boto3",
+         "boutiques"
        ]
 
 setup(name="clowdr",
