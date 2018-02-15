@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 
 from argparse import ArgumentParser
+import boutiques as bosh
 import sys
 
 
 def dev(tool, invocation, location, **kwargs):
+    mode = 'launch'
+    bosh.execute(mode, tool, invocation, '-v {0}:{0}'.format(location))
     print(tool, invocation, location, kwargs)
     return 0
 
