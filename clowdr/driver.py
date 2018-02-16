@@ -3,8 +3,8 @@
 from argparse import ArgumentParser
 import sys
 
-import clowdr.task as task
 from clowdr.controller import metadata  # , launcher, sendMetadata, launchTask
+import clowdr.task as task
 
 
 def dev(tool, invocation, clowdrloc, dataloc, **kwargs):
@@ -30,6 +30,7 @@ def dev(tool, invocation, clowdrloc, dataloc, **kwargs):
         The exit-code returned by the task being executed
     """
     # TODO: scrub inputs
+    print(tool, invocation, clowdrloc, dataloc, kwargs)
     task = metadata.consolidate(tool, invocation, clowdrloc, dataloc)
     if len(task) > 1: task = task[0]  # Just launch the first task in dev mode
     code = process_task(task)
@@ -37,6 +38,7 @@ def dev(tool, invocation, clowdrloc, dataloc, **kwargs):
 
 
 def deploy(tool, invocation, location, auth, **kwargs):
+    # TODO: document
     # TODO: scrub inputs
     # tasks_local  = metadata.consolidate(tool, invocation, location)
     # tasks_remote = metadata.upload(tasks_remote, auth)
@@ -47,6 +49,7 @@ def deploy(tool, invocation, location, auth, **kwargs):
 
 
 def share(location, **kwargs):
+    # TODO: document
     # TODO: scrub inputs
     print(location, kwargs)
     return 0
@@ -55,7 +58,6 @@ def share(location, **kwargs):
 def main(args=None):
     desc = "Interface for launching Boutiques task locally and in the cloud"
     parser = ArgumentParser("Clowdr CLI", description=desc)
-    parser.add_argument("--verbose", "-v", action="store_true")
     subparsers = parser.add_subparsers(help="Modes of operation", dest="mode")
 
     parser_dev = subparsers.add_parser("dev")
@@ -63,29 +65,29 @@ def main(args=None):
     parser_dev.add_argument("invocation", help="input(s) for the tool")
     parser_dev.add_argument("clowdrloc", help="local output location")
     parser_dev.add_argument("dataloc", help="local or S3 input data location")
+    parser_dev.add_argument("--verbose", "-v", action="store_true")
+    parser_dev.add_argument("--bids", "-b", action="store_true")
+    parser_dev.set_defaults(func=dev)
 
     parser_dpy = subparsers.add_parser("deploy")
     parser_dpy.add_argument("tool",  help="boutiques descriptor for a tool")
     parser_dpy.add_argument("invocation", help="input(s) for the tool")
     parser_dpy.add_argument("location", help="local or s3 location for clowdr")
     parser_dpy.add_argument("auth", help="credentials for the remote resource")
+    parser_dpy.add_argument("--verbose", "-v", action="store_true")
+    parser_dpy.add_argument("--bids", "-b", action="store_true")
+    parser_dpy.set_defaults(func=deploy)
 
     parser_shr = subparsers.add_parser("share")
     parser_shr.add_argument("location", help="local or s3 location for clowdr")
+    parser_shr.set_defaults(func=share)
 
     inps = parser.parse_args(args) if args is not None else parser.parse_args()
     if len(sys.argv) == 1:
         parser.print_help()
         sys.exit()
-    mode = inps.mode
-    del inps.mode
-
-    if mode == "dev":
-        dev(**vars(inps))
-    elif mode == "deploy":
-        deploy(**vars(inps))
-    elif mode == "share":
-        share(**vars(inps))
+    else:
+        inps.func(**vars(inps))
 
 
 if __name__ == "__main__":
