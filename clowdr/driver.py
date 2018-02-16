@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 import sys
 
 from clowdr.controller import metadata  # , launcher, sendMetadata, launchTask
+# from clowdr.endpoint import local, aws, kubernetes, azure, etc.
 from clowdr.task import process_task
 
 
