@@ -9,7 +9,7 @@ import json
 
 from clowdr import utils
 
-def process_task(metadata, clowdrloc="/task/"):
+def process_task(metadata, clowdrloc="/task/", **kwargs):
     # Get metadata
     local_task_dir = clowdrloc
     print("Fetching metadata...")
