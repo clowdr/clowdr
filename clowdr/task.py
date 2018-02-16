@@ -9,18 +9,18 @@ import json
 
 from clowdr import utils
 
-def process_task(metadata):
+def process_task(metadata, clowdrloc="/task/"):
     # Get metadata
-    local_task_dir = "/task/"
+    local_task_dir = clowdrloc
     print("Fetching metadata...")
     metadata = utils.get(metadata, local_task_dir)[0]
 
     # Parse metadata
     metadata   = json.load(open(metadata))
-    descriptor = metadata['descriptor']
+    descriptor = metadata['tool']
     invocation = metadata['invocation']
-    input_data = metadata['input_data']
-    output_loc = metadata['output_loc']
+    input_data = metadata['dataloc']
+    output_loc = op.realpath(metadata['taskloc'])
 
     print("Fetching descriptor and invocation...")
     # Get descriptor and invocation

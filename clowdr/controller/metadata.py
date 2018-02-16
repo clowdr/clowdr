@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-from boutiques import bosh
 from copy import deepcopy
 
 import time, datetime
+import boutiques as bosh
 import os, os.path as op
 import random as rnd
 import string
@@ -20,7 +20,9 @@ def consolidate(tool, invocation, clowdrloc, dataloc, **kwargs):
 
     # Initialize task dictionary
     taskdict = {}
-    taskdict["taskloc"] = op.join(clowdrloc, modif)
+    with open(tool) as fhandle:
+        toolname = json.load(fhandle)["name"]
+    taskdict["taskloc"] = op.join(clowdrloc, modif, toolname)
     taskdict["dataloc"] = [dataloc]
     taskdict["invocation"] = invocation
     taskdict["tool"] = tool
@@ -38,21 +40,19 @@ def consolidate(tool, invocation, clowdrloc, dataloc, **kwargs):
     else:
         # Case 2a: User is running a BIDS app
         if kwargs.get('bids'):
-            taskdicts = bidstasks(taskdict)
+            taskdicts = bidstasks(clowdrloc, taskdict)
 
         # Case 2b: User is quite simply just launching a single invocation
         else:
             taskdict["invocation"] = invocation
             taskdicts = [taskdict]
 
-    # TODO: validate exemplar invocation
-    # bosh.invocation(tool, '-i', taskdicts[0]["invocation"])
+    bosh.invocation(tool, '-i', taskdicts[0]["invocation"])
 
     # Store task definition files to disk
     taskdictnames = []
     for idx, taskdict in enumerate(taskdicts):
-        # TODO: replace with real path
-        taskfname = "somefilename-{}.json".format(idx)
+        taskfname = op.join(clowdrloc, "task-{}.json".format(idx))
         taskdictnames += [taskfname]
         with open(taskfname, 'w') as fhandle:
             fhandle.write(json.dumps(taskdict))
@@ -60,10 +60,9 @@ def consolidate(tool, invocation, clowdrloc, dataloc, **kwargs):
     return taskdictnames
 
 
-# TODO: add clowdrloc as parameter
-def bidstasks(taskdict):
+def bidstasks(clowdrloc, taskdict):
     # TODO: document
-    dataloc = taskdict["dataloc"]
+    dataloc = taskdict["dataloc"][0]
     invocation = taskdict["invocation"]
 
     invo = json.load(open(invocation))
@@ -91,8 +90,7 @@ def bidstasks(taskdict):
 
             invo["participant_label"] = [part]
 
-            # TODO: replace with real path
-            invofname = "someinvocation-{}.json".format(part)
+            invofname = op.join(clowdrloc, "invocation-{}.json".format(part))
             with open(invofname, 'w') as fhandle:
                 fhandle.write(json.dumps(invo))
 
@@ -116,8 +114,8 @@ def bidstasks(taskdict):
                 invo["participant_label"] = [part]
                 invo["session_label"] = [sesh]
 
-                # TODO: replace with real path
-                invofname = "someinvocation-{}-{}.json".format(part, sesh)
+                invofname = op.join(clowdrloc,
+                                    "invocation-{}-{}.json".format(part, sesh))
                 with open(invofname, 'w') as fhandle:
                     fhandle.write(json.dumps(invo))
 

@@ -1,27 +1,38 @@
 #!/usr/bin/env python
 
-from shutil import copy, copytree
+from shutil import copy, copytree, SameFileError
 import boto3
 import os
 import os.path as op
 
 
 def get(remote, local):
-    if remote.startswith("s3://"):
-        return aws_get(remote, local)
-    elif op.isdir(remote):
-        copytree(remote, local)
-    else:
-        copy(remote, local)
+    try:
+        if remote.startswith("s3://"):
+            return aws_get(remote, local)
+        elif op.isdir(remote):
+            return [op.realpath(copytree(remote, local))]
+        else:
+            return [op.realpath(copy(remote, local))]
+    except SameFileError as e:
+        print("SameFileWarning: some files may not have been moved")
+        return [op.realpath(remote)]
+    except FileExistsError as e:
+        print("FileExistsWarning: some files may not have been moved")
+        return [op.realpath(remote)]
 
 
 def post(local, remote):
-    if "s3://" in remote:
-        return aws_post(local, remote)
-    elif op.isdir(local):
-        copytree(local, remote)
-    else:
-        copy(local, remote)
+    try:
+        if "s3://" in remote:
+            return aws_post(local, remote)
+        elif op.isdir(local):
+            return [op.realpath(copytree(local, remote))]
+        else:
+            return [op.realpath(copy(local, remote))]
+    except SameFileError as e:
+        print("SameFileWarning: some files may not have been moved")
+        return [op.realpath(local)]
 
 
 def aws_get(remote, local):

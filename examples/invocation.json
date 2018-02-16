@@ -1,0 +1,6 @@
+{
+	  "bids_dir": "/clowdata/ds114",
+	  "output_dir_name": "/clowdata/ds114/derivatives/bids-example/",
+	  "analysis_level": "participant",
+		"participant_label": ["03", "04", "05"]
+}

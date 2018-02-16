@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 import sys
 
 from clowdr.controller import metadata  # , launcher, sendMetadata, launchTask
-import clowdr.task as task
+from clowdr.task import process_task
 
 
 def dev(tool, invocation, clowdrloc, dataloc, **kwargs):
@@ -30,10 +30,9 @@ def dev(tool, invocation, clowdrloc, dataloc, **kwargs):
         The exit-code returned by the task being executed
     """
     # TODO: scrub inputs
-    print(tool, invocation, clowdrloc, dataloc, kwargs)
-    task = metadata.consolidate(tool, invocation, clowdrloc, dataloc)
+    task = metadata.consolidate(tool, invocation, clowdrloc, dataloc, **kwargs)
     if len(task) > 1: task = task[0]  # Just launch the first task in dev mode
-    code = process_task(task)
+    code = process_task(task, clowdrloc)
     return code
 
 
