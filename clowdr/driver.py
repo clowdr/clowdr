@@ -82,11 +82,11 @@ def main(args=None):
     parser_shr.add_argument("location", help="local or s3 location for clowdr")
     parser_shr.set_defaults(func=share)
 
-    parser_shr = subparsers.add_parser("run")
-    parser_shr.add_argument("metadata", help="task metadata file")
-    parser_shr.add_argument("--clowdrloc", "-l", action="store",
+    parser_run = subparsers.add_parser("run")
+    parser_run.add_argument("metadata", help="task metadata file")
+    parser_run.add_argument("--clowdrloc", "-l", action="store",
                             help="task output directory")
-    parser_shr.set_defaults(func=process_task)
+    parser_run.set_defaults(func=process_task)
 
     inps = parser.parse_args(args) if args is not None else parser.parse_args()
     if len(sys.argv) == 1:

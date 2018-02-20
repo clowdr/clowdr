@@ -23,9 +23,9 @@ def consolidate(tool, invocation, clowdrloc, dataloc, **kwargs):
     with open(tool) as fhandle:
         toolname = json.load(fhandle)["name"]
     taskdict["taskloc"] = op.join(clowdrloc, modif, toolname)
-    taskdict["dataloc"] = [dataloc]
-    taskdict["invocation"] = invocation
-    taskdict["tool"] = tool
+    taskdict["dataloc"] = [op.realpath(dataloc)]
+    taskdict["invocation"] = op.realpath(invocation)
+    taskdict["tool"] = op.realpath(tool)
 
     # Case 1: User supplies directory of invocations
     if op.isdir(invocation):
@@ -33,7 +33,7 @@ def consolidate(tool, invocation, clowdrloc, dataloc, **kwargs):
         taskdicts = []
         for invoc in invocations:
             tempdict = deepcopy(taskdict)
-            tempdict["invocation"] = op.join(invocation, invoc)
+            tempdict["invocation"] = op.join(op.realpath(invocation), invoc)
             taskdicts += [tempdict]
 
     # Case 2: User supplies a single invocation
@@ -44,7 +44,6 @@ def consolidate(tool, invocation, clowdrloc, dataloc, **kwargs):
 
         # Case 2b: User is quite simply just launching a single invocation
         else:
-            taskdict["invocation"] = invocation
             taskdicts = [taskdict]
 
     bosh.invocation(tool, '-i', taskdicts[0]["invocation"])
