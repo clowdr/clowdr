@@ -3,9 +3,10 @@
 from argparse import ArgumentParser
 import sys
 
-from clowdr.controller import metadata  # , launcher, sendMetadata, launchTask
+from clowdr.controller import metadata # launchTask
 # from clowdr.endpoint import local, aws, kubernetes, azure, etc.
 from clowdr.task import process_task
+from clowdr import utils
 
 
 def dev(tool, invocation, clowdrloc, dataloc, **kwargs):
@@ -31,27 +32,71 @@ def dev(tool, invocation, clowdrloc, dataloc, **kwargs):
         The exit-code returned by the task being executed
     """
     # TODO: scrub inputs
-    task = metadata.consolidate(tool, invocation, clowdrloc, dataloc, **kwargs)
-    if len(task) > 1: task = task[0]  # Just launch the first task in dev mode
-    code = process_task(task, clowdrloc)
+    [tasks, invocs] = metadata.consolidate(tool, invocation, clowdrloc,
+                      dataloc, **kwargs)
+    if len(tasks) > 1: tasks = tasks[0]  # Just launch the first task in dev
+    code = process_task(tasks, clowdrloc)
     return code
 
 
-def deploy(tool, invocation, location, auth, **kwargs):
-    # TODO: document
+def deploy(tool, invocation, clowdrloc, dataloc, auth, **kwargs):
+    """deploy
+    Launches a pipeline locally at scale through Clowdr.
+
+    Parameters
+    ----------
+    tool : str
+        Path to a boutiques descriptor for the tool to be run
+    invocation : str
+        Path to a boutiques invocation for the tool and parameters to be run
+    clowdrloc : str
+        Path on S3 for storing Clowdr intermediate files and outputs
+    dataloc : str
+        Path on S3 for accessing input data
+    auth : str
+        Credentials for Amazon with access to dataloc, clowdrloc, and Batch
+    **kwargs : dict
+        Arbitrary keyword arguments (i.e. {'verbose': True})
+
+    Returns
+    -------
+    int
+        The exit-code returned by the task being executed
+    """
     # TODO: scrub inputs
-    # tasks_local  = metadata.consolidate(tool, invocation, location)
-    # tasks_remote = metadata.upload(tasks_remote, auth)
+    
+    # Create temp dir for clowdrloc 
+    kwargs["workdir"] = "/tmp/clowdrtask-thing/"
+
+    [tasks, invocs] = metadata.consolidate(tool, invocation, clowdrloc,
+                                           dataloc, **kwargs)
+    utils.setcreds(auth)
+    
+    tasks_remote = metadata.upload(tool, invocation, task, clowdrloc)
+    tasks_remote = utils.put(task + [tool, invocation], clowdrloc)
 
     # launcher.submit(resource, auth, tasks_remote)
     print(tool, invocation, location, auth, kwargs)
-    return 0
+    return task_remote
 
 
-def share(location, **kwargs):
-    # TODO: document
+def share(clowdrloc, **kwargs):
+    """share
+    Launches a simple web server which showcases all runs at the clowdrloc.
+
+    Parameters
+    ----------
+    clowdrloc : str
+        Path with Clowdr intermediate files and outputs
+    **kwargs : dict
+        Arbitrary keyword arguments (i.e. {'verbose': True})
+
+    Returns
+    -------
+    None
+    """
     # TODO: scrub inputs
-    print(location, kwargs)
+    print(clowdrloc, kwargs)
     return 0
 
 

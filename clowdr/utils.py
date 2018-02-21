@@ -1,15 +1,33 @@
 #!/usr/bin/env python
 
 from shutil import copy, copytree, SameFileError
-import boto3
-import os
 import os.path as op
+import boto3
+import csv
+import os
+
+
+def truepath(path):
+    if path.startswith("s3://"):
+        return path
+    else:
+        return op.realpath(path)
+
+
+def setcreds(auth):
+    with open(auth) as fhandle:
+        reader = csv.reader(fhandle)
+        creds = []
+        for row in reader:
+            creds += row
+    os.environ['AWS_ACCESS_KEY_ID'] = creds[2]
+    os.environ['AWS_SECRET_ACCESS_KEY'] = creds[3]
 
 
 def get(remote, local):
     try:
         if remote.startswith("s3://"):
-            return aws_get(remote, local)
+            return _awsget(remote, local)
         elif op.isdir(remote):
             return [op.realpath(copytree(remote, local))]
         else:
@@ -24,8 +42,8 @@ def get(remote, local):
 
 def post(local, remote):
     try:
-        if "s3://" in remote:
-            return aws_post(local, remote)
+        if remote.startswith("s3://"):
+            return _awspost(local, remote)
         elif op.isdir(local):
             return [op.realpath(copytree(local, remote))]
         else:
@@ -35,7 +53,7 @@ def post(local, remote):
         return [op.realpath(local)]
 
 
-def aws_get(remote, local):
+def _awsget(remote, local):
     s3 = boto3.resource("s3")
 
     bucket, rpath = remote.split('/')[2], remote.split('/')[3:]
@@ -55,7 +73,7 @@ def aws_get(remote, local):
     return files_local
 
 
-def aws_post(local, remote):
+def _awspost(local, remote):
     # Credit: https://github.com/boto/boto3/issues/358#issuecomment-346093506
     if not op.isfile(local):
         local_files = [op.join(root, f)
@@ -68,8 +86,12 @@ def aws_post(local, remote):
     bucket, rpath = remote.split('/')[2], remote.split('/')[3:]
     rpath = "/".join(rpath)
 
+    rempats = []
     for flocal in local_files:
         rempat = rpath if local == flocal else op.join(rpath,
                                                        op.relpath(flocal,
                                                                   local))
         s3.upload_file(flocal, bucket, rempat, {'ACL': 'public-read'})
+        rempats += [rempat]
+
+    return rempats

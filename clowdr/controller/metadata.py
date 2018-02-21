@@ -10,6 +10,8 @@ import string
 import json
 import sys
 
+from clowdr import utils
+
 
 def consolidate(tool, invocation, clowdrloc, dataloc, **kwargs):
     # TODO: document
@@ -23,8 +25,8 @@ def consolidate(tool, invocation, clowdrloc, dataloc, **kwargs):
     with open(tool) as fhandle:
         toolname = json.load(fhandle)["name"]
     taskdict["taskloc"] = op.join(clowdrloc, modif, toolname)
-    taskdict["dataloc"] = [op.realpath(dataloc)]
-    taskdict["invocation"] = op.realpath(invocation)
+    taskdict["dataloc"] = [utils.truepath(dataloc)]
+    taskdict["invocation"] = utils.truepath(invocation)
     taskdict["tool"] = op.realpath(tool)
 
     # Case 1: User supplies directory of invocations
@@ -40,13 +42,12 @@ def consolidate(tool, invocation, clowdrloc, dataloc, **kwargs):
     else:
         # Case 2a: User is running a BIDS app
         if kwargs.get('bids'):
-            taskdicts = bidstasks(clowdrloc, taskdict)
+            taskdicts, invocations = bidstasks(clowdrloc, taskdict)
 
         # Case 2b: User is quite simply just launching a single invocation
         else:
             taskdicts = [taskdict]
-
-    bosh.invocation(tool, '-i', taskdicts[0]["invocation"])
+            invocations = [invocation]
 
     # Store task definition files to disk
     taskdictnames = []
@@ -56,7 +57,7 @@ def consolidate(tool, invocation, clowdrloc, dataloc, **kwargs):
         with open(taskfname, 'w') as fhandle:
             fhandle.write(json.dumps(taskdict))
 
-    return taskdictnames
+    return (taskdictnames, invocations)
 
 
 def bidstasks(clowdrloc, taskdict):
@@ -70,17 +71,18 @@ def bidstasks(clowdrloc, taskdict):
 
     # Case 1: User is running BIDS group-level analysis
     if invo.get("analysis_level") == "group":
-        return [taskdict]
+        return ([taskdict], [invocation])
 
     # Case 2: User is running BIDS participant- or session-level analysis
     #       ... and specified neither participant(s) nor session(s)
     elif not participants and not sessions:
-        return [taskdict]
+        return ([taskdict], [invocation])
 
     # Case 3: User is running BIDS participant- or session-level analysis
     #       ... and specified participant(s) but not session(s)
     elif participants and not sessions:
         taskdicts = []
+        invos = []
         for part in participants:
             partstr = "sub-{}".format(part)
 
@@ -94,13 +96,15 @@ def bidstasks(clowdrloc, taskdict):
                 fhandle.write(json.dumps(invo))
 
             tempdict["invocation"] = invofname
+            invos += [invofname]
             taskdicts += [tempdict]
-        return taskdicts
+        return (taskdicts, invos)
 
     # Case 4: User is running BIDS participant- or session-level analysis
     #       ... and specified participants(s) and session(s)
     elif participants and sessions:
         taskdicts = []
+        invos = []
         for part in participants:
             partstr = "sub-{}".format(part)
 
@@ -119,8 +123,9 @@ def bidstasks(clowdrloc, taskdict):
                     fhandle.write(json.dumps(invo))
 
                 tempdict["invocation"] = invofname
+                invos += [invofname]
                 taskdicts += [tempdict]
-        return taskdicts
+        return (taskdicts, invos)
 
     # Case 5: User is running BIDS participant- or session-level analysis
     #       ... and specified sessions(s) but not participant(s)
@@ -129,3 +134,5 @@ def bidstasks(clowdrloc, taskdict):
         print("       Must specify participant label if specifying sessions!")
         sys.exit(-1)
 
+
+# def upload(tool, 

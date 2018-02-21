@@ -9,6 +9,7 @@ import json
 
 from clowdr import utils
 
+
 def process_task(metadata, clowdrloc=None, **kwargs):
     # Get metadata
     if clowdrloc is None:
