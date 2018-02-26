@@ -135,4 +135,24 @@ def bidstasks(clowdrloc, taskdict):
         sys.exit(-1)
 
 
-# def upload(tool, 
+def prepare(tasks, tmploc, clowdrloc):
+    # TODO: document
+
+    # Modify tasks
+    for task in tasks:
+        with open(task) as fhandle:
+            task_dict = json.load(fhandle)
+
+        task_dict["invocation"] = op.join(clowdrloc,
+                                          op.relpath(task_dict["invocation"],
+                                                     tmploc))
+        task_dict["taskloc"] = op.join(clowdrloc,
+                                       op.relpath(task_dict["taskloc"],
+                                                  tmploc))
+        task_dict["tool"] = op.join(clowdrloc, op.basename(task_dict["tool"]))
+
+        with open(task, 'w') as fhandle:
+            fhandle.write(json.dumps(task_dict))
+
+    return 0
+

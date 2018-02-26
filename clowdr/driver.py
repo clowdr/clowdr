@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from argparse import ArgumentParser
+import tempfile
 import sys
 
 from clowdr.controller import metadata # launchTask
@@ -63,17 +64,23 @@ def deploy(tool, invocation, clowdrloc, dataloc, auth, **kwargs):
     int
         The exit-code returned by the task being executed
     """
-    # TODO: scrub inputs
-    
-    # Create temp dir for clowdrloc 
-    kwargs["workdir"] = "/tmp/clowdrtask-thing/"
+    # TODO: scrub inputs better
+    clowdrloc = clowdrloc.strip('/')
 
-    [tasks, invocs] = metadata.consolidate(tool, invocation, clowdrloc,
+    # Create temp dir for clowdrloc 
+    tmploc = tempfile.mkdtemp()
+
+    [tasks, invocs] = metadata.consolidate(tool, invocation, tmploc,
                                            dataloc, **kwargs)
     utils.setcreds(auth)
-    
-    tasks_remote = metadata.upload(tool, invocation, task, clowdrloc)
-    tasks_remote = utils.put(task + [tool, invocation], clowdrloc)
+
+    metadata.prepare(tasks, tmploc, clowdrloc)
+    print(tasks)
+    print(invocs)
+    return 0
+    tasks_remote = []
+    for fil in [tool] + tasks + invocs:
+        tasks_remote += utils.put(fil, clowdrloc)
 
     # launcher.submit(resource, auth, tasks_remote)
     print(tool, invocation, location, auth, kwargs)
@@ -101,6 +108,19 @@ def share(clowdrloc, **kwargs):
 
 
 def main(args=None):
+    """main
+    Command-line API wrapper for Clowdr as a CLI, not Python API.
+
+    Parameters
+    ----------
+    args: list
+        List of all command-line arguments being passed
+
+    Returns
+    -------
+    int
+        The exit-code returned by the task being executed
+    """
     desc = "Interface for launching Boutiques task locally and in the cloud"
     parser = ArgumentParser("Clowdr CLI", description=desc)
     subparsers = parser.add_subparsers(help="Modes of operation", dest="mode")
@@ -108,8 +128,8 @@ def main(args=None):
     parser_dev = subparsers.add_parser("dev")
     parser_dev.add_argument("tool", help="boutiques descriptor for a tool")
     parser_dev.add_argument("invocation", help="input(s) for the tool")
-    parser_dev.add_argument("clowdrloc", help="local output location")
-    parser_dev.add_argument("dataloc", help="local or S3 input data location")
+    parser_dev.add_argument("clowdrloc", help="location locally for clowdr")
+    parser_dev.add_argument("dataloc", help="location locally or s3 of data")
     parser_dev.add_argument("--verbose", "-v", action="store_true")
     parser_dev.add_argument("--bids", "-b", action="store_true")
     parser_dev.set_defaults(func=dev)
@@ -117,7 +137,8 @@ def main(args=None):
     parser_dpy = subparsers.add_parser("deploy")
     parser_dpy.add_argument("tool",  help="boutiques descriptor for a tool")
     parser_dpy.add_argument("invocation", help="input(s) for the tool")
-    parser_dpy.add_argument("location", help="local or s3 location for clowdr")
+    parser_dpy.add_argument("clowdrloc", help="location on s3 for clowdr")
+    parser_dpy.add_argument("dataloc", help="location on s3 of data")
     parser_dpy.add_argument("auth", help="credentials for the remote resource")
     parser_dpy.add_argument("--verbose", "-v", action="store_true")
     parser_dpy.add_argument("--bids", "-b", action="store_true")
