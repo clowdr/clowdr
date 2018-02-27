@@ -24,7 +24,7 @@ def setcreds(auth):
     os.environ['AWS_SECRET_ACCESS_KEY'] = creds[3]
 
 
-def get(remote, local):
+def get(remote, local, **kwargs):
     try:
         if remote.startswith("s3://"):
             return _awsget(remote, local)
@@ -33,14 +33,22 @@ def get(remote, local):
         else:
             return [op.realpath(copy(remote, local))]
     except SameFileError as e:
-        print("SameFileWarning: some files may not have been moved")
-        return [op.realpath(remote)]
+        if kwargs.get("verbose"):
+            print("SameFileWarning: some files may not have been moved")
+        if op.isdir(local) and op.isfile(remote):
+            return [op.realpath(op.join(local, op.basename(remote)))]
+        else:
+            return [op.realpath(local)] 
     except FileExistsError as e:
-        print("FileExistsWarning: some files may not have been moved")
-        return [op.realpath(remote)]
+        if kwargs.get("verbose"):
+            print("FileExistsWarning: some files may not have been moved")
+        if op.isdir(local) and op.isfile(remote):
+            return [op.realpath(op.join(local, op.basename(remote)))]
+        else:
+            return [op.realpath(local)] 
 
 
-def post(local, remote):
+def post(local, remote, **kwargs):
     try:
         if remote.startswith("s3://"):
             return _awspost(local, remote)
@@ -49,8 +57,12 @@ def post(local, remote):
         else:
             return [op.realpath(copy(local, remote))]
     except SameFileError as e:
-        print("SameFileWarning: some files may not have been moved")
-        return [op.realpath(local)]
+        if kwargs.get("verbose"):
+            print("SameFileWarning: some files may not have been moved")
+        if op.isdir(remote) and op.isfile(local):
+            return [op.realpath(op.join(remote, op.basename(local)))]
+        else:
+            return [op.realpath(remote)] 
 
 
 def _awsget(remote, local):

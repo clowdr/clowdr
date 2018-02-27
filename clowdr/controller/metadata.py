@@ -2,13 +2,16 @@
 
 from copy import deepcopy
 
-import time, datetime
-import boutiques as bosh
-import os, os.path as op
+import time
+import datetime
+import os
+import os.path as op
 import random as rnd
 import string
 import json
 import sys
+
+import boutiques as bosh
 
 from clowdr import utils
 
@@ -20,14 +23,23 @@ def consolidate(tool, invocation, clowdrloc, dataloc, **kwargs):
     randx = "".join(rnd.choices(string.ascii_uppercase + string.digits, k=8))
     modif = "{}-{}".format(dt, randx)
 
+    # Scrub inputs
+    tool = utils.truepath(tool)
+    invocation = utils.truepath(invocation)
+    clowdrloc = utils.truepath(clowdrloc)
+    dataloc = utils.truepath(dataloc)
+
     # Initialize task dictionary
     taskdict = {}
     with open(tool) as fhandle:
-        toolname = json.load(fhandle)["name"]
+        toolname = json.load(fhandle)["name"].replace(' ', '-')
+    taskloc = op.join(clowdrloc, modif, 'clowdr')
+    os.makedirs(taskloc)
+
     taskdict["taskloc"] = op.join(clowdrloc, modif, toolname)
-    taskdict["dataloc"] = [utils.truepath(dataloc)]
-    taskdict["invocation"] = utils.truepath(invocation)
-    taskdict["tool"] = op.realpath(tool)
+    taskdict["dataloc"] = [dataloc]
+    taskdict["invocation"] = utils.get(invocation, taskloc)[0]
+    taskdict["tool"] = utils.get(tool, taskloc)[0]
 
     # Case 1: User supplies directory of invocations
     if op.isdir(invocation):
@@ -35,24 +47,25 @@ def consolidate(tool, invocation, clowdrloc, dataloc, **kwargs):
         taskdicts = []
         for invoc in invocations:
             tempdict = deepcopy(taskdict)
-            tempdict["invocation"] = op.join(op.realpath(invocation), invoc)
+            tempinvo = utils.get(op.join(invocation, invoc), taskloc)
+            tempdict["invocation"] = tempinvo
             taskdicts += [tempdict]
 
     # Case 2: User supplies a single invocation
     else:
         # Case 2a: User is running a BIDS app
         if kwargs.get('bids'):
-            taskdicts, invocations = bidstasks(clowdrloc, taskdict)
+            taskdicts, invocations = bidstasks(taskloc, taskdict)
 
         # Case 2b: User is quite simply just launching a single invocation
         else:
             taskdicts = [taskdict]
-            invocations = [invocation]
+            invocations = [taskdict["invocation"]]
 
     # Store task definition files to disk
     taskdictnames = []
     for idx, taskdict in enumerate(taskdicts):
-        taskfname = op.join(clowdrloc, "task-{}.json".format(idx))
+        taskfname = op.join(taskloc, "task-{}.json".format(idx))
         taskdictnames += [taskfname]
         with open(taskfname, 'w') as fhandle:
             fhandle.write(json.dumps(taskdict))
@@ -91,7 +104,7 @@ def bidstasks(clowdrloc, taskdict):
 
             invo["participant_label"] = [part]
 
-            invofname = op.join(clowdrloc, "invocation-{}.json".format(part))
+            invofname = op.join(clowdrloc, "invocation_sub-{}.json".format(part))
             with open(invofname, 'w') as fhandle:
                 fhandle.write(json.dumps(invo))
 
@@ -117,8 +130,7 @@ def bidstasks(clowdrloc, taskdict):
                 invo["participant_label"] = [part]
                 invo["session_label"] = [sesh]
 
-                invofname = op.join(clowdrloc,
-                                    "invocation-{}-{}.json".format(part, sesh))
+                invofname = op.join(clowdrloc, "invocation_sub-{}_ses-{}.json".format(part, sesh))
                 with open(invofname, 'w') as fhandle:
                     fhandle.write(json.dumps(invo))
 
@@ -149,7 +161,8 @@ def prepare(tasks, tmploc, clowdrloc):
         task_dict["taskloc"] = op.join(clowdrloc,
                                        op.relpath(task_dict["taskloc"],
                                                   tmploc))
-        task_dict["tool"] = op.join(clowdrloc, op.basename(task_dict["tool"]))
+        task_dict["tool"] = op.join(clowdrloc, op.relpath(task_dict["tool"],
+                                                          tmploc))
 
         with open(task, 'w') as fhandle:
             fhandle.write(json.dumps(task_dict))

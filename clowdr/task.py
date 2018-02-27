@@ -24,7 +24,7 @@ def process_task(metadata, clowdrloc=None, **kwargs):
     descriptor = metadata['tool']
     invocation = metadata['invocation']
     input_data = metadata['dataloc']
-    output_loc = op.realpath(metadata['taskloc'])
+    output_loc = utils.truepath(metadata['taskloc'])
 
     print("Fetching descriptor and invocation...")
     # Get descriptor and invocation

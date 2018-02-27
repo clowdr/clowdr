@@ -34,7 +34,7 @@ def dev(tool, invocation, clowdrloc, dataloc, **kwargs):
     """
     # TODO: scrub inputs
     [tasks, invocs] = metadata.consolidate(tool, invocation, clowdrloc,
-                      dataloc, **kwargs)
+                                           dataloc, **kwargs)
     if len(tasks) > 1: tasks = tasks[0]  # Just launch the first task in dev
     code = process_task(tasks, clowdrloc)
     return code
@@ -68,7 +68,7 @@ def deploy(tool, invocation, clowdrloc, dataloc, auth, **kwargs):
     clowdrloc = clowdrloc.strip('/')
 
     # Create temp dir for clowdrloc 
-    tmploc = tempfile.mkdtemp()
+    tmploc = utils.truepath(tempfile.mkdtemp())
 
     [tasks, invocs] = metadata.consolidate(tool, invocation, tmploc,
                                            dataloc, **kwargs)
