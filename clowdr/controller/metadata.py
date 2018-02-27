@@ -11,13 +11,32 @@ import string
 import json
 import sys
 
-import boutiques as bosh
-
 from clowdr import utils
 
 
-def consolidate(tool, invocation, clowdrloc, dataloc, **kwargs):
-    # TODO: document
+def consolidateTask(tool, invocation, clowdrloc, dataloc, **kwargs):
+    """consolidate
+    Creates Clowdr task JSON files which summarize all associated metadata
+
+    Parameters
+    ----------
+    tool : str
+        Path to a boutiques descriptor for the tool to be run
+    invocation : str
+        Path to a boutiques invocation for the tool and parameters to be run
+    clowdrloc : str
+        Path for storing Clowdr intermediate files and outputs
+    dataloc : str
+        Path for accessing input data
+    **kwargs : dict
+        Arbitrary keyword arguments (i.e. {'verbose': True})
+
+    Returns
+    -------
+    tuple: (list, list)
+        The task dictionary JSONs, and associated Boutiques invocation files.
+    """
+
     ts = time.time()
     dt = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
     randx = "".join(rnd.choices(string.ascii_uppercase + string.digits, k=8))
@@ -55,7 +74,7 @@ def consolidate(tool, invocation, clowdrloc, dataloc, **kwargs):
     else:
         # Case 2a: User is running a BIDS app
         if kwargs.get('bids'):
-            taskdicts, invocations = bidstasks(taskloc, taskdict)
+            taskdicts, invocations = bidsTasks(taskloc, taskdict)
 
         # Case 2b: User is quite simply just launching a single invocation
         else:
@@ -73,8 +92,23 @@ def consolidate(tool, invocation, clowdrloc, dataloc, **kwargs):
     return (taskdictnames, invocations)
 
 
-def bidstasks(clowdrloc, taskdict):
-    # TODO: document
+def bidsTasks(clowdrloc, taskdict):
+    """bidsTask
+    Scans through BIDS app fields for creating more tasks than specified.
+
+    Parameters
+    ----------
+    clowdrloc : str
+        Path for storing Clowdr intermediate files and outputs
+    taskdict : str
+        Dictionary of the tasks (pre-BIDS-ification)
+
+    Returns
+    -------
+    tuple: (list, list)
+        The task dictionary JSONs, and associated Boutiques invocation files.
+    """
+
     dataloc = taskdict["dataloc"][0]
     invocation = taskdict["invocation"]
 
@@ -147,8 +181,22 @@ def bidstasks(clowdrloc, taskdict):
         sys.exit(-1)
 
 
-def prepare(tasks, tmploc, clowdrloc):
-    # TODO: document
+def prepareForRemote(tasks, tmploc, clowdrloc):
+    """prepare
+    Scans through BIDS app fields for creating more tasks than specified.
+
+    Parameters
+    ----------
+    clowdrloc : str
+        Path for storing Clowdr intermediate files and outputs
+    taskdict : str
+        Dictionary of the tasks (pre-BIDS-ification)
+
+    Returns
+    -------
+    tuple: (list, list)
+        The task dictionary JSONs, and associated Boutiques invocation files.
+    """
 
     # Modify tasks
     for task in tasks:

@@ -6,7 +6,7 @@ import sys
 
 from clowdr.controller import metadata # launchTask
 # from clowdr.endpoint import local, aws, kubernetes, azure, etc.
-from clowdr.task import process_task
+from clowdr.task import processTask
 from clowdr import utils
 
 
@@ -33,10 +33,10 @@ def dev(tool, invocation, clowdrloc, dataloc, **kwargs):
         The exit-code returned by the task being executed
     """
     # TODO: scrub inputs
-    [tasks, invocs] = metadata.consolidate(tool, invocation, clowdrloc,
-                                           dataloc, **kwargs)
+    [tasks, invocs] = metadata.consolidateTask(tool, invocation, clowdrloc,
+                                               dataloc, **kwargs)
     if len(tasks) > 1: tasks = tasks[0]  # Just launch the first task in dev
-    code = process_task(tasks, clowdrloc)
+    code = processTask(tasks, clowdrloc)
     return code
 
 
@@ -70,11 +70,11 @@ def deploy(tool, invocation, clowdrloc, dataloc, auth, **kwargs):
     # Create temp dir for clowdrloc 
     tmploc = utils.truepath(tempfile.mkdtemp())
 
-    [tasks, invocs] = metadata.consolidate(tool, invocation, tmploc,
-                                           dataloc, **kwargs)
+    [tasks, invocs] = metadata.consolidateTask(tool, invocation, tmploc,
+                                               dataloc, **kwargs)
     utils.setcreds(auth)
 
-    metadata.prepare(tasks, tmploc, clowdrloc)
+    metadata.prepareForRemote(tasks, tmploc, clowdrloc)
     print(tasks)
     print(invocs)
     return 0
@@ -152,7 +152,7 @@ def main(args=None):
     parser_run.add_argument("metadata", help="task metadata file")
     parser_run.add_argument("--clowdrloc", "-l", action="store",
                             help="task output directory")
-    parser_run.set_defaults(func=process_task)
+    parser_run.set_defaults(func=processTask)
 
     inps = parser.parse_args(args) if args is not None else parser.parse_args()
     if len(sys.argv) == 1:
