@@ -1,0 +1,11 @@
+{
+    "jobQueueName": "clowdr-q", 
+    "state": "ENABLED", 
+    "priority": 1, 
+    "computeEnvironmentOrder": [
+        {
+            "order": 0, 
+            "computeEnvironment": "clowdr-env"
+        }
+    ]
+}

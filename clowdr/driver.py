@@ -1,11 +1,18 @@
 #!/usr/bin/env python
+#
+# This software is distributed with the MIT license:
+# https://github.com/gkiar/clowdr/blob/master/LICENSE
+#
+# clowdr/driver.py
+# Created by Greg Kiar on 2018-02-28.
+# Email: gkiar@mcin.ca
 
 from argparse import ArgumentParser
 import tempfile
 import sys
 
-from clowdr.controller import metadata # launchTask
-# from clowdr.endpoint import local, aws, kubernetes, azure, etc.
+from clowdr.controller import metadata, launcher
+# from clowdr.endpoint import aws, kubernetes, cbrain
 from clowdr.task import processTask
 from clowdr import utils
 
@@ -40,7 +47,7 @@ def dev(tool, invocation, clowdrloc, dataloc, **kwargs):
     return code
 
 
-def deploy(tool, invocation, clowdrloc, dataloc, auth, **kwargs):
+def deploy(tool, invocation, clowdrloc, dataloc, endpoint, auth, **kwargs):
     """deploy
     Launches a pipeline locally at scale through Clowdr.
 
@@ -54,6 +61,8 @@ def deploy(tool, invocation, clowdrloc, dataloc, auth, **kwargs):
         Path on S3 for storing Clowdr intermediate files and outputs
     dataloc : str
         Path on S3 for accessing input data
+    endpoint : str
+        Which endpoint to use for deployment
     auth : str
         Credentials for Amazon with access to dataloc, clowdrloc, and Batch
     **kwargs : dict
@@ -72,19 +81,16 @@ def deploy(tool, invocation, clowdrloc, dataloc, auth, **kwargs):
 
     [tasks, invocs] = metadata.consolidateTask(tool, invocation, tmploc,
                                                dataloc, **kwargs)
-    utils.setcreds(auth)
-
     metadata.prepareForRemote(tasks, tmploc, clowdrloc)
-    print(tasks)
-    print(invocs)
-    return 0
-    tasks_remote = []
-    for fil in [tool] + tasks + invocs:
-        tasks_remote += utils.put(fil, clowdrloc)
+    tasks_remote = [task for task in utils.post(tmploc, clowdrloc)
+                    if "task-" in task]
 
-    # launcher.submit(resource, auth, tasks_remote)
-    print(tool, invocation, location, auth, kwargs)
-    return task_remote
+    resource = launcher.configureResource(endpoint, auth, **kwargs)
+    jids = []
+    for task in tasks_remote:
+        jids += [resource.launchJob(task)]
+
+    return (tasks_remote, jids)
 
 
 def share(clowdrloc, **kwargs):
@@ -139,8 +145,10 @@ def main(args=None):
     parser_dpy.add_argument("invocation", help="input(s) for the tool")
     parser_dpy.add_argument("clowdrloc", help="location on s3 for clowdr")
     parser_dpy.add_argument("dataloc", help="location on s3 of data")
+    parser_dpy.add_argument("endpoint", help="cloud endpoint", choices=["aws"])
     parser_dpy.add_argument("auth", help="credentials for the remote resource")
     parser_dpy.add_argument("--verbose", "-v", action="store_true")
+    parser_dpy.add_argument("--region", "-r", action="store")
     parser_dpy.add_argument("--bids", "-b", action="store_true")
     parser_dpy.set_defaults(func=deploy)
 

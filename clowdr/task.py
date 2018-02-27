@@ -1,12 +1,19 @@
 #!/usr/bin/env python
+#
+# This software is distributed with the MIT license:
+# https://github.com/gkiar/clowdr/blob/master/LICENSE
+#
+# clowdr/task.py
+# Created by Greg Kiar on 2018-02-28.
+# Email: gkiar@mcin.ca
 
 from argparse import ArgumentParser
-import re
 import os.path as op
-import boutiques as bosh
-import os
 import json
+import os
+import re
 
+import boutiques as bosh
 from clowdr import utils
 
 

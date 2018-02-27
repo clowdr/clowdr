@@ -14,16 +14,6 @@ def truepath(path):
         return op.realpath(path)
 
 
-def setcreds(auth):
-    with open(auth) as fhandle:
-        reader = csv.reader(fhandle)
-        creds = []
-        for row in reader:
-            creds += row
-    os.environ['AWS_ACCESS_KEY_ID'] = creds[2]
-    os.environ['AWS_SECRET_ACCESS_KEY'] = creds[3]
-
-
 def get(remote, local, **kwargs):
     try:
         if remote.startswith("s3://"):
@@ -100,10 +90,12 @@ def _awspost(local, remote):
 
     rempats = []
     for flocal in local_files:
-        rempat = rpath if local == flocal else op.join(rpath,
-                                                       op.relpath(flocal,
-                                                                  local))
+        if local == flocal:
+            rempat = op.join(rpath, op.basename(flocal))
+        else:
+            rempat = op.join(rpath, op.relpath(flocal, local))
+
         s3.upload_file(flocal, bucket, rempat, {'ACL': 'public-read'})
-        rempats += [rempat]
+        rempats += [op.join('s3://', bucket, rempat)]
 
     return rempats

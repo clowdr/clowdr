@@ -1,15 +1,21 @@
 #!/usr/bin/env python
+#
+# This software is distributed with the MIT license:
+# https://github.com/gkiar/clowdr/blob/master/LICENSE
+#
+# clowdr/controller/metadata.py
+# Created by Greg Kiar on 2018-02-28.
+# Email: gkiar@mcin.ca
 
 from copy import deepcopy
-
-import time
-import datetime
-import os
 import os.path as op
 import random as rnd
+import datetime
+import time
 import string
 import json
 import sys
+import os
 
 from clowdr import utils
 

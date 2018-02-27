@@ -1,0 +1,47 @@
+{
+  "batch": {
+    "RoleName": "clowdr-batch",
+    "AssumeRolePolicyDocument": {
+      "Statement": [
+             {
+                 "Action": "sts:AssumeRole",
+                 "Principal": {
+                     "Service": "batch.amazonaws.com"
+                 },
+                 "Effect": "Allow"
+             }
+         ]
+      },
+    "Path": "/"
+  },
+  "spot": {
+    "RoleName": "clowdr-spot",
+    "AssumeRolePolicyDocument": {
+      "Statement": [
+             {
+                 "Action": "sts:AssumeRole",
+                 "Principal": {
+                     "Service": "spotfleet.amazonaws.com"
+                 },
+                 "Effect": "Allow"
+             }
+         ]
+      },
+    "Path": "/" 
+  },
+  "ecs": {
+    "RoleName": "clowdr-ecs",
+    "AssumeRolePolicyDocument": {
+      "Statement": [
+             {
+                 "Action": "sts:AssumeRole",
+                 "Principal": {
+                     "Service": "ec2.amazonaws.com"
+                 },
+                 "Effect": "Allow"
+             }
+         ]
+      },
+    "Path": "/"
+  }
+}
