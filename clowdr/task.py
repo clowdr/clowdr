@@ -13,11 +13,11 @@ from clowdr import utils
 def processTask(metadata, clowdrloc=None, **kwargs):
     # Get metadata
     if clowdrloc is None:
-        local_task_dir = "/task/"
+        localtaskdir = "/task/"
     else:
-        local_task_dir = clowdrloc
+        localtaskdir = clowdrloc
     print("Fetching metadata...")
-    metadata = utils.get(metadata, local_task_dir)[0]
+    metadata = utils.get(metadata, localtaskdir)[0]
 
     # Parse metadata
     metadata   = json.load(open(metadata))
@@ -28,8 +28,8 @@ def processTask(metadata, clowdrloc=None, **kwargs):
 
     print("Fetching descriptor and invocation...")
     # Get descriptor and invocation
-    desc_local = utils.get(descriptor, local_task_dir)[0]
-    invo_local = utils.get(invocation, local_task_dir)[0]
+    desc_local = utils.get(descriptor, localtaskdir)[0]
+    invo_local = utils.get(invocation, localtaskdir)[0]
 
     task_loc   = op.dirname(invocation)
     invo_id    = invo_local.split('.')[0].split('-')[-1]
