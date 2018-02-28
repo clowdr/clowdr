@@ -195,7 +195,7 @@ class AWS(Endpoint):
                 job["jobDefinitionArn"] = response["jobDefinitions"][0]["jobDefinitionArn"]
         except ClientError as e:
             if e.response["Error"]["Code"] == "NoSuchEntity":
-                if verb:
+                if kwargs.get("verbose"):
                     print("Job '{}' not found- creating.".format(name))
                 response = self.batch.register_job_definition(**job)
                 job["jobDefinitionArn"] = response["jobDefinitionArn"]
@@ -209,7 +209,7 @@ class AWS(Endpoint):
                                   "value":self.access_key},
                                  {"name":"AWS_SECRET_ACCESS_KEY",
                                   "value":self.secret_access}],
-                  "command":[taskloc]}
+                  "command":["run", taskloc]}
         p1, p2 = re.match('.+\/.+-(\w+)\/clowdr\/task-([A-Za-z0-9]+).json', taskloc).group(1, 2)
         response = self.batch.submit_job(jobName="clowdr_{}-{}".format(p1, p2),
                                          jobQueue="clowdr-q",

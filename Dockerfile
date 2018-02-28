@@ -6,6 +6,6 @@ RUN mkdir -p /clowdata /clowtask /opt
 
 COPY requirements.txt /opt/requirements.txt
 RUN pip3 install boutiques &&\
-    pip3 install -e git+https://github.com/gkiar/clowdr.git@7a66e39dead874c480f469fbb546d28788e1f6f7#egg=clowdr
+    pip3 install -e git+https://github.com/gkiar/clowdr.git@57edd78724a5e44e2bf0aafa1cb14a9693a2ec8b#egg=clowdr
  
 ENTRYPOINT ["clowdr"]
