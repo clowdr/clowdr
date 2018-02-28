@@ -1,0 +1,30 @@
+appnope==0.1.0
+boto3==1.5.28
+botocore==1.8.42
+-e git+https://github.com/gkiar/boutiques.git@da81a6f65032db89c9b15d76ae786ddf7ef017e0#egg=boutiques&subdirectory=tools/python
+-e git+https://github.com/gkiar/clowdr.git@7a66e39dead874c480f469fbb546d28788e1f6f7#egg=clowdr
+decorator==4.2.1
+docutils==0.14
+gitdb2==2.0.3
+GitPython==2.1.8
+ipython==6.2.1
+ipython-genutils==0.2.0
+jedi==0.11.1
+jmespath==0.9.3
+jsonschema==2.6.0
+parso==0.1.1
+pexpect==4.4.0
+pickleshare==0.7.4
+prompt-toolkit==1.0.15
+ptyprocess==0.5.2
+PyGithub==1.36
+Pygments==2.2.0
+PyJWT==1.5.3
+python-dateutil==2.6.1
+s3transfer==0.1.12
+simplegeneric==0.8.1
+simplejson==3.13.2
+six==1.11.0
+smmap2==2.0.3
+traitlets==4.3.2
+wcwidth==0.1.7

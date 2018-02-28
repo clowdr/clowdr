@@ -1,0 +1,160 @@
+{
+    "command-line": "mkdir -p OUTPUT_DIR; /run.py BIDS_DIR OUTPUT_DIR ANALYSIS_LEVEL PARTICIPANT_LABEL SKIP_VALIDATOR",
+    "container-image": {
+        "image": "bids/example",
+        "type": "docker"
+    },
+    "description": "See https://github.com/BIDS-Apps/example",
+    "groups": [
+        {
+            "description": "For a participants analysis, an output directory name must be specified. For a group analysis, a directory containing the output of participant-level analyses must be selected. ",
+            "id": "output_directory",
+            "members": [
+                "output_dir_name",
+                "participant_level_analysis_dir"
+            ],
+            "mutually-exclusive": true,
+            "name": "Output Directory",
+            "one-is-required": true
+        }
+    ],
+    "inputs": [
+        {
+            "description": "The directory with the input dataset formatted according to the BIDS standard.",
+            "id": "bids_dir",
+            "name": "BIDS directory",
+            "optional": false,
+            "type": "File",
+            "value-key": "BIDS_DIR"
+        },
+        {
+            "description": "The directory where the output files should be stored. If you are running a group level analysis, this folder should be prepopulated with the results of the participant level analysis.",
+            "id": "output_dir_name",
+            "name": "Output directory name",
+            "optional": true,
+            "type": "String",
+            "value-key": "OUTPUT_DIR"
+        },
+        {
+            "description": "Directory containing the output of the participants analysis.",
+            "id": "participant_level_analysis_dir",
+            "name": "Participants dir",
+            "optional": true,
+            "type": "File",
+            "value-key": "OUTPUT_DIR"
+        },
+        {
+            "description": "Level of the analysis that will be performed. Multiple participant level analyses can be run independently (in parallel).",
+            "id": "analysis_level",
+            "name": "Analysis level",
+            "type": "String",
+            "value-choices": [
+                "participant",
+                "group",
+                "session"
+            ],
+            "value-key": "ANALYSIS_LEVEL"
+        },
+        {
+            "command-line-flag": "--participant_label",
+            "description": "The label(s) of the participant(s) that should be analyzed. The label corresponds to sub-<participant_label> from the BIDS spec (so it does not include \"sub-\"). If this parameter is not provided all subjects will be analyzed. Multiple participants can be specified with a space separated list.",
+            "id": "participant_label",
+            "list": true,
+            "name": "Participant label",
+            "optional": true,
+            "type": "String",
+            "value-key": "PARTICIPANT_LABEL"
+        },
+        {
+            "command-line-flag": "--skip_bids_validator",
+            "description": "Toggles the BIDS validator prior to running",
+            "id": "skip_validator",
+            "name": "Skip validator",
+            "optional": true,
+            "type": "Flag",
+            "value-key": "SKIP_VALIDATOR"
+        }
+    ],
+    "invocation-schema": {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "additionalProperties": false,
+        "allOf": [
+            {
+                "anyOf": [
+                    {
+                        "required": [
+                            "output_dir_name"
+                        ]
+                    },
+                    {
+                        "required": [
+                            "participant_level_analysis_dir"
+                        ]
+                    }
+                ]
+            }
+        ],
+        "dependencies": {
+            "output_dir_name": {
+                "properties": {
+                    "participant_level_analysis_dir": {
+                        "not": {}
+                    }
+                }
+            },
+            "participant_level_analysis_dir": {
+                "properties": {
+                    "output_dir_name": {
+                        "not": {}
+                    }
+                }
+            }
+        },
+        "description": "Invocation schema for example.",
+        "properties": {
+            "analysis_level": {
+                "enum": [
+                    "participant",
+                    "group",
+                    "session"
+                ]
+            },
+            "bids_dir": {
+                "type": "string"
+            },
+            "output_dir_name": {
+                "type": "string"
+            },
+            "participant_label": {
+                "items": {
+                    "type": "string"
+                },
+                "type": "array"
+            },
+            "participant_level_analysis_dir": {
+                "type": "string"
+            },
+            "skip_validator": {
+                "type": "boolean"
+            }
+        },
+        "required": [
+            "bids_dir",
+            "analysis_level"
+        ],
+        "title": "example.invocationSchema",
+        "type": "object"
+    },
+    "name": "example",
+    "output-files": [
+        {
+            "description": "The directory where the output files should be stored. If you are running a group level analysis, this folder should be prepopulated with the results of the participant level analysis.",
+            "id": "output_dir",
+            "name": "Output directory",
+            "optional": false,
+            "path-template": "OUTPUT_DIR"
+        }
+    ],
+    "schema-version": "0.5",
+    "tool-version": "dev"
+}

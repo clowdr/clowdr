@@ -1,0 +1,43 @@
+{
+    "jobDefinitionName": "clowdr",
+    "type": "container",
+    "parameters": {},
+    "containerProperties": {
+        "image": "clowdr/clowdr",
+        "vcpus": 2,
+        "memory": 8000,
+        "command": [
+            "docker",
+            "ps"
+        ],
+        "volumes": [
+            {
+                "host": {
+                    "sourcePath": "/clowdata"
+                },
+                "name": "data-volume"
+            },
+            {
+                "host": {
+                    "sourcePath": "/var/run/docker.sock"
+                },
+                "name": "docker-socket"
+            }
+        ],
+        "environment": [],
+        "mountPoints": [
+            {
+                "containerPath": "/clowdata",
+                "readOnly": false,
+                "sourceVolume": "data-volume"
+            },
+            {
+                "containerPath": "/var/run/docker.sock",
+                "readOnly": false,
+                "sourceVolume": "docker-socket"
+            }
+        ],
+        "privileged": true,
+        "ulimits": []
+    }
+}
