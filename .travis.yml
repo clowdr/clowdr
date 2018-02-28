@@ -15,15 +15,16 @@ python:
 - nightly
 - pypy-5.3.1
 
-# before_install:
-# - docker build -t clowdr/clowdr .
+before_install:
+- docker build -t clowdr/clowdr .
 
 install:
 - pip install --upgrade setuptools
 - pip install coveralls pytest pytest-runner
 - pip install -e .
 
-# script:
+script:
+- clowdr -h
 # - coverage run --source clowdr setup.py pytest
 
 # after_success:
