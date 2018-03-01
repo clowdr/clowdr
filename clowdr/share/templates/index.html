@@ -1,0 +1,15 @@
+<html>
+  <body>
+    <h1>Test suite running Flask</h1>
+    <p>Bucket: {{ data.bucket }}</p>
+    <p>Session: {{ data.offset }} </p>
+    <p>Files:</p>
+    <ul>
+    {% for file in data.files %}
+      {% if "task-" in file %}
+        <li>{{ file }}</li>
+      {% endif %}
+    {% endfor %}
+    </ul>
+  </body>
+</html>

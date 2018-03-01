@@ -7,7 +7,7 @@
 # Created by Greg Kiar on 2018-03-01.
 # Email: gkiar@mcin.ca
 
-from flask import Flask
+from flask import Flask, render_template
 import os.path as op
 import tempfile
 import boto3
@@ -20,18 +20,12 @@ app = Flask(__name__)
 
 @app.route("/clowdr/")
 def index():
-    return """
-    <html>
-    <body>
-        <h1>Test site running under Flask</h1>
-        <p>Bucket: {0}</p>
-        <p>Offset: {1}</p>
-        <p>Files: {2}</p>
-    </body>
-    </html>
-    """.format(app.config.get("bucket"),
-               app.config.get("offset"),
-               app.config.get("files"))
+    return render_template('index.html',
+                           data=app.config.get("data"),
+                           bucket=app.config.get("bucket"),
+                           session=app.config.get("offset"),
+                           files=app.config.get("files"))
+
 
 def main():
     clowdrloc = sys.argv[1]
@@ -43,15 +37,12 @@ def main():
     buck = s3.Bucket(bucket)
     objs = buck.objects.filter(Prefix=offset)
     for obj in objs:
-        buck.download_file(obj.key,
-                           Filename=op.join(tmpdir, op.basename(obj.key)))
+        key = obj.key
+        buck.download_file(key, Filename=op.join(tmpdir, op.basename(key)))
     files = os.listdir(tmpdir)
     
-    app.config["bucket"] = bucket
-    app.config["offset"] = offset
-    app.config["files"] = files
+    app.config["data"] = {"bucket": bucket, "offset": offset, "files": files}
     app.run(host='0.0.0.0', debug=True)
-
 
 
 if __name__ == "__main__":
