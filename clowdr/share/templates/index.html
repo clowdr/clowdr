@@ -1,15 +1,43 @@
 <html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/tether/1.4.3/js/tether.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
+</head>
   <body>
     <h1>Test suite running Flask</h1>
     <p>Bucket: {{ data.bucket }}</p>
     <p>Session: {{ data.offset }} </p>
     <p>Files:</p>
-    <ul>
-    {% for file in data.files %}
-      {% if "task-" in file %}
-        <li>{{ file }}</li>
-      {% endif %}
-    {% endfor %}
-    </ul>
+    <table class="table table-condensed" style="border-collapse:collapse;">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Credit</th>
+                <th>Debit</th>
+                <th>Balance</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for file in data.files %}
+          {% if "task-" in file %}
+            <tr data-toggle="collapse" data-target="#demo{{loop.index}}" class="accordion-toggle">
+                <td>{{ file.split('-')[1].split('.')[0] }}</td>
+                <td>{{ file }}</td>
+                <td>Credit Account</td>
+                <td class="text-success">$150.00</td>
+                <td class="text-error"></td>
+                <td class="text-success">$150.00</td>
+            </tr>
+            <tr >
+                <td colspan="6" class="hiddenRow"><div class="accordian-body collapse" id="demo{{loop.index}}"> Demo1 </div> </td>
+            </tr>
+          {% endif %}
+        {% endfor %}
+        </tbody>
+    </table>
   </body>
 </html>
