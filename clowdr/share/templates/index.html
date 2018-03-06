@@ -4,6 +4,25 @@
 <script src="//cdnjs.cloudflare.com/ajax/libs/tether/1.4.3/js/tether.min.js"></script>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
+<style>
+table.table>tbody .hiddenRow {
+  padding: 0 8px;
+}
+</style>
+<!--
+<style>
+body {
+  background-color: #fefefe;
+  color: #16161e;
+}
+table.table-sm > thead > tr > th{
+    border-bottom:2px solid #4d70f9;
+}
+table.table-sm > tbody > tr > td{
+    border-top:1px solid #4d70f9;
+    border-bottom:1px solid #4d70f9;
+}-->
+</style>
 </head>
   <body>
     <h1>Test suite running Flask</h1>
@@ -32,8 +51,28 @@
                 <td class="text-error"></td>
                 <td class="text-success">$150.00</td>
             </tr>
-            <tr >
-                <td colspan="6" class="hiddenRow"><div class="accordian-body collapse" id="demo{{loop.index}}"> Demo1 </div> </td>
+            <tr style="background-color:#ddd">
+                <td colspan="6" class="hiddenRow"><div class="accordian-body collapse" id="demo{{loop.index}}">
+                    <table class="table table-condensed table-sm small" style="background-color:#ddd">
+                        <thead>
+                            <th>Task Info</th>
+                            <th>Inputs</th>
+                            <th>Outputs</th>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Descriptor</td>
+                                <td>Inp</td>
+                                <td>Out</td>
+                            </tr>
+                            <tr>
+                                <td>Date</td>
+                                <td>Inp</td>
+                                <td>Out</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div></td>
             </tr>
           {% endif %}
         {% endfor %}

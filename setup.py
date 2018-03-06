@@ -3,6 +3,7 @@ from setuptools import setup
 VERSION = "0.0.2"
 DEPS = [
          "boto3",
+         "flask",
          "boutiques"
        ]
 
