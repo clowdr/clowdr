@@ -53,14 +53,12 @@ def getJSON(outdir, objlist, buck, cli, **kwargs):
         elif kwargs.get("invocation"):
             tmpdict["name"] = op.basename(key)
         elif kwargs.get("task"):
-            print(kwargs.get("data").keys())
             if kwargs.get("data").get("descriptor"):
                 tmpdict["toolname"] = kwargs["data"]["descriptor"]["name"]
                 tmpdict["toolurl"] = kwargs["data"]["descriptor"]["url"]
             if kwargs.get("data").get("invocation"):
                 invocs = kwargs["data"]["invocation"]
                 invname = op.basename(tmpdict["contents"]["invocation"])
-                print(invname)
                 invoc = [inv for inv in invocs if inv["name"] == invname]
                 tmpdict["invocname"] = invoc[0]["name"]
                 tmpdict["invocurl"] = invoc[0]["url"]
@@ -81,7 +79,7 @@ def main():
     objs = buck.objects.filter(Prefix=offset)
     task_objs = [obj for obj in objs if "task-" in obj.key]
     descriptor_obj = [obj for obj in objs if "descriptor" in obj.key]
-    invocation_obj = [obj for obj in objs if "invocation-" in obj.key]
+    invocation_obj = [obj for obj in objs if "invocation" in obj.key]
 
     descriptor = getJSON(tmpdir, descriptor_obj, buck, cli, descriptor=True)[0]
     invocation = getJSON(tmpdir, invocation_obj, buck, cli, invocation=True)
