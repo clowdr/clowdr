@@ -63,34 +63,70 @@ table.table-sm > tbody > tr > td{
               <td>{{ task.date }}</td>
           </tr>
           <tr style="background-color:#ddd">
-              <td colspan="6" class="hiddenRow"><div class="accordian-body collapse" id="demo{{loop.index}}">
-                  <table class="table table-condensed table-sm small" style="background-color:#ddd">
+              <td colspan="4" class="hiddenRow"><div class="accordian-body collapse" id="demo{{loop.index}}">
+                  <table class="table table-condensed table-sm small" style="width:30%; float:left; margin-right:2%; background-color:#ddd">
                       <thead>
                           <th>Task Info</th>
-                          <th>Inputs</th>
-                          <th>Outputs</th>
                       </thead>
                       <tbody>
                           <tr>
                               <td>
                                 <a href="{{ task.url }}">Task</a><br>
                               </td>
-                              <td>Descriptor</td>
-                              <td>Inp</td>
                           </tr>
                           <tr>
                               <td>
                                 <a href="{{ task.toolurl }}">Descriptor</a><br>
                               </td>
-                              <td>Inp</td>
-                              <td>Out</td>
                           </tr>
                           <tr>
                               <td>
                                 <a href="{{ task.invocurl }}">Invocation</a><br>
                               </td>
-                              <td>Inp</td>
-                              <td>Out</td>
+                          </tr>
+                      </tbody>
+                  </table>
+                  <table class="table table-condensed table-sm small" style="width:30%; float:left; margin-right:2%; background-color:#ddd">
+                      <thead>
+                          <th>Task Info</th>
+                      </thead>
+                      <tbody>
+                          <tr>
+                              <td>
+                                <a href="{{ task.url }}">Task</a><br>
+                              </td>
+                          </tr>
+                          <tr>
+                              <td>
+                                <a href="{{ task.toolurl }}">Descriptor</a><br>
+                              </td>
+                          </tr>
+                          <tr>
+                              <td>
+                                <a href="{{ task.invocurl }}">Invocation</a><br>
+                              </td>
+                          </tr>
+                      </tbody>
+                  </table>
+                  <table class="table table-condensed table-sm small" style="width:30%; float:left; margin-right:2%; background-color:#ddd">
+                      <thead>
+                          <th>Task Info</th>
+                      </thead>
+                      <tbody>
+                          <tr>
+                              <td>
+                                <a href="{{ task.url }}">Task</a><br>
+                              </td>
+                          </tr>
+                          <tr>
+                              <td>
+                                <a href="{{ task.toolurl }}">Descriptor</a><br>
+                              </td>
+                          </tr>
+                          <tr>
+                              <td>
+                                <a href="{{ task.invocurl }}">Invocation</a><br>
+                              </td>
                           </tr>
                       </tbody>
                   </table>
