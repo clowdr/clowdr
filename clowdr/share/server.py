@@ -53,10 +53,6 @@ def parseJSON(outdir, objlist, buck, cli, **kwargs):
             tmpdict["id"] = op.splitext(op.basename(outfname))[0].split('-')[1]
         elif kwargs.get("task"):
             tmpdict["id"] = op.splitext(op.basename(outfname))[0].split('-')[1]
-            if kwargs.get("data").get("descriptor"):
-                tmpdict["toolname"] = kwargs["data"]["descriptor"]["name"]
-                tmpdict["toolurl"] = kwargs["data"]["descriptor"]["url"]
-                tmpdict["toolcontents"] = kwargs["data"]["descriptor"]["contents"]
             if kwargs.get("data").get("invocation"):
                 invocs = kwargs["data"]["invocation"]
                 invname = op.basename(tmpdict["contents"]["invocation"])
@@ -96,12 +92,12 @@ def updateRecord():
     invocation = parseJSON(tmpdir, invocation_obj, buck, cli, invocation=True)
     summary = parseJSON(tmpdir, summary_objs, buck, cli, summary=True)
     tasks = parseJSON(tmpdir, task_objs, buck, cli, task=True,
-                      data={"descriptor": descriptor,
-                            "invocation": invocation,
+                      data={"invocation": invocation,
                             "summary": summary})
 
     app.config["data"] = {"bucket": bucket,
                           "offset": offset,
+                          "tool": descriptor,
                           "tasks" : tasks}
 
 

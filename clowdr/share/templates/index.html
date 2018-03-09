@@ -39,19 +39,27 @@ table.table-sm > tbody > tr > td{
       <div>
         <h1>Clowdr Share</h1>
       </div>
-      <div>
-        <p>
-          Bucket: {{ data.bucket }} <br/>
-          Session: {{ data.offset }}
-        </p>
-      </div>
     </div>
     <div class="row">
+      <h3>Session Info</h3>
+        <table class="table table-condensed" style="border-collapse:collapse; width:100%">
+          <tbody>
+            <tr>
+              <th>Tool</th>
+              <td>{{ data.tool.name }}</td>
+            </tr>
+            <tr>
+              <th>Session Location</th>
+              <td>{{ data.bucket + "/" + data.offset}}</td>
+            </tr>
+        </table>
+    </div>
+    <div class="row">
+    <h3>Executions</h3>
     <table class="table table-condensed" style="border-collapse:collapse;">
         <thead>
             <tr>
                 <th>#</th>
-                <th>Tool</th>
                 <th>Invocation</th>
                 <th>Date Launched</th>
                 <th>Status</th>
@@ -61,7 +69,6 @@ table.table-sm > tbody > tr > td{
         {% for task in data.tasks %}
           <tr data-toggle="collapse" data-target="#demo{{loop.index}}" class="accordion-toggle">
               <td>{{ task.id }}</td>
-              <td>{{ task.toolname }}</td>
               <td>{{ task.invocname }}</td>
               <td>{{ task.date }}</td>
               {% if task.exitcode == "0" %}
@@ -74,8 +81,8 @@ table.table-sm > tbody > tr > td{
               </td>
           </tr>
           <tr style="background-color:#ddd">
-              <td colspan="5" class="hiddenRow"><div class="accordian-body collapse" id="demo{{loop.index}}">
-                  <table class="table table-condensed table-sm small" style="width:100%; float:left; margin-right:2%; background-color:#ddd">
+              <td colspan="6" class="hiddenRow"><div class="accordian-body collapse" id="demo{{loop.index}}">
+                  <table class="table table-condensed table-sm small" style="width:98%; float:left; margin-right:2%; background-color:#ddd">
                       <thead>
                         <th colspan="2">Property</th>
                         <th colspan="8">Value(s)</th>
