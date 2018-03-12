@@ -145,10 +145,11 @@ def main(args=None):
     parser_loc.add_argument("invocation", help="input(s) for the tool")
     parser_loc.add_argument("clowdrloc", help="location locally for clowdr")
     parser_loc.add_argument("dataloc", help="location locally or s3 of data")
-    parser_loc.add_argument("--verbose", "-v", action="store_true")
+    parser_loc.add_argument("--verbose", "-V", action="store_true")
     parser_loc.add_argument("--bids", "-b", action="store_true")
     parser_loc.add_argument("--dev", "-d", action="store_true")
     parser_loc.add_argument("--workdir", "-w", action="store")
+    parser_loc.add_argument("--volumes", "-v", action="append")
     parser_loc.set_defaults(func=local)
 
     parser_dpy = subparsers.add_parser("deploy")

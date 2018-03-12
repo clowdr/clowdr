@@ -21,9 +21,14 @@ from clowdr import utils
 def processTask(metadata, clowdrloc=None, **kwargs):
     # Get metadata
     if clowdrloc is None:
-        localtaskdir = "/task/"
+        localtaskdir = "/clowtask/"
     else:
         localtaskdir = clowdrloc
+
+    localtaskdir = op.join(localtaskdir, utils.randstring(3))
+    if not op.exists(localtaskdir):
+        os.makedirs(localtaskdir)
+
     print("Fetching metadata...")
     remotetaskdir = op.dirname(metadata)
     metadata = utils.get(metadata, localtaskdir)[0]
@@ -42,19 +47,32 @@ def processTask(metadata, clowdrloc=None, **kwargs):
     desc_local = utils.get(descriptor, localtaskdir)[0]
     invo_local = utils.get(invocation, localtaskdir)[0]
 
-    print("Fetching input data...")
-    # Get input data
-    localdatadir = "/clowdata"
-    for dataloc in input_data:
-        utils.get(dataloc, localdatadir)
-
-    # Move to correct location
-    os.chdir(localdatadir)
+    # Get input data, if running remotely
+    if not kwargs.get("local") and \
+       any([dl.startswith("s3://") for dl in dataloc]):
+        print("Fetching input data...")
+        localdatadir = op.join(localtaskdir, "data")
+        for dataloc in input_data:
+            utils.get(dataloc, localdatadir)
+        # Move to correct location
+        os.chdir(localdatadir)
+    else:
+        print("Skipping data fetch (local execution)...")
+        if kwargs.get("workdir") and op.exists(kwargs.get("workdir")):
+            os.chdir(kwargs["workdir"])
 
     print("Beginning execution...")
     # Launch task
     start_time = time.time()
-    stdout, stderr, ecode, _ = bosh.execute('launch',  desc_local, invo_local)
+    volumes = ""
+    if kwargs.get("volumes"):
+        for vol in kwargs.get("volumes"):
+            volumes +=  "-v {} ".format(vol)
+        stdout, stderr, ecode, _ = bosh.execute('launch',  desc_local,
+                                                invo_local, volumes)
+    else:
+        stdout, stderr, ecode, _ = bosh.execute('launch',  desc_local,
+                                                invo_local)
     duration = time.time() - start_time
 
     # Get list of bosh exec outputs
@@ -85,26 +103,18 @@ def processTask(metadata, clowdrloc=None, **kwargs):
                "stdout": op.join(remotetaskdir, stdoutf),
                "stderr": op.join(remotetaskdir, stderrf)}
 
-    print("Uploading outputs...")
-    # Push outputs
-    for local_output in outputs_present:
-        print("{} --> {}".format(local_output, output_loc))
-        summary["outputs"] += utils.post(local_output, output_loc)
+    if not kwargs.get("local"):
+        print("Uploading outputs...")
+        # Push outputs
+        for local_output in outputs_present:
+            print("{} --> {}".format(local_output, output_loc))
+            summary["outputs"] += utils.post(local_output, output_loc)
+    else:
+        print("Skipping uploading outputs (local execution)...")
+        summary["outputs"] = outputs_present
 
     summarf = "summary-{}.json".format(task_id)
     with open(op.join(localtaskdir, summarf), "w") as fhandle:
         fhandle.write(json.dumps(summary) + "\n")
     utils.post(op.join(localtaskdir, summarf), remotetaskdir)
-
-
-def main(args=None):
-    parser = ArgumentParser(description="Entrypoint for Clowdr-task")
-    parser.add_argument("metadata", action="store", help="S3 URL to metadata")
-    results = parser.parse_args() if args is None else parser.parse_args(args)
-
-    process_task(results.metadata)
-
-
-if __name__ == "__main__":
-    main()
 
