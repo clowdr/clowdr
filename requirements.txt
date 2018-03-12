@@ -1,7 +1,7 @@
 appnope==0.1.0
 boto3==1.5.28
 botocore==1.8.42
--e git+https://github.com/gkiar/boutiques.git@da81a6f65032db89c9b15d76ae786ddf7ef017e0#egg=boutiques&subdirectory=tools/python
+-e git+https://github.com/gkiar/boutiques.git@25daee080c952f1bba275a494fa7cf2fdd8c65ea#egg=boutiques&subdirectory=tools/python
 -e git+https://github.com/gkiar/clowdr.git@7a66e39dead874c480f469fbb546d28788e1f6f7#egg=clowdr
 decorator==4.2.1
 docutils==0.14
