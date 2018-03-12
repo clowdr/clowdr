@@ -8,6 +8,7 @@
 # Email: gkiar@mcin.ca
 
 from argparse import ArgumentParser
+import os.path as op
 import tempfile
 import sys
 
@@ -43,8 +44,10 @@ def dev(tool, invocation, clowdrloc, dataloc, **kwargs):
     [tasks, invocs] = metadata.consolidateTask(tool, invocation, clowdrloc,
                                                dataloc, **kwargs)
     if len(tasks) > 1: tasks = tasks[0]  # Just launch the first task in dev
-    code = processTask(tasks, clowdrloc)
-    return code
+    taskdir = op.dirname(utils.truepath(tasks))
+    processTask(tasks, taskdir)
+    print("Clowdr location: {}".format(taskdir))
+    return taskdir
 
 
 def deploy(tool, invocation, clowdrloc, dataloc, endpoint, auth, **kwargs):

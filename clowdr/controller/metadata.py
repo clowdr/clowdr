@@ -79,7 +79,7 @@ def consolidateTask(tool, invocation, clowdrloc, dataloc, **kwargs):
     # Case 2: User supplies a single invocation
     else:
         # Case 2a: User is running a BIDS app
-        if kwargs.get('bids'):
+        if kwargs.get("bids"):
             taskdicts, invocations = bidsTasks(taskloc, taskdict)
 
         # Case 2b: User is quite simply just launching a single invocation
