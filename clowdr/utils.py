@@ -2,6 +2,8 @@
 
 from shutil import copy, copytree, SameFileError
 import os.path as op
+import string
+import random as rnd
 import boto3
 import csv
 import os
@@ -13,6 +15,10 @@ def truepath(path):
         return path
     else:
         return op.realpath(path)
+
+
+def randstring(k):
+    return "".join(rnd.choices(string.ascii_uppercase + string.digits, k=k))
 
 
 def splitS3Path(path):
@@ -66,8 +72,7 @@ def post(local, remote, **kwargs):
 def _awsget(remote, local):
     s3 = boto3.resource("s3")
 
-    bucket, rpath = remote.split('/')[2], remote.split('/')[3:]
-    rpath = "/".join(rpath)
+    bucket, rpath = splitS3Path(remote)
 
     buck = s3.Bucket(bucket)
     files = [obj.key for obj in buck.objects.filter(Prefix=rpath) if not os.path.isdir(obj.key)]
@@ -93,8 +98,7 @@ def _awspost(local, remote):
         local_files = [local]
 
     s3 = boto3.client("s3")
-    bucket, rpath = remote.split('/')[2], remote.split('/')[3:]
-    rpath = "/".join(rpath)
+    bucket, rpath = splitS3Path(remote)
 
     rempats = []
     for flocal in local_files:
