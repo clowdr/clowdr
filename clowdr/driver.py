@@ -18,7 +18,7 @@ from clowdr.task import processTask
 from clowdr import utils
 
 
-def dev(tool, invocation, clowdrloc, dataloc, **kwargs):
+def local(tool, invocation, clowdrloc, dataloc, **kwargs):
     """dev
     Launches a pipeline locally through the Clowdr wrappers.
 
@@ -43,10 +43,14 @@ def dev(tool, invocation, clowdrloc, dataloc, **kwargs):
     # TODO: scrub inputs
     [tasks, invocs] = metadata.consolidateTask(tool, invocation, clowdrloc,
                                                dataloc, **kwargs)
-    if len(tasks) > 1: tasks = tasks[0]  # Just launch the first task in dev
-    taskdir = op.dirname(utils.truepath(tasks))
-    processTask(tasks, taskdir)
-    print("Clowdr location: {}".format(taskdir))
+    if kwargs.get("dev"):
+        tasks = [tasks[0]]  # Just launch the first task in dev
+
+    taskdir = op.dirname(utils.truepath(tasks[0]))
+    for task in tasks:
+        processTask(task, taskdir, local=True, **kwargs)
+
+    print(taskdir)
     return taskdir
 
 
@@ -94,7 +98,7 @@ def deploy(tool, invocation, clowdrloc, dataloc, endpoint, auth, **kwargs):
         jids += [resource.launchJob(task)]
 
     taskdir = op.dirname(utils.truepath(tasks_remote[0]))
-    print("Clowdr location: {}".format(taskdir))
+    print(taskdir)
     return taskdir, jids
 
 
@@ -136,14 +140,16 @@ def main(args=None):
     parser = ArgumentParser("Clowdr CLI", description=desc)
     subparsers = parser.add_subparsers(help="Modes of operation", dest="mode")
 
-    parser_dev = subparsers.add_parser("dev")
-    parser_dev.add_argument("tool", help="boutiques descriptor for a tool")
-    parser_dev.add_argument("invocation", help="input(s) for the tool")
-    parser_dev.add_argument("clowdrloc", help="location locally for clowdr")
-    parser_dev.add_argument("dataloc", help="location locally or s3 of data")
-    parser_dev.add_argument("--verbose", "-v", action="store_true")
-    parser_dev.add_argument("--bids", "-b", action="store_true")
-    parser_dev.set_defaults(func=dev)
+    parser_loc = subparsers.add_parser("local")
+    parser_loc.add_argument("tool", help="boutiques descriptor for a tool")
+    parser_loc.add_argument("invocation", help="input(s) for the tool")
+    parser_loc.add_argument("clowdrloc", help="location locally for clowdr")
+    parser_loc.add_argument("dataloc", help="location locally or s3 of data")
+    parser_loc.add_argument("--verbose", "-v", action="store_true")
+    parser_loc.add_argument("--bids", "-b", action="store_true")
+    parser_loc.add_argument("--dev", "-d", action="store_true")
+    parser_loc.add_argument("--workdir", "-w", action="store")
+    parser_loc.set_defaults(func=local)
 
     parser_dpy = subparsers.add_parser("deploy")
     parser_dpy.add_argument("tool",  help="boutiques descriptor for a tool")
