@@ -5,6 +5,7 @@ import os.path as op
 import boto3
 import csv
 import os
+import re
 
 
 def truepath(path):
@@ -12,6 +13,10 @@ def truepath(path):
         return path
     else:
         return op.realpath(path)
+
+
+def splitS3Path(path):
+    return re.match('^s3:\/\/([\w\-\_]+)/([\w\-\_\/\.]+)', path).group(1, 2)
 
 
 def get(remote, local, **kwargs):

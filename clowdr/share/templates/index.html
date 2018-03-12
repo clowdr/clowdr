@@ -1,7 +1,7 @@
 <html>
 <head>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/tether/1.4.3/js/tether.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.3/js/tether.min.js"></script>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
 <style>
@@ -50,13 +50,14 @@ table.table-sm > tbody > tr > td{
             </tr>
             <tr>
               <th>Session Location</th>
-              <td>{{ data.bucket + "/" + data.offset}}</td>
+              <td>{{ "s3://" + data.bucket + "/" + data.offset}}</td>
             </tr>
         </table>
     </div>
     <div class="row">
-    <h3>Executions</h3>
-    <table class="table table-condensed" style="border-collapse:collapse;">
+    <h3 style="display:inline">Executions</h3>
+    <a href="/refresh"><img src="https://d30y9cdsu7xlg0.cloudfront.net/png/4985-200.png" height="20pt" style="display:inline;" class="mt-2" align="bottom"/></a>
+    <table class="table table-condensed" style="border-collapse:collapse; width:100%">
         <thead>
             <tr>
                 <th>#</th>
@@ -82,7 +83,7 @@ table.table-sm > tbody > tr > td{
           </tr>
           <tr style="background-color:#ddd">
               <td colspan="6" class="hiddenRow"><div class="accordian-body collapse" id="demo{{loop.index}}">
-                  <table class="table table-condensed table-sm small" style="width:98%; float:left; margin-right:2%; background-color:#ddd">
+                  <table class="table table-condensed table-sm small" style="width:95%; float:left; margin-right:2%; background-color:#ddd">
                       <thead>
                         <th colspan="2">Property</th>
                         <th colspan="8">Value(s)</th>
@@ -93,7 +94,7 @@ table.table-sm > tbody > tr > td{
                               <td colspan="8">
                                 <a href="{{ task.url }}">Task File</a>,
                                 <a href="{{ task.toolurl }}">Tool Descriptor</a>,
-                                <a href="{{ task.invocurl }}">Tool Invocation</a>
+                                <a href="{{ task.invocurl }}">Run Invocation</a>
                               </td>
                           </tr>
                           <tr>
@@ -115,7 +116,7 @@ table.table-sm > tbody > tr > td{
                           </tr>
                       </tbody>
                   </table>
-                  <table class="table table-condensed table-sm small" style="width:70%; float:left; margin-right:2%; background-color:#ddd">
+                  <table class="table table-condensed table-sm small" style="width:65%; float:left; margin-right:2%; background-color:#ddd">
                       <thead>
                           <th colspan="2">Tool Inputs</th>
                       </thead>
@@ -139,12 +140,8 @@ table.table-sm > tbody > tr > td{
                       <tbody>
                           <tr>
                               <td>
-                                Stdout
-                              </td>
-                          </tr>
-                          <tr>
-                              <td>
-                                Stderr
+                                <a href="{{ task.stdout }}">Output Log</a>,
+                                <a href="{{ task.stderr }}">Error Log</a>
                               </td>
                           </tr>
                       </tbody>

@@ -13,12 +13,6 @@
         "volumes": [
             {
                 "host": {
-                    "sourcePath": "/clowdata"
-                },
-                "name": "data-volume"
-            },
-            {
-                "host": {
                     "sourcePath": "/var/run/docker.sock"
                 },
                 "name": "docker-socket"
@@ -26,11 +20,6 @@
         ],
         "environment": [],
         "mountPoints": [
-            {
-                "containerPath": "/clowdata",
-                "readOnly": false,
-                "sourceVolume": "data-volume"
-            },
             {
                 "containerPath": "/var/run/docker.sock",
                 "readOnly": false,
