@@ -93,7 +93,9 @@ def deploy(tool, invocation, clowdrloc, dataloc, endpoint, auth, **kwargs):
     for task in tasks_remote:
         jids += [resource.launchJob(task)]
 
-    return (tasks_remote, jids)
+    taskdir = op.dirname(utils.truepath(tasks_remote[0]))
+    print("Clowdr location: {}".format(taskdir))
+    return taskdir, jids
 
 
 def share(clowdrloc, **kwargs):

@@ -44,6 +44,9 @@ def post(local, remote, **kwargs):
             return _awspost(local, remote)
         elif op.isdir(local):
             return [op.realpath(copytree(local, remote))]
+        elif op.isdir(remote):
+            return [op.realpath(copy(local,
+                                     op.join(remote, op.basename(local))))]
         else:
             return [op.realpath(copy(local, remote))]
     except SameFileError as e:

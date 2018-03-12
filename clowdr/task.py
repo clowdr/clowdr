@@ -70,13 +70,13 @@ def processTask(metadata, clowdrloc=None, **kwargs):
     stdoutf = "stdout-{}.txt".format(task_id)
     with open(op.join(localtaskdir, stdoutf), "w") as fhandle:
         fhandle.write(stdout.decode("utf-8"))
-    utils.post(op.join(localtaskdir, stdoutf), op.join(remotetaskdir, stdoutf))
+    utils.post(op.join(localtaskdir, stdoutf), remotetaskdir)
 
     # Write sterr to file
     stderrf = "stderr-{}.txt".format(task_id)
     with open(op.join(localtaskdir, stderrf), "w") as fhandle:
         fhandle.write(stderr.decode("utf-8"))
-    utils.post(op.join(localtaskdir, stderrf), op.join(remotetaskdir, stderrf))
+    utils.post(op.join(localtaskdir, stderrf), remotetaskdir)
 
     # Write summary values to file, including:
     summary = {"duration": duration,
@@ -94,7 +94,7 @@ def processTask(metadata, clowdrloc=None, **kwargs):
     summarf = "summary-{}.json".format(task_id)
     with open(op.join(localtaskdir, summarf), "w") as fhandle:
         fhandle.write(json.dumps(summary) + "\n")
-    utils.post(op.join(localtaskdir, summarf), op.join(remotetaskdir, summarf))
+    utils.post(op.join(localtaskdir, summarf), remotetaskdir)
 
 
 def main(args=None):
