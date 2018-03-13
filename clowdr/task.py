@@ -49,7 +49,7 @@ def processTask(metadata, clowdrloc=None, **kwargs):
 
     # Get input data, if running remotely
     if not kwargs.get("local") and \
-       any([dl.startswith("s3://") for dl in dataloc]):
+       any([dl.startswith("s3://") for dl in input_data]):
         print("Fetching input data...")
         localdatadir = op.join(localtaskdir, "data")
         for dataloc in input_data:
