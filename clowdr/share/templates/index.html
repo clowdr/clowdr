@@ -14,6 +14,7 @@ p, h1, h2, h3, h4, h5, div, table, body{
 body {
   background-color: #fefefe
 }
+tr.exploding { cursor: pointer; }
 </style>
 <!--
 <style>
@@ -68,7 +69,7 @@ table.table-sm > tbody > tr > td{
         </thead>
         <tbody>
         {% for task in data.tasks %}
-          <tr data-toggle="collapse" data-target="#demo{{loop.index}}" class="accordion-toggle">
+          <tr data-toggle="collapse" data-target="#demo{{loop.index}}" class="accordion-toggle exploding">
               <td>{{ task.id }}</td>
               <td>{{ task.invocname }}</td>
               <td>{{ task.date }}</td>
