@@ -16,10 +16,9 @@ import os
 import re
 
 from clowdr.endpoint.remote import Endpoint
-from clowdr import __file__ as clowfile
+from clowdr import __path__ as clowfile
 
-
-clowfile = op.dirname(clowfile)
+clowfile = clowfile[0]
 
 class AWS(Endpoint):
     # TODO: document
