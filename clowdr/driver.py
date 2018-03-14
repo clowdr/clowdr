@@ -31,9 +31,16 @@ def local(tool, invocation, clowdrloc, dataloc, **kwargs):
     clowdrloc : str
         Path for storing Clowdr intermediate files and outputs
     dataloc : str
-        Path for accessing input data
+        Path for accessing input data. If local, provide the hostname and
+        optionally a path. If on S3, provide an S3 path.
     **kwargs : dict
-        Arbitrary keyword arguments (i.e. {'verbose': True})
+        Arbitrary keyword arguments. Currently supported arguments:
+        - verbose : bool
+            Toggle verbose output printing
+        - dev : bool
+            Toggle dev mode (only runs first execution in the specified set)
+
+        Additionally, transfers all keyword arguments accepted by "processTask"
 
     Returns
     -------
