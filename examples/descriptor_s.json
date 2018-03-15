@@ -1,0 +1,38 @@
+{
+    "command-line": "bet INPUT OUTPUT",
+    "container-image": {
+        "image": "markxiao/fsl",
+        "type": "singularity"
+    },
+    "description": "See https://github.com/BIDS-Apps/example",
+    "inputs": [
+        {
+            "description": "Input file",
+            "id": "input",
+            "name": "Input file",
+            "optional": false,
+            "type": "File",
+            "value-key": "INPUT"
+        },
+        {
+            "description": "Output File",
+            "id": "output",
+            "name": "Output file",
+            "optional": false,
+            "type": "File",
+            "value-key": "OUTPUT"
+        }
+    ],
+    "name": "FSL-bet",
+    "output-files": [
+        {
+            "description": "the output file created",
+            "id": "output_file",
+            "name": "Output file",
+            "optional": false,
+            "path-template": "OUTPUT"
+        }
+    ],
+    "schema-version": "0.5",
+    "tool-version": "dev"
+}
