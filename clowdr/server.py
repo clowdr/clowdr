@@ -19,26 +19,29 @@ import os
 
 from clowdr import utils
 
-app = Flask(__name__)
 
+shareapp = Flask(__name__)
 
-@app.route("/")
+@shareapp.route("/")
 def index():
-    return render_template('index.html', data=app.config.get("data"))
+    return render_template('index.html', data=shareapp.config.get("data"))
 
-@app.route("/refresh")
+
+@shareapp.route("/refresh")
 def update():
-    updateRecord()
+    updateIndex()
     return redirect("/")
 
 
-def parseJSON(outdir, objlist, buck, cli, **kwargs):
+def parseJSON(outdir, objlist, s3bool=True, **kwargs):
+    cli = boto3.client("s3")
     tmplist = []
     for obj in objlist:
         tmpdict = {}
-        key = obj.key
-        bucket = obj.bucket_name
+        key = obj["key"]
+        bucket = obj["bucket_name"]
         outfname = op.join(outdir, op.basename(key))
+        buck = boto3.resource("s3").Bucket(bucket)
         buck.download_file(key, Filename=outfname)
         tmpdict["fname"] = outfname
         tmpdict["bucket"] = bucket
@@ -47,7 +50,7 @@ def parseJSON(outdir, objlist, buck, cli, **kwargs):
                                                     Params={"Bucket": bucket,
                                                             "Key": key},
                                                     ExpiresIn=None)
-        tmpdict["date"] = obj.last_modified.strftime("%b %d, %Y (%T)")
+        tmpdict["date"] = obj["last_modified"].strftime("%b %d, %Y (%T)")
 
         with open(outfname) as fhandle:
             tmpdict["contents"] = json.load(fhandle)
@@ -92,42 +95,50 @@ def parseJSON(outdir, objlist, buck, cli, **kwargs):
     return tmplist
 
 
-def updateRecord():
-    clowdrloc = app.config.get("clowdrloc")
-    tmpdir = app.config.get("tmpdir")
+def getRecords(clowdrloc, **kwargs):
+    # get remote records, open local records
+    try:
+        bucket, rpath = utils.splitS3Path(clowdrloc)
+        s3bool = True
+    except AttributeError:
+        s3bool = False
+        hostname = kwargs.get("hostname")
+
+    if s3bool:
+        s3 = boto3.resource("s3")
+        cli = boto3.client("s3")
+        buck = s3.Bucket(bucket)
+        objs = buck.objects.filter(Prefix=rpath)
+        objs = [{"key": obj.key, "bucket_name": obj.bucket_name,
+                 "last_modified": obj.last_modified}
+                for obj in objs]
+    else:
+        objs = [{"key": op.join(dp, f)}
+                for dp, dn, fnames in os.walk(clowdrloc)
+                for f in fnames]
+
+    task = [obj for obj in objs if "task-" in obj["key"]]
+    summ = [obj for obj in objs if "summary-" in obj["key"]]
+    desc = [obj for obj in objs if "descriptor" in obj["key"]]
+    invo = [obj for obj in objs if "invocation" in obj["key"]]
+    return (s3bool, task, summ, desc, invo)
+
+
+def updateIndex(**kwargs):
+    clowdrloc = shareapp.config.get("clowdrloc")
+    tmpdir = shareapp.config.get("tmpdir")
+    s3bool, task, summ, desc, invo = getRecords(clowdrloc)
+
     print("updating!")
 
-    s3 = boto3.resource("s3")
-    cli = boto3.client("s3")
-    bucket, offset = utils.splitS3Path(clowdrloc)
-    buck = s3.Bucket(bucket)
-    objs = buck.objects.filter(Prefix=offset)
-    task_objs = [obj for obj in objs if "task-" in obj.key]
-    summary_objs = [obj for obj in objs if "summary-" in obj.key]
-    descriptor_obj = [obj for obj in objs if "descriptor" in obj.key]
-    invocation_obj = [obj for obj in objs if "invocation" in obj.key]
+    desc = parseJSON(tmpdir, desc, s3bool, descriptor=True)[0]
+    invo = parseJSON(tmpdir, invo, s3bool, invocation=True)
+    summ = parseJSON(tmpdir, summ, s3bool, summary=True)
+    task = parseJSON(tmpdir, task, s3bool, task=True,
+                     data={"invocation": invo,
+                           "summary"   : summ})
 
-    descriptor = parseJSON(tmpdir, descriptor_obj, buck, cli, descriptor=True)[0]
-    invocation = parseJSON(tmpdir, invocation_obj, buck, cli, invocation=True)
-    summary = parseJSON(tmpdir, summary_objs, buck, cli, summary=True)
-    tasks = parseJSON(tmpdir, task_objs, buck, cli, task=True,
-                      data={"invocation": invocation,
-                            "summary": summary})
-
-    app.config["data"] = {"bucket": bucket,
-                          "offset": offset,
-                          "tool": descriptor,
-                          "tasks" : tasks}
-
-
-def main():
-    clowdrloc = sys.argv[1]
-    app.config["clowdrloc"] = clowdrloc
-    app.config["tmpdir"] = tempfile.mkdtemp()
-    updateRecord()
-    app.run(host='0.0.0.0', debug=True)
-
-
-if __name__ == "__main__":
-    main()
+    shareapp.config["data"] = {"clowdrloc" : clowdrloc,
+                               "tool"      : desc,
+                               "tasks"     : task}
 
