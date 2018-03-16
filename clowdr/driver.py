@@ -85,8 +85,6 @@ def cluster(tool, invocation, clowdrloc, dataloc, cluster, **kwargs):
             Account for the cluster scheduler
         - jobname : str
             Base-name for the jobs as they will appear in the scheduler
-        - ssh : str
-            Path to private key for connecting remotely to cluster
         - verbose : bool
             Toggle verbose output printing
         - dev : bool
@@ -238,7 +236,6 @@ def main(args=None):
     parser_cls.add_argument("--account", "-a", action="store")
     parser_cls.add_argument("--workdir", "-w", action="store")
     parser_cls.add_argument("--volumes", "-v", action="append")
-    parser_cls.add_argument("--ssh", "-s", action="store", help="private key")
 
     parser_cls.add_argument("--verbose", "-V", action="store_true")
     parser_cls.add_argument("--bids", "-b", action="store_true")
