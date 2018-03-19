@@ -64,12 +64,11 @@ def processTask(metadata, clowdrloc=None, **kwargs):
     print("Beginning execution...")
     # Launch task
     start_time = time.time()
-    volumes = ""
     if kwargs.get("volumes"):
-        for vol in kwargs.get("volumes"):
-            volumes +=  "-v {} ".format(vol)
-        stdout, stderr, ecode, _ = bosh.execute('launch',  desc_local,
-                                                invo_local, volumes)
+        volumes = " ".join(kwargs.get("volumes"))
+        print(volumes)
+        stdout, stderr, ecode, _ = bosh.execute('launch', desc_local,
+                                                invo_local, '-v', volumes)
     else:
         stdout, stderr, ecode, _ = bosh.execute('launch',  desc_local,
                                                 invo_local)
