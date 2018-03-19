@@ -11,6 +11,7 @@ from argparse import ArgumentParser
 import os.path as op
 import tempfile
 import sys
+import os
 
 from clowdr.controller import metadata, launcher
 # from clowdr.endpoint import aws, kubernetes, cbrain
@@ -107,6 +108,7 @@ def cluster(tool, invocation, clowdrloc, dataloc, cluster, **kwargs):
         tasks = [tasks[0]]  # Just launch the first task in dev
 
     taskdir = op.dirname(utils.truepath(tasks[0]))
+    os.chdir(taskdir)
     jobname = kwargs.get("jobname") if kwargs.get("jobname") else "clowdrtask"
     job = Slurm(jobname, {"account": kwargs.get("account")})
 

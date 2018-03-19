@@ -66,7 +66,6 @@ def processTask(metadata, clowdrloc=None, **kwargs):
     start_time = time.time()
     if kwargs.get("volumes"):
         volumes = " ".join(kwargs.get("volumes"))
-        print(volumes)
         stdout, stderr, ecode, _ = bosh.execute('launch', desc_local,
                                                 invo_local, '-v', volumes)
     else:
