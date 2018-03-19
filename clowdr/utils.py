@@ -1,13 +1,30 @@
 #!/usr/bin/env python
 
 from shutil import copy, copytree, SameFileError
+from subprocess import Popen, PIPE
 import os.path as op
-import string
 import random as rnd
+import string
 import boto3
 import csv
+import sys
 import os
 import re
+
+
+def getContainer(savedir, container):
+    if container["type"] == "singularity":
+        name = container.get("image")
+        local = name.replace("/", "-")
+        index = container.get("index")
+        if not index:
+            index = "shub://"
+        elif not index.endswith("://"):
+            index = index + "://"
+        cmd = "singularity pull --name \"{}.simg\" {}{}".format(local, index, name)
+
+        p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
+        return p.communicate()
 
 
 def truepath(path):

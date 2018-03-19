@@ -10,6 +10,7 @@
 from argparse import ArgumentParser
 import os.path as op
 import tempfile
+import json
 import sys
 import os
 
@@ -55,6 +56,7 @@ def local(tool, invocation, clowdrloc, dataloc, **kwargs):
         tasks = [tasks[0]]  # Just launch the first task in dev
 
     taskdir = op.dirname(utils.truepath(tasks[0]))
+    os.chdir(taskdir)
     for task in tasks:
         processTask(task, taskdir, local=True, **kwargs)
 
@@ -100,8 +102,13 @@ def cluster(tool, invocation, clowdrloc, dataloc, cluster, **kwargs):
         The exit-code returned by the task being executed
     """
     # TODO: scrub inputs
+    tool = utils.truepath(tool)
+
+
     from slurmpy import Slurm
 
+    if kwargs.get("verbose"):
+        print("Consolidating metadata...")
     [tasks, invocs] = metadata.consolidateTask(tool, invocation, clowdrloc,
                                                dataloc, **kwargs)
     if kwargs.get("dev"):
@@ -109,6 +116,16 @@ def cluster(tool, invocation, clowdrloc, dataloc, cluster, **kwargs):
 
     taskdir = op.dirname(utils.truepath(tasks[0]))
     os.chdir(taskdir)
+
+    with open(tool) as fhandle:
+        container = json.load(fhandle).get("container-image")
+    if container:
+        if kwargs.get("verbose"):
+            print("Getting conatainer...")
+        outp = utils.getContainer(taskdir, container)
+        if kwargs.get("verbose"):
+            print("\n".join(elem.decode("utf-8") for elem in outp))
+
     jobname = kwargs.get("jobname") if kwargs.get("jobname") else "clowdrtask"
     job = Slurm(jobname, {"account": kwargs.get("account")})
 
