@@ -3,7 +3,7 @@
 # This software is distributed with the MIT license:
 # https://github.com/gkiar/clowdr/blob/master/LICENSE
 #
-# clowdr/controller/launcher.py
+# clowdr/endpoint/AWS.py
 # Created by Greg Kiar on 2018-02-28.
 # Email: gkiar@mcin.ca
 
@@ -16,10 +16,9 @@ import os
 import re
 
 from clowdr.endpoint.remote import Endpoint
-from clowdr import __file__ as clowfile
+from clowdr import __path__ as clowfile
 
-
-clowfile = op.dirname(clowfile)
+clowfile = clowfile[0]
 
 class AWS(Endpoint):
     # TODO: document

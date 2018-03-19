@@ -9,6 +9,7 @@
 
 from argparse import ArgumentParser
 import os.path as op
+import time
 import json
 import os
 import re
@@ -20,11 +21,19 @@ from clowdr import utils
 def processTask(metadata, clowdrloc=None, **kwargs):
     # Get metadata
     if clowdrloc is None:
-        localtaskdir = "/task/"
+        localtaskdir = "/clowtask/"
     else:
         localtaskdir = clowdrloc
+
+    localtaskdir = op.join(localtaskdir, utils.randstring(3))
+    if not op.exists(localtaskdir):
+        os.makedirs(localtaskdir)
+
     print("Fetching metadata...")
+    remotetaskdir = op.dirname(metadata)
     metadata = utils.get(metadata, localtaskdir)[0]
+    task_id = metadata.split('.')[0].split('-')[-1]
+    # The above grabs an ID from the form: fname-#.ext
 
     # Parse metadata
     metadata   = json.load(open(metadata))
@@ -38,37 +47,31 @@ def processTask(metadata, clowdrloc=None, **kwargs):
     desc_local = utils.get(descriptor, localtaskdir)[0]
     invo_local = utils.get(invocation, localtaskdir)[0]
 
-    task_loc   = op.dirname(invocation)
-    invo_id    = invo_local.split('.')[0].split('-')[-1]
-    # The above grabs an ID from the form: fname-#.ext
-
-    print("Fetching input data...")
-    # Get input data
-    local_data_dir = "/clowdata/"
-    for dataloc in input_data:
-        utils.get(dataloc, local_data_dir)
-
-    # Move to correct location
-    os.chdir(local_data_dir)
+    # Get input data, if running remotely
+    if not kwargs.get("local") and \
+       any([dl.startswith("s3://") for dl in input_data]):
+        print("Fetching input data...")
+        localdatadir = op.join(localtaskdir, "data")
+        for dataloc in input_data:
+            utils.get(dataloc, localdatadir)
+        # Move to correct location
+        os.chdir(localdatadir)
+    else:
+        print("Skipping data fetch (local execution)...")
+        if kwargs.get("workdir") and op.exists(kwargs.get("workdir")):
+            os.chdir(kwargs["workdir"])
 
     print("Beginning execution...")
     # Launch task
-    try:
-        std = bosh.execute('launch',  desc_local, invo_local)
-        # graph_dir = '{}clowprov/'.format(local_data_dir)
-        # graph_name = '{}clowdrgraph-{}.rpz'.format(graph_dir, invo_id)
-
-        # cmd = 'reprozip trace -w --dir={} bosh exec launch {} {}'
-        # os.system(cmd.format(graph_dir, desc_local, invo_local))
-
-        # cmd = 'reprozip pack --dir={} {}'
-        # os.system(cmd.format(graph_dir, graph_name))
-
-        # print("{} --> {}".format(graph_name, op.join(task_loc, op.basename(graph_name))))
-        # utils.post(graph_name, op.join(task_loc, op.basename(graph_name)))
-    except ImportError:
-        print("(Reprozip not installed, no provenance tracing)")
-        std = bosh.execute('launch',  desc_local, invo_local)
+    start_time = time.time()
+    if kwargs.get("volumes"):
+        volumes = " ".join(kwargs.get("volumes"))
+        stdout, stderr, ecode, _ = bosh.execute('launch', desc_local,
+                                                invo_local, '-v', volumes)
+    else:
+        stdout, stderr, ecode, _ = bosh.execute('launch',  desc_local,
+                                                invo_local)
+    duration = time.time() - start_time
 
     # Get list of bosh exec outputs
     with open(desc_local) as fhandle:
@@ -79,21 +82,37 @@ def processTask(metadata, clowdrloc=None, **kwargs):
     for outfile in outputs_all.values():
         outputs_present += [outfile] if op.exists(outfile) else []
 
-    print("Uploading outputs...")
-    # Push outputs
-    for local_output in outputs_present:
-        print("{} --> {}".format(local_output, output_loc))
-        utils.post(local_output, output_loc)
+    # Write stdout to file
+    stdoutf = "stdout-{}.txt".format(task_id)
+    with open(op.join(localtaskdir, stdoutf), "w") as fhandle:
+        fhandle.write(stdout.decode("utf-8"))
+    utils.post(op.join(localtaskdir, stdoutf), remotetaskdir)
 
+    # Write sterr to file
+    stderrf = "stderr-{}.txt".format(task_id)
+    with open(op.join(localtaskdir, stderrf), "w") as fhandle:
+        fhandle.write(stderr.decode("utf-8"))
+    utils.post(op.join(localtaskdir, stderrf), remotetaskdir)
 
-def main(args=None):
-    parser = ArgumentParser(description="Entrypoint for Clowdr-task")
-    parser.add_argument("metadata", action="store", help="S3 URL to metadata")
-    results = parser.parse_args() if args is None else parser.parse_args(args)
+    # Write summary values to file, including:
+    summary = {"duration": duration,
+               "exitcode": ecode,
+               "outputs": [],
+               "stdout": op.join(remotetaskdir, stdoutf),
+               "stderr": op.join(remotetaskdir, stderrf)}
 
-    process_task(results.metadata)
+    if not kwargs.get("local"):
+        print("Uploading outputs...")
+        # Push outputs
+        for local_output in outputs_present:
+            print("{} --> {}".format(local_output, output_loc))
+            summary["outputs"] += utils.post(local_output, output_loc)
+    else:
+        print("Skipping uploading outputs (local execution)...")
+        summary["outputs"] = outputs_present
 
-
-if __name__ == "__main__":
-    main()
+    summarf = "summary-{}.json".format(task_id)
+    with open(op.join(localtaskdir, summarf), "w") as fhandle:
+        fhandle.write(json.dumps(summary) + "\n")
+    utils.post(op.join(localtaskdir, summarf), remotetaskdir)
 

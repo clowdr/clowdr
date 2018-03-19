@@ -1,0 +1,169 @@
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.3/js/tether.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
+<style>
+table.table>tbody .hiddenRow {
+  padding: 0 8px;
+}
+p, h1, h2, h3, h4, h5, div, table, body{
+  color: #26265e
+}
+body {
+  background-color: #fefefe
+}
+tr.exploding { cursor: pointer; }
+</style>
+<!--
+<style>
+body {
+  background-color: #fefefe;
+  color: #16161e;
+}
+table.table-sm > thead > tr > th{
+    border-bottom:2px solid #4d70f9;
+}
+table.table-sm > tbody > tr > td{
+    border-top:1px solid #4d70f9;
+    border-bottom:1px solid #4d70f9;
+}-->
+</style>
+</head>
+  <body>
+    <div class="container">
+    <div class="row">
+      <br/>
+    </div>
+    <div class="row jumbotron">
+      <div>
+        <h1>Clowdr Share</h1>
+      </div>
+    </div>
+    <div class="row">
+      <h3>Session Info</h3>
+        <table class="table table-condensed" style="border-collapse:collapse; width:100%">
+          <tbody>
+            <tr>
+              <th>Tool</th>
+              <td>{{ data.tool.name }}</td>
+            </tr>
+            <tr>
+              <th>Session Location</th>
+              <td>{{ "s3://" + data.bucket + "/" + data.offset}}</td>
+            </tr>
+        </table>
+    </div>
+    <div class="row">
+    <h3 style="display:inline">Executions</h3>
+    <a href="/refresh"><img src="https://d30y9cdsu7xlg0.cloudfront.net/png/4985-200.png" height="20pt" style="display:inline;" class="mt-2" align="bottom"/></a>
+    <table class="table table-condensed" style="border-collapse:collapse; width:100%">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Invocation</th>
+                <th>Date Launched</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for task in data.tasks %}
+          <tr data-toggle="collapse" data-target="#demo{{loop.index}}" class="accordion-toggle exploding">
+              <td>{{ task.id }}</td>
+              <td>{{ task.invocname }}</td>
+              <td>{{ task.date }}</td>
+              {% if task.exitcode == "0" %}
+                <td class="text-success">Complete
+              {% elif task.exitcode %}
+                <td class="text-danger">Failed ({{ task.exitcode }})
+              {% else %}
+                <td class="text-warning">Incomplete
+              {% endif %}
+              </td>
+          </tr>
+          <tr style="background-color:#ddd">
+              <td colspan="6" class="hiddenRow"><div class="accordian-body collapse" id="demo{{loop.index}}">
+                  <table class="table table-condensed table-sm small" style="width:95%; float:left; margin-right:2%; background-color:#ddd">
+                      <thead>
+                        <th colspan="2">Property</th>
+                        <th colspan="8">Value(s)</th>
+                      </thead>
+                      <tbody>
+                          <tr>
+                              <th colspan="2">Task Files</th>
+                              <td colspan="8">
+                                <a href="{{ task.url }}">Task File</a>,
+                                <a href="{{ data.tool.url }}">Tool Descriptor</a>,
+                                <a href="{{ task.invocurl }}">Run Invocation</a>
+                              </td>
+                          </tr>
+                          <tr>
+                              <th colspan="2">Input Data Location</th>
+                              <td colspan="8">
+                                {% for dloc in task.contents.dataloc %}
+                                  {% if loop.index > 1 %}
+                                    ,
+                                  {% endif %}
+                                  {{ dloc }}
+                                {% endfor %}
+                              </td>
+                          </tr>
+                          <tr>
+                              <th colspan="2">Output Data Location</th>
+                              <td colspan="8">
+                                {{ task.contents.taskloc }}
+                              </td>
+                          </tr>
+                      </tbody>
+                  </table>
+                  <table class="table table-condensed table-sm small" style="width:65%; float:left; margin-right:2%; background-color:#ddd">
+                      <thead>
+                          <th colspan="2">Tool Inputs</th>
+                      </thead>
+                      <tbody>
+                          {% for param in task.invocontents.keys() %}
+                          <tr>
+                              <td>
+                                {{ param }}
+                              </td>
+                              <td>
+                                {{ task.invocontents[param] }}
+                              </td>
+                          </tr>
+                          {% endfor %}
+                      </tbody>
+                  </table>
+                  <table class="table table-condensed table-sm small" style="width:25%; float:right; margin-right:2%; background-color:#ddd">
+                      <thead>
+                          <th>Logs</th>
+                      </thead>
+                      <tbody>
+                          <tr>
+                              <td>
+                                <a href="{{ task.stdout }}">Output Log</a>,
+                                <a href="{{ task.stderr }}">Error Log</a>
+                              </td>
+                          </tr>
+                      </tbody>
+                  </table>
+                  <table class="table table-condensed table-sm small" style="width:25%; float:right; margin-right:2%; background-color:#ddd">
+                      <thead>
+                          <th>Task Duration</th>
+                      </thead>
+                      <tbody>
+                          <tr>
+                              <td>
+                                {{ task.duration }}
+                              </td>
+                          </tr>
+                      </tbody>
+                  </table>
+              </div></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div></div>
+  </body>
+</html>

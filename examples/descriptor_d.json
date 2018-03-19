@@ -145,7 +145,7 @@
         "title": "example.invocationSchema",
         "type": "object"
     },
-    "name": "example",
+    "name": "BIDS-example",
     "output-files": [
         {
             "description": "The directory where the output files should be stored. If you are running a group level analysis, this folder should be prepopulated with the results of the participant level analysis.",

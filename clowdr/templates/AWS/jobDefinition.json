@@ -13,9 +13,9 @@
         "volumes": [
             {
                 "host": {
-                    "sourcePath": "/clowdata"
+                    "sourcePath": "/clowtask"
                 },
-                "name": "data-volume"
+                "name": "task-volume"
             },
             {
                 "host": {
@@ -27,9 +27,9 @@
         "environment": [],
         "mountPoints": [
             {
-                "containerPath": "/clowdata",
+                "containerPath": "/clowtask",
                 "readOnly": false,
-                "sourceVolume": "data-volume"
+                "sourceVolume": "task-volume"
             },
             {
                 "containerPath": "/var/run/docker.sock",

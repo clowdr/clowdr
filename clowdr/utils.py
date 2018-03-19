@@ -1,10 +1,30 @@
 #!/usr/bin/env python
 
 from shutil import copy, copytree, SameFileError
+from subprocess import Popen, PIPE
 import os.path as op
+import random as rnd
+import string
 import boto3
 import csv
+import sys
 import os
+import re
+
+
+def getContainer(savedir, container):
+    if container["type"] == "singularity":
+        name = container.get("image")
+        local = name.replace("/", "-")
+        index = container.get("index")
+        if not index:
+            index = "shub://"
+        elif not index.endswith("://"):
+            index = index + "://"
+        cmd = "singularity pull --name \"{}.simg\" {}{}".format(local, index, name)
+
+        p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
+        return p.communicate()
 
 
 def truepath(path):
@@ -12,6 +32,14 @@ def truepath(path):
         return path
     else:
         return op.realpath(path)
+
+
+def randstring(k):
+    return "".join(rnd.choices(string.ascii_uppercase + string.digits, k=k))
+
+
+def splitS3Path(path):
+    return re.match('^s3:\/\/([\w\-\_]+)/([\w\-\_\/\.]+)', path).group(1, 2)
 
 
 def get(remote, local, **kwargs):
@@ -44,6 +72,9 @@ def post(local, remote, **kwargs):
             return _awspost(local, remote)
         elif op.isdir(local):
             return [op.realpath(copytree(local, remote))]
+        elif op.isdir(remote):
+            return [op.realpath(copy(local,
+                                     op.join(remote, op.basename(local))))]
         else:
             return [op.realpath(copy(local, remote))]
     except SameFileError as e:
@@ -58,8 +89,7 @@ def post(local, remote, **kwargs):
 def _awsget(remote, local):
     s3 = boto3.resource("s3")
 
-    bucket, rpath = remote.split('/')[2], remote.split('/')[3:]
-    rpath = "/".join(rpath)
+    bucket, rpath = splitS3Path(remote)
 
     buck = s3.Bucket(bucket)
     files = [obj.key for obj in buck.objects.filter(Prefix=rpath) if not os.path.isdir(obj.key)]
@@ -85,8 +115,7 @@ def _awspost(local, remote):
         local_files = [local]
 
     s3 = boto3.client("s3")
-    bucket, rpath = remote.split('/')[2], remote.split('/')[3:]
-    rpath = "/".join(rpath)
+    bucket, rpath = splitS3Path(remote)
 
     rempats = []
     for flocal in local_files:

@@ -1,8 +1,10 @@
 from setuptools import setup
+import os.path as op
 
-VERSION = "0.0.2"
+VERSION = "0.0.5"
 DEPS = [
          "boto3",
+         "flask",
          "boutiques"
        ]
 
@@ -12,6 +14,7 @@ setup(name="clowdr",
       url="http://github.com/clowdr/clowdr",
       author="Gregory Kiar",
       author_email="gkiar07@gmail.com",
+      python_requires=">=3",
       classifiers=[
                 "Programming Language :: Python",
                 "Programming Language :: Python :: 3",
@@ -25,8 +28,9 @@ setup(name="clowdr",
                 "Natural Language :: English"
                   ],
       license="MIT",
-      packages=["clowdr"],
+      packages=["clowdr", "clowdr.controller", "clowdr.endpoint"],
       include_package_data=True,
+      package_data = {"clowdr/templates": [op.join("templates", "AWS","*")]},
       test_suite="pytest",
       tests_require=["pytest"],
       setup_requires=DEPS,

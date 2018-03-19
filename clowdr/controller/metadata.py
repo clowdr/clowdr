@@ -9,7 +9,6 @@
 
 from copy import deepcopy
 import os.path as op
-import random as rnd
 import datetime
 import time
 import string
@@ -45,7 +44,7 @@ def consolidateTask(tool, invocation, clowdrloc, dataloc, **kwargs):
 
     ts = time.time()
     dt = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
-    randx = "".join(rnd.choices(string.ascii_uppercase + string.digits, k=8))
+    randx = utils.randstring(8)
     modif = "{}-{}".format(dt, randx)
 
     # Scrub inputs
@@ -79,7 +78,7 @@ def consolidateTask(tool, invocation, clowdrloc, dataloc, **kwargs):
     # Case 2: User supplies a single invocation
     else:
         # Case 2a: User is running a BIDS app
-        if kwargs.get('bids'):
+        if kwargs.get("bids"):
             taskdicts, invocations = bidsTasks(taskloc, taskdict)
 
         # Case 2b: User is quite simply just launching a single invocation
