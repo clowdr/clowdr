@@ -5,7 +5,7 @@ VERSION = "0.0.6"
 DEPS = [
          "boto3",
          "flask",
-         "boutiques"
+         "boutiques>=0.5.6.post1"
        ]
 
 setup(name="clowdr",
