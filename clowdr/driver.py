@@ -121,7 +121,7 @@ def cluster(tool, invocation, clowdrloc, dataloc, cluster, **kwargs):
         container = json.load(fhandle).get("container-image")
     if container:
         if kwargs.get("verbose"):
-            print("Getting conatainer...")
+            print("Getting container...")
         outp = utils.getContainer(taskdir, container)
         if kwargs.get("verbose"):
             print("\n".join(elem.decode("utf-8") for elem in outp))

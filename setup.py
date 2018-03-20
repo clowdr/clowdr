@@ -1,11 +1,12 @@
 from setuptools import setup
 import os.path as op
 
-VERSION = "0.0.6"
+VERSION = "0.0.6.post1"
 DEPS = [
          "boto3",
          "flask",
-         "boutiques>=0.5.6.post1"
+         "boutiques>=0.5.6.post1",
+         "slurmpy"
        ]
 
 setup(name="clowdr",
