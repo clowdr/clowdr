@@ -115,6 +115,10 @@ def cluster(tool, invocation, clowdrloc, dataloc, cluster, **kwargs):
         tasks = [tasks[0]]  # Just launch the first task in dev
 
     taskdir = op.dirname(utils.truepath(tasks[0]))
+    try:
+        os.mkdir(taskdir)
+    except FileExistsError:
+        pass
     os.chdir(taskdir)
 
     with open(tool) as fhandle:
@@ -122,7 +126,7 @@ def cluster(tool, invocation, clowdrloc, dataloc, cluster, **kwargs):
     if container:
         if kwargs.get("verbose"):
             print("Getting container...")
-        outp = utils.getContainer(taskdir, container)
+        outp = utils.getContainer(taskdir, container, **kwargs)
         if kwargs.get("verbose"):
             print("\n".join(elem.decode("utf-8") for elem in outp))
 
