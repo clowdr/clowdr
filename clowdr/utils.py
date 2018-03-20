@@ -12,7 +12,7 @@ import os
 import re
 
 
-def getContainer(savedir, container):
+def getContainer(savedir, container, **kwargs):
     if container["type"] == "singularity":
         name = container.get("image")
         local = name.replace("/", "-")
@@ -22,7 +22,8 @@ def getContainer(savedir, container):
         elif not index.endswith("://"):
             index = index + "://"
         cmd = "singularity pull --name \"{}.simg\" {}{}".format(local, index, name)
-
+        if kwargs.get("verbose"):
+            print(cmd)
         p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
         return p.communicate()
 

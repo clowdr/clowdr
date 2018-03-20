@@ -25,7 +25,7 @@ def processTask(metadata, clowdrloc=None, **kwargs):
     else:
         localtaskdir = clowdrloc
 
-    localtaskdir = op.join(localtaskdir, utils.randstring(3))
+    localtaskdir = op.join(localtaskdir, "clowtask_"+utils.randstring(3))
     if not op.exists(localtaskdir):
         os.makedirs(localtaskdir)
 
