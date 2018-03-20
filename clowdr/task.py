@@ -25,7 +25,7 @@ def processTask(metadata, clowdrloc=None, **kwargs):
     else:
         localtaskdir = clowdrloc
 
-    localtaskdir = op.join(localtaskdir, utils.randstring(3))
+    localtaskdir = op.join(localtaskdir, "clowtask_"+utils.randstring(3))
     if not op.exists(localtaskdir):
         os.makedirs(localtaskdir)
 
@@ -64,12 +64,10 @@ def processTask(metadata, clowdrloc=None, **kwargs):
     print("Beginning execution...")
     # Launch task
     start_time = time.time()
-    volumes = ""
     if kwargs.get("volumes"):
-        for vol in kwargs.get("volumes"):
-            volumes +=  "-v {} ".format(vol)
-        stdout, stderr, ecode, _ = bosh.execute('launch',  desc_local,
-                                                invo_local, volumes)
+        volumes = " ".join(kwargs.get("volumes"))
+        stdout, stderr, ecode, _ = bosh.execute('launch', desc_local,
+                                                invo_local, '-v', volumes)
     else:
         stdout, stderr, ecode, _ = bosh.execute('launch',  desc_local,
                                                 invo_local)
