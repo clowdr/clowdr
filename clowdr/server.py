@@ -94,7 +94,7 @@ def getRecords(clowdrloc, outdir, **kwargs):
         hostname = kwargs.get("hostname")
 
     if s3bool:
-        s3 = boto3.resource("s3")
+        s3 = boto3.resource("s3", config=Config(signature_version=UNSIGNED))
         cli = boto3.client("s3", config=Config(signature_version=UNSIGNED))
         buck = s3.Bucket(bucket)
         objs = buck.objects.filter(Prefix=rpath)
