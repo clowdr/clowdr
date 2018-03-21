@@ -290,6 +290,8 @@ def main(args=None):
     # Share Parser
     parser_shr = subparsers.add_parser("share")
     parser_shr.add_argument("clowdrloc", help="local or s3 location for clowdr")
+    parser_shr.add_argument("--debug", "-d", action="store_true")
+
     parser_shr.set_defaults(func=share)
 
     # Run Parser

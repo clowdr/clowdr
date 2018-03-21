@@ -26,7 +26,9 @@ shareapp = Flask(__name__)
 
 @shareapp.route("/")
 def index():
-    return render_template('index.html', data=shareapp.config.get("data"))
+    with open(shareapp.config.get("datapath")) as fhandle:
+        data = json.load(fhandle)
+    return render_template("index.html", data=data)
 
 
 @shareapp.route("/refresh")
@@ -36,7 +38,7 @@ def update():
 
 
 def parseJSON(outdir, objlist, s3bool=True, **kwargs):
-    cli = boto3.client("s3", config=Config(signature_version=UNSIGNED))
+    cli = boto3.client("s3") # , config=Config(signature_version=UNSIGNED))
     tmplist = []
     for obj in objlist:
         tmpdict = {}
@@ -94,8 +96,8 @@ def getRecords(clowdrloc, outdir, **kwargs):
         hostname = kwargs.get("hostname")
 
     if s3bool:
-        s3 = boto3.resource("s3", config=Config(signature_version=UNSIGNED))
-        cli = boto3.client("s3", config=Config(signature_version=UNSIGNED))
+        s3 = boto3.resource("s3") # , config=Config(signature_version=UNSIGNED))
+        cli = boto3.client("s3") # , config=Config(signature_version=UNSIGNED))
         buck = s3.Bucket(bucket)
         objs = buck.objects.filter(Prefix=rpath)
         objs = [{"key": obj.key,
@@ -141,7 +143,12 @@ def updateIndex(**kwargs):
                      data={"invocation": invo,
                            "summary"   : summ})
 
-    shareapp.config["data"] = {"clowdrloc" : clowdrloc,
-                               "tool"      : desc,
-                               "tasks"     : task}
+    data = {"clowdrloc" : clowdrloc,
+            "tool"      : desc,
+            "tasks"     : task}
 
+    fname = op.join(tmpdir, "clowdrsitedata.json")
+    with open(fname, "w") as fhandle:
+        fhandle.write(json.dumps(data))
+
+    shareapp.config["datapath"] = fname

@@ -15,46 +15,6 @@ body {
   background-color: #fefefe
 }
 tr.exploding { cursor: pointer; }
-
-/* The Modal (background) */
-.modal {
-    display: none; /* Hidden by default */
-    position: fixed; /* Stay in place */
-    z-index: 1; /* Sit on top */
-    padding-top: 100px; /* Location of the box */
-    left: 0;
-    top: 0;
-    width: 100%; /* Full width */
-    height: 100%; /* Full height */
-    overflow: auto; /* Enable scroll if needed */
-    background-color: rgb(0,0,0); /* Fallback color */
-    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
-}
-
-/* Modal Content */
-.modal-content {
-    background-color: #fefefe;
-    margin: auto;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 80%;
-}
-
-/* The Close Button */
-.close {
-    color: #aaaaaa;
-    text-align: right;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-}
-
-.close:hover,
-.close:focus {
-    color: #000;
-    text-decoration: none;
-    cursor: pointer;
-}
 </style>
 </head>
   <body>
@@ -82,6 +42,24 @@ tr.exploding { cursor: pointer; }
         </table>
     </div>
     <div class="row">
+      <div class="modal fade" id="logModal" tabindex="-1" role="dialog" aria-labelledby="logModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="logModalLabel">Logs</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <code> stuff </code>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
     <h3 style="display:inline">Executions</h3>
     <a href="/refresh"><img src="https://d30y9cdsu7xlg0.cloudfront.net/png/4985-200.png" height="20pt" style="display:inline;" class="mt-2" align="bottom"/></a>
     <table class="table table-condensed" style="border-collapse:collapse; width:100%">
@@ -167,15 +145,10 @@ tr.exploding { cursor: pointer; }
                       <tbody>
                           <tr>
                               <td>
-                                <a id="btn{{loop.index}}" style="cursor:pointer; color:blue">Open Modal</a>
-                                <div id="modal{{loop.index}}" class="modal">
-                                  <div class="modal-content">
-                                    <span id="close{{loop.index}}" class="close">&times;</span>
-                                    <p> words {{ task.stdout }} {{ task.stderr }} </p>
-                                  </div>
-                                </div>
-                                <a href="{{ task.stdout }}">Output Log</a>,
-                                <a href="{{ task.stderr }}">Error Log</a>
+<!--<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#logModal" data-content="{{task.stdout}}" data-name="Output Log (Task: {{task.id}})">stdout</button>
+<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#logModal" data-content="{{task.stderr}}" data-name="Error Log (Task: {{task.id}})">stderr</button> -->
+                                <a data-toggle="modal" data-target="#logModal" data-content="{{task.stdout}}" data-name="Output Log (Task: {{task.id}})" href="#">Output Log</a>,
+                                <a data-toggle="modal" data-target="#logModal" data-content="{{task.stderr}}" data-name="Error Log (Task: {{task.id}})" href="#">Error Log</a>
                               </td>
                           </tr>
                       </tbody>
@@ -200,29 +173,16 @@ tr.exploding { cursor: pointer; }
     </div></div>
 
 <script>
-{% for task in data.tasks %}
-// Get the modal
-  var modal{{loop.index}} = document.getElementById('modal{{loop.index}}');
-  // Get the button that opens the modal
-  var btn{{loop.index}} = document.getElementById("btn{{loop.index}}");
-  // Get the <span> element that closes the modal
-  var span{{loop.index}} = document.getElementById("close{{loop.index}}");
-
-  // When the user clicks the button, open the modal 
-  btn{{loop.index}}.onclick = function() {
-      modal{{loop.index}}.style.display = "block";
-  }
-  // When the user clicks on <span> (x), close the modal
-  span{{loop.index}}.onclick = function() {
-      modal{{loop.index}}.style.display = "none";
-  }
-  // When the user clicks anywhere outside of the modal, close it
-  window.onclick{{loop.index}} = function(event) {
-      if (event.target == modal{{loop.index}}) {
-          modal{{loop.index}}.style.display = "none";
-      }
-  }
-{% endfor %}
+$('#logModal').on('show.bs.modal', function (event) {
+  var button = $(event.relatedTarget) // Button that triggered the modal
+  var name = button.data('name') // Extract info from data-* attributes
+  var content = button.data('content') // Extract info from data-* attributes
+  // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
+  // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
+  var modal = $(this)
+  modal.find('.modal-title').text(name)
+  modal.find('.modal-body code').html(content.replace(/\n/, "<br />"))
+})
 </script>
   </body>
 </html>
