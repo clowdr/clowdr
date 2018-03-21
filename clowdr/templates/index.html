@@ -15,20 +15,46 @@ body {
   background-color: #fefefe
 }
 tr.exploding { cursor: pointer; }
-</style>
-<!--
-<style>
-body {
-  background-color: #fefefe;
-  color: #16161e;
+
+/* The Modal (background) */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    padding-top: 100px; /* Location of the box */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
 }
-table.table-sm > thead > tr > th{
-    border-bottom:2px solid #4d70f9;
+
+/* Modal Content */
+.modal-content {
+    background-color: #fefefe;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
 }
-table.table-sm > tbody > tr > td{
-    border-top:1px solid #4d70f9;
-    border-bottom:1px solid #4d70f9;
-}-->
+
+/* The Close Button */
+.close {
+    color: #aaaaaa;
+    text-align: right;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+}
 </style>
 </head>
   <body>
@@ -141,6 +167,13 @@ table.table-sm > tbody > tr > td{
                       <tbody>
                           <tr>
                               <td>
+                                <a id="btn{{loop.index}}" style="cursor:pointer; color:blue">Open Modal</a>
+                                <div id="modal{{loop.index}}" class="modal">
+                                  <div class="modal-content">
+                                    <span id="close{{loop.index}}" class="close">&times;</span>
+                                    <p> words {{ task.stdout }} {{ task.stderr }} </p>
+                                  </div>
+                                </div>
                                 <a href="{{ task.stdout }}">Output Log</a>,
                                 <a href="{{ task.stderr }}">Error Log</a>
                               </td>
@@ -165,5 +198,31 @@ table.table-sm > tbody > tr > td{
         </tbody>
     </table>
     </div></div>
+
+<script>
+{% for task in data.tasks %}
+// Get the modal
+  var modal{{loop.index}} = document.getElementById('modal{{loop.index}}');
+  // Get the button that opens the modal
+  var btn{{loop.index}} = document.getElementById("btn{{loop.index}}");
+  // Get the <span> element that closes the modal
+  var span{{loop.index}} = document.getElementById("close{{loop.index}}");
+
+  // When the user clicks the button, open the modal 
+  btn{{loop.index}}.onclick = function() {
+      modal{{loop.index}}.style.display = "block";
+  }
+  // When the user clicks on <span> (x), close the modal
+  span{{loop.index}}.onclick = function() {
+      modal{{loop.index}}.style.display = "none";
+  }
+  // When the user clicks anywhere outside of the modal, close it
+  window.onclick{{loop.index}} = function(event) {
+      if (event.target == modal{{loop.index}}) {
+          modal{{loop.index}}.style.display = "none";
+      }
+  }
+{% endfor %}
+</script>
   </body>
 </html>

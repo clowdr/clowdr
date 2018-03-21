@@ -40,19 +40,10 @@ def parseJSON(outdir, objlist, s3bool=True, **kwargs):
         tmpdict = {}
         key = obj["key"]
         bucket = obj["bucket_name"]
-        outfname = op.join(outdir, op.basename(key))
-        buck = boto3.resource("s3").Bucket(bucket)
-        buck.download_file(key, Filename=outfname)
-        tmpdict["fname"] = outfname
-        tmpdict["bucket"] = bucket
-        tmpdict["key"] = key
-        tmpdict["url"] = cli.generate_presigned_url("get_object",
-                                                    Params={"Bucket": bucket,
-                                                            "Key": key},
-                                                    ExpiresIn=None)
-        tmpdict["date"] = obj["last_modified"].strftime("%b %d, %Y (%T)")
+        for key2 in obj.keys():
+            tmpdict[key2] = obj[key2]
 
-        with open(outfname) as fhandle:
+        with open(obj["fname"]) as fhandle:
             tmpdict["contents"] = json.load(fhandle)
 
         if kwargs.get("descriptor"):
@@ -60,19 +51,15 @@ def parseJSON(outdir, objlist, s3bool=True, **kwargs):
         elif kwargs.get("invocation"):
             tmpdict["name"] = op.basename(key)
         elif kwargs.get("summary"):
-            tmpdict["id"] = op.splitext(op.basename(outfname))[0].split('-')[1]
-            bucket, key = utils.splitS3Path(tmpdict["contents"]["stdout"])
-            tmpdict["out"] = cli.generate_presigned_url("get_object",
-                                                        Params={"Bucket": bucket,
-                                                                "Key": key},
-                                                        ExpiresIn=None)
-            bucket, key = utils.splitS3Path(tmpdict["contents"]["stderr"])
-            tmpdict["err"] = cli.generate_presigned_url("get_object",
-                                                        Params={"Bucket": bucket,
-                                                                "Key": key},
-                                                        ExpiresIn=None)
+            tmpdict["id"] = op.splitext(op.basename(obj["fname"]))[0].split('-')[1]
+            _, key = utils.splitS3Path(tmpdict["contents"]["stdout"])
+            with open(op.join(outdir, op.basename(key))) as fhandle:
+                tmpdict["out"] = fhandle.read()
+            _, key = utils.splitS3Path(tmpdict["contents"]["stderr"])
+            with open(op.join(outdir, op.basename(key))) as fhandle:
+                tmpdict["err"] = fhandle.read()
         elif kwargs.get("task"):
-            tmpdict["id"] = op.splitext(op.basename(outfname))[0].split('-')[1]
+            tmpdict["id"] = op.splitext(op.basename(obj["fname"]))[0].split('-')[1]
             if kwargs.get("data").get("invocation"):
                 invocs = kwargs["data"]["invocation"]
                 invname = op.basename(tmpdict["contents"]["invocation"])
@@ -95,7 +82,7 @@ def parseJSON(outdir, objlist, s3bool=True, **kwargs):
     return tmplist
 
 
-def getRecords(clowdrloc, **kwargs):
+def getRecords(clowdrloc, outdir, **kwargs):
     # get remote records, open local records
     try:
         bucket, rpath = utils.splitS3Path(clowdrloc)
@@ -109,11 +96,24 @@ def getRecords(clowdrloc, **kwargs):
         cli = boto3.client("s3")
         buck = s3.Bucket(bucket)
         objs = buck.objects.filter(Prefix=rpath)
-        objs = [{"key": obj.key, "bucket_name": obj.bucket_name,
-                 "last_modified": obj.last_modified}
+        objs = [{"key": obj.key,
+                 "bucket_name": obj.bucket_name,
+                 "date": obj.last_modified.strftime("%b %d, %Y (%T)"),
+                 "url": cli.generate_presigned_url("get_object",
+                                                   Params={"Bucket": obj.bucket_name,
+                                                           "Key": obj.key},
+                                                   ExpiresIn=None)}
                 for obj in objs]
+        for idx, obj in enumerate(objs):
+            outfname = op.join(outdir, op.basename(obj["key"]))
+            buck.download_file(obj["key"], Filename=outfname)
+            objs[idx]["fname"] = outfname
     else:
-        objs = [{"key": op.join(dp, f)}
+        objs = [{"key": op.join(dp, f),
+                 "hostname": hostname,
+                 "date": op.getmtime(op.join(dp, f)).strftime("%b %d, %Y (%T)"),
+                 "fname": op.join(dp, f),
+                 "url": None}
                 for dp, dn, fnames in os.walk(clowdrloc)
                 for f in fnames]
 
@@ -127,7 +127,8 @@ def getRecords(clowdrloc, **kwargs):
 def updateIndex(**kwargs):
     clowdrloc = shareapp.config.get("clowdrloc")
     tmpdir = shareapp.config.get("tmpdir")
-    s3bool, task, summ, desc, invo = getRecords(clowdrloc)
+    print(tmpdir)
+    s3bool, task, summ, desc, invo = getRecords(clowdrloc, tmpdir)
 
     print("updating!")
 
