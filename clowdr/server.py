@@ -16,6 +16,8 @@ import json
 import sys
 import re
 import os
+from botocore import UNSIGNED
+from botocore.client import Config
 
 from clowdr import utils
 
@@ -34,7 +36,7 @@ def update():
 
 
 def parseJSON(outdir, objlist, s3bool=True, **kwargs):
-    cli = boto3.client("s3")
+    cli = boto3.client("s3", config=Config(signature_version=UNSIGNED))
     tmplist = []
     for obj in objlist:
         tmpdict = {}
@@ -93,7 +95,7 @@ def getRecords(clowdrloc, outdir, **kwargs):
 
     if s3bool:
         s3 = boto3.resource("s3")
-        cli = boto3.client("s3")
+        cli = boto3.client("s3", config=Config(signature_version=UNSIGNED))
         buck = s3.Bucket(bucket)
         objs = buck.objects.filter(Prefix=rpath)
         objs = [{"key": obj.key,
