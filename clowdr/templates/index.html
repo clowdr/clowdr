@@ -52,7 +52,7 @@ tr.exploding { cursor: pointer; }
               </button>
             </div>
             <div class="modal-body">
-              <code id="modal-code-content"> placeholder </code>
+              <pre><code id="modal-code-content"> placeholder </code></pre>
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -76,12 +76,12 @@ tr.exploding { cursor: pointer; }
         {% for task in data.tasks %}
           <tr data-toggle="collapse" data-target="#demo{{loop.index}}" class="accordion-toggle exploding">
               <td>{{ task.id }}</td>
-              <td>{{ task.invocname }}</td>
+              <td>{{ task.invoc.name }}</td>
               <td>{{ task.date }}</td>
-              {% if task.exitcode == "0" %}
+              {% if task.summary.exitcode == 0 %}
                 <td class="text-success">Complete
-              {% elif task.exitcode %}
-                <td class="text-danger">Failed ({{ task.exitcode }})
+              {% elif task.summary.exitcode %}
+                <td class="text-danger">Failed ({{ task.summary.exitcode }})
               {% else %}
                 <td class="text-warning">Incomplete
               {% endif %}
@@ -99,8 +99,8 @@ tr.exploding { cursor: pointer; }
                               <th colspan="2">Task Files</th>
                               <td colspan="8">
                                 <a data-toggle="modal" data-target="#logModal" data-fname="task-{{task.id}}.json" data-content="{{task.contents}}" data-name="Task Definition (Task: {{task.id}})" href="#">Task Definition</a>,
-                                <a href="{{ data.tool.url }}">Tool Descriptor</a>,
-                                <a href="{{ task.invocurl }}">Run Invocation</a>
+                                <a data-toggle="modal" data-target="#logModal" data-fname="{{data.tool.name}}.json" data-content="{{data.tool.contents}}" data-name="Tool Descriptor (Task: {{task.id}})" href="#">Tool Descriptor</a>,
+                                <a data-toggle="modal" data-target="#logModal" data-fname="{{task.invoc.name}}" data-content="{{task.invoc.contents}}" data-name="Invocation (Task: {{task.id}})" href="#">Invocation</a>
                               </td>
                           </tr>
                           <tr>
@@ -127,13 +127,17 @@ tr.exploding { cursor: pointer; }
                           <th colspan="2">Tool Inputs</th>
                       </thead>
                       <tbody>
-                          {% for param in task.invocontents.keys() %}
+                          {% for param in task.invoc.contents.keys() %}
                           <tr>
                               <td>
-                                {{ param }}
+                              {% for inam in data.tool.contents.inputs %}
+                                {% if inam["id"] == param %}
+                                  {{ inam["name"] }}
+                                {% endif %}
+                              {% endfor %}
                               </td>
                               <td>
-                                {{ task.invocontents[param] }}
+                                {{ task.invoc.contents[param] }}
                               </td>
                           </tr>
                           {% endfor %}
@@ -146,8 +150,8 @@ tr.exploding { cursor: pointer; }
                       <tbody>
                           <tr>
                               <td>
-                                <a data-toggle="modal" data-target="#logModal" data-fname="stdout-{{task.id}}.txt" data-content="{{task.stdout}}" data-name="Output Log (Task: {{task.id}})" href="#">Output Log</a>,
-                                <a data-toggle="modal" data-target="#logModal" data-fname="stderr-{{task.id}}.txt" data-content="{{task.stderr}}" data-name="Error Log (Task: {{task.id}})" href="#">Error Log</a>
+                                <a data-toggle="modal" data-target="#logModal" data-fname="stdout-{{task.id}}.txt" data-content="{{task.summary.out}}" data-name="Output Log (Task: {{task.id}})" href="#">Output Log</a>,
+                                <a data-toggle="modal" data-target="#logModal" data-fname="stderr-{{task.id}}.txt" data-content="{{task.summary.err}}" data-name="Error Log (Task: {{task.id}})" href="#">Error Log</a>
                               </td>
                           </tr>
                       </tbody>
@@ -159,7 +163,7 @@ tr.exploding { cursor: pointer; }
                       <tbody>
                           <tr>
                               <td>
-                                {{ task.duration }}
+                                {{ task.summary.duration }}
                               </td>
                           </tr>
                       </tbody>
@@ -181,11 +185,13 @@ $('#logModal').on('show.bs.modal', function (event) {
   // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
   var modal = $(this)
   modal.find('.modal-title').text(name)
+
   if (filename.endsWith(".json")) {
-    modal.find('.modal-body code').text(JSON.stringify(content, null, 2))
-  } else {
-    modal.find('.modal-body code').html(content.replace(/\n/, "<br />"))
+    content = content.replace(/True/g, true).replace(/False/g, false) // Replaces True and Falses'
+    content = content.replace(/"/g, '\\\"').replace(/'/g, '"') //  Replaces all quotes in string
+    content = JSON.stringify(JSON.parse(content), undefined, 2)
   }
+  modal.find('.modal-body code').html(content)
   modal.find('#download-modal').on('click', function a(event) {
     var element = document.createElement('a');
     element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
@@ -198,8 +204,12 @@ $('#logModal').on('show.bs.modal', function (event) {
 
     document.body.removeChild(element);
     element.remove();
-    modal.find('#download-modal').off('click', a);
   })
+})
+$('#logModal').on('hide.bs.modal', function (event) {
+  console.log("hi")
+  var modal = $(this)
+  modal.find('#download-modal').off('click');
 })
 </script>
   </body>

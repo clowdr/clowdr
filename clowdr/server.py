@@ -27,7 +27,7 @@ shareapp = Flask(__name__)
 def index():
     with open(shareapp.config.get("datapath")) as fhandle:
         data = json.load(fhandle)
-    return render_template("index.html", data=data)
+    return render_template("index.html", data=data, datapath=shareapp.config.get("datapath"))
 
 
 @shareapp.route("/refresh")
@@ -60,26 +60,24 @@ def parseJSON(outdir, objlist, s3bool=True, **kwargs):
             _, key = utils.splitS3Path(tmpdict["contents"]["stderr"])
             with open(op.join(outdir, op.basename(key))) as fhandle:
                 tmpdict["err"] = fhandle.read()
+            tmpdict["exitcode"] = tmpdict["contents"]["exitcode"]
+            tmpdur = tmpdict["contents"]["duration"]
+            tmpdict["duration"] = str(datetime.timedelta(seconds=tmpdur))
+            tmpdict["outputs"] = tmpdict["contents"]["outputs"]
         elif kwargs.get("task"):
             tmpdict["id"] = op.splitext(op.basename(obj["fname"]))[0].split('-')[1]
             if kwargs.get("data").get("invocation"):
                 invocs = kwargs["data"]["invocation"]
                 invname = op.basename(tmpdict["contents"]["invocation"])
                 invoc = [inv for inv in invocs if inv["name"] == invname][0]
-                tmpdict["invocname"] = invoc["name"]
-                tmpdict["invocurl"] = invoc["url"]
-                tmpdict["invocontents"] = invoc["contents"]
+                tmpdict["invoc"] = invoc
             if kwargs.get("data").get("summary"):
                 summars = kwargs["data"]["summary"]
                 summar = [summ for summ in summars if summ["id"] == tmpdict["id"]]
                 if len(summar) > 0:
-                    tmpdict["exitcode"] = str(summar[0]["contents"]["exitcode"])
-                    tmpdur = float(summar[0]["contents"]["duration"])
-                    tmpdict["duration"] = str(datetime.timedelta(seconds=tmpdur))
-                    tmpdict["outputs"] = summar[0]["contents"]["outputs"]
-                    tmpdict["stdout"] = summar[0]["out"]
-                    tmpdict["stderr"] = summar[0]["err"]
+                    tmpdict["summary"] = summar[0]
 
+        # tmpdict["contents"] = json.dumps(tmpdict["contents"])
         tmplist.append(tmpdict)
     return tmplist
 
@@ -148,6 +146,6 @@ def updateIndex(**kwargs):
 
     fname = op.join(tmpdir, "clowdrsitedata.json")
     with open(fname, "w") as fhandle:
-        fhandle.write(json.dumps(data))
+        fhandle.write(json.dumps(data, indent=2))
 
     shareapp.config["datapath"] = fname
