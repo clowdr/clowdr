@@ -27,7 +27,7 @@ shareapp = Flask(__name__)
 def index():
     with open(shareapp.config.get("datapath")) as fhandle:
         data = json.load(fhandle)
-    return render_template("index.html", data=data, datapath=shareapp.config.get("datapath"))
+    return render_template("index.html", data=data)
 
 
 @shareapp.route("/refresh")
@@ -75,6 +75,8 @@ def parseJSON(outdir, objlist, s3bool=True, **kwargs):
                 summar = [summ for summ in summars if summ["id"] == tmpdict["id"]]
                 if len(summar) > 0:
                     tmpdict["summary"] = summar[0]
+                else:
+                    tmpdict["summary"] = {"exitcode": None}
 
         tmplist.append(tmpdict)
     return tmplist
@@ -127,10 +129,7 @@ def getRecords(clowdrloc, outdir, **kwargs):
 def updateIndex(**kwargs):
     clowdrloc = shareapp.config.get("clowdrloc")
     tmpdir = shareapp.config.get("tmpdir")
-    print(tmpdir)
     s3bool, task, summ, desc, invo, outs = getRecords(clowdrloc, tmpdir)
-
-    print("updating!")
 
     if not s3bool:
         tmpdir = clowdrloc
