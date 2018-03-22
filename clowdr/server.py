@@ -41,7 +41,6 @@ def parseJSON(outdir, objlist, s3bool=True, **kwargs):
     for obj in objlist:
         tmpdict = {}
         key = obj["key"]
-        bucket = obj["bucket_name"]
         for key2 in obj.keys():
             tmpdict[key2] = obj[key2]
 
@@ -54,11 +53,11 @@ def parseJSON(outdir, objlist, s3bool=True, **kwargs):
             tmpdict["name"] = op.basename(key)
         elif kwargs.get("summary"):
             tmpdict["id"] = op.splitext(op.basename(obj["fname"]))[0].split('-')[1]
-            _, key = utils.splitS3Path(tmpdict["contents"]["stdout"])
-            with open(op.join(outdir, op.basename(key))) as fhandle:
+            outfname = op.basename(tmpdict["contents"]["stdout"])
+            with open(op.join(outdir, outfname)) as fhandle:
                 tmpdict["out"] = fhandle.read()
-            _, key = utils.splitS3Path(tmpdict["contents"]["stderr"])
-            with open(op.join(outdir, op.basename(key))) as fhandle:
+            errfname = op.basename(tmpdict["contents"]["stderr"])
+            with open(op.join(outdir, errfname)) as fhandle:
                 tmpdict["err"] = fhandle.read()
             tmpdict["exitcode"] = tmpdict["contents"]["exitcode"]
             tmpdur = tmpdict["contents"]["duration"]
@@ -77,7 +76,6 @@ def parseJSON(outdir, objlist, s3bool=True, **kwargs):
                 if len(summar) > 0:
                     tmpdict["summary"] = summar[0]
 
-        # tmpdict["contents"] = json.dumps(tmpdict["contents"])
         tmplist.append(tmpdict)
     return tmplist
 
@@ -110,32 +108,37 @@ def getRecords(clowdrloc, outdir, **kwargs):
             buck.download_file(obj["key"], Filename=outfname)
             objs[idx]["fname"] = outfname
     else:
-        objs = [{"key": op.join(dp, f),
+        tsp = datetime.datetime.fromtimestamp
+        objs = [{"key": op.join(clowdrloc, f),
                  "hostname": hostname,
-                 "date": op.getmtime(op.join(dp, f)).strftime("%b %d, %Y (%T)"),
-                 "fname": op.join(dp, f),
+                 "date": tsp(op.getmtime(op.join(clowdrloc, f))).strftime("%b %d, %Y (%T)"),
+                 "fname": op.join(clowdrloc, f),
                  "url": None}
-                for dp, dn, fnames in os.walk(clowdrloc)
-                for f in fnames]
+                for f in os.listdir(clowdrloc)]
 
     task = [obj for obj in objs if "task-" in obj["key"]]
     summ = [obj for obj in objs if "summary-" in obj["key"]]
     desc = [obj for obj in objs if "descriptor" in obj["key"]]
     invo = [obj for obj in objs if "invocation" in obj["key"]]
-    return (s3bool, task, summ, desc, invo)
+    outs = [obj for obj in objs if ".txt" in obj["key"]]
+    return (s3bool, task, summ, desc, invo, outs)
 
 
 def updateIndex(**kwargs):
     clowdrloc = shareapp.config.get("clowdrloc")
     tmpdir = shareapp.config.get("tmpdir")
     print(tmpdir)
-    s3bool, task, summ, desc, invo = getRecords(clowdrloc, tmpdir)
+    s3bool, task, summ, desc, invo, outs = getRecords(clowdrloc, tmpdir)
 
     print("updating!")
 
+    if not s3bool:
+        tmpdir = clowdrloc
+
     desc = parseJSON(tmpdir, desc, s3bool, descriptor=True)[0]
     invo = parseJSON(tmpdir, invo, s3bool, invocation=True)
-    summ = parseJSON(tmpdir, summ, s3bool, summary=True)
+    summ = parseJSON(tmpdir, summ, s3bool, summary=True,
+                     data={"outs": outs})
     task = parseJSON(tmpdir, task, s3bool, task=True,
                      data={"invocation": invo,
                            "summary"   : summ})
