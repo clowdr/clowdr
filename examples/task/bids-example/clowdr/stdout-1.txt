@@ -1,0 +1,4 @@
+bet /data/ds114/sub-02/ses-retest/anat/sub-02_ses-retest_T1w.nii.gz /data/ds114/derivatives/bids-example/sub-02_ses-retest_brain.nii.gz
+
+bet /data/ds114/sub-02/ses-test/anat/sub-02_ses-test_T1w.nii.gz /data/ds114/derivatives/bids-example/sub-02_ses-test_brain.nii.gz
+

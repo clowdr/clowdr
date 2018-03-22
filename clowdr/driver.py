@@ -15,8 +15,8 @@ import sys
 import os
 
 from clowdr.controller import metadata, launcher
-# from clowdr.endpoint import aws, kubernetes, cbrain
 from clowdr.task import processTask
+from clowdr.server import shareapp, updateIndex
 from clowdr import utils
 
 
@@ -202,7 +202,7 @@ def share(clowdrloc, **kwargs):
     Parameters
     ----------
     clowdrloc : str
-        Path with Clowdr intermediate files and outputs
+        Path with Clowdr metdata files (returned from "local" and "deploy")
     **kwargs : dict
         Arbitrary keyword arguments (i.e. {'verbose': True})
 
@@ -211,8 +211,13 @@ def share(clowdrloc, **kwargs):
     None
     """
     # TODO: scrub inputs
-    print(clowdrloc, kwargs)
-    return 0
+    shareapp.config["clowdrloc"] = clowdrloc
+    shareapp.config["tmpdir"] = tempfile.mkdtemp()
+
+    updateIndex()
+
+    host = kwargs["host"] if kwargs.get("host") else "0.0.0.0"
+    shareapp.run(host=host, debug=kwargs.get("debug"))
 
 
 def main(args=None):
@@ -284,7 +289,9 @@ def main(args=None):
 
     # Share Parser
     parser_shr = subparsers.add_parser("share")
-    parser_shr.add_argument("location", help="local or s3 location for clowdr")
+    parser_shr.add_argument("clowdrloc", help="local or s3 location for clowdr")
+    parser_shr.add_argument("--debug", "-d", action="store_true")
+
     parser_shr.set_defaults(func=share)
 
     # Run Parser

@@ -16,20 +16,6 @@ body {
 }
 tr.exploding { cursor: pointer; }
 </style>
-<!--
-<style>
-body {
-  background-color: #fefefe;
-  color: #16161e;
-}
-table.table-sm > thead > tr > th{
-    border-bottom:2px solid #4d70f9;
-}
-table.table-sm > tbody > tr > td{
-    border-top:1px solid #4d70f9;
-    border-bottom:1px solid #4d70f9;
-}-->
-</style>
 </head>
   <body>
     <div class="container">
@@ -51,11 +37,30 @@ table.table-sm > tbody > tr > td{
             </tr>
             <tr>
               <th>Session Location</th>
-              <td>{{ "s3://" + data.bucket + "/" + data.offset}}</td>
+              <td>{{ data.clowdrloc }}</td>
             </tr>
         </table>
     </div>
     <div class="row">
+      <div class="modal fade" id="logModal" tabindex="-1" role="dialog" aria-labelledby="logModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="logModalLabel">Placeholder</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <pre><code id="modal-code-content"> placeholder </code></pre>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+              <button type="button" class="btn btn-primary" data-dismiss="modal" id="download-modal" href="#">Download</button>
+            </div>
+          </div>
+        </div>
+      </div>
     <h3 style="display:inline">Executions</h3>
     <a href="/refresh"><img src="https://d30y9cdsu7xlg0.cloudfront.net/png/4985-200.png" height="20pt" style="display:inline;" class="mt-2" align="bottom"/></a>
     <table class="table table-condensed" style="border-collapse:collapse; width:100%">
@@ -71,12 +76,12 @@ table.table-sm > tbody > tr > td{
         {% for task in data.tasks %}
           <tr data-toggle="collapse" data-target="#demo{{loop.index}}" class="accordion-toggle exploding">
               <td>{{ task.id }}</td>
-              <td>{{ task.invocname }}</td>
+              <td>{{ task.invoc.name }}</td>
               <td>{{ task.date }}</td>
-              {% if task.exitcode == "0" %}
+              {% if task.summary.exitcode == 0 %}
                 <td class="text-success">Complete
-              {% elif task.exitcode %}
-                <td class="text-danger">Failed ({{ task.exitcode }})
+              {% elif task.summary.exitcode %}
+                <td class="text-danger">Failed ({{ task.summary.exitcode }})
               {% else %}
                 <td class="text-warning">Incomplete
               {% endif %}
@@ -93,9 +98,9 @@ table.table-sm > tbody > tr > td{
                           <tr>
                               <th colspan="2">Task Files</th>
                               <td colspan="8">
-                                <a href="{{ task.url }}">Task File</a>,
-                                <a href="{{ data.tool.url }}">Tool Descriptor</a>,
-                                <a href="{{ task.invocurl }}">Run Invocation</a>
+                                <a data-toggle="modal" data-target="#logModal" data-fname="task-{{task.id}}.json" data-content="{{task.contents}}" data-name="Task Definition (Task: {{task.id}})" href="#">Task Definition</a>,
+                                <a data-toggle="modal" data-target="#logModal" data-fname="{{data.tool.name}}.json" data-content="{{data.tool.contents}}" data-name="Tool Descriptor (Task: {{task.id}})" href="#">Tool Descriptor</a>,
+                                <a data-toggle="modal" data-target="#logModal" data-fname="{{task.invoc.name}}" data-content="{{task.invoc.contents}}" data-name="Invocation (Task: {{task.id}})" href="#">Invocation</a>
                               </td>
                           </tr>
                           <tr>
@@ -122,13 +127,17 @@ table.table-sm > tbody > tr > td{
                           <th colspan="2">Tool Inputs</th>
                       </thead>
                       <tbody>
-                          {% for param in task.invocontents.keys() %}
+                          {% for param in task.invoc.contents.keys() %}
                           <tr>
                               <td>
-                                {{ param }}
+                              {% for inam in data.tool.contents.inputs %}
+                                {% if inam["id"] == param %}
+                                  {{ inam["name"] }}
+                                {% endif %}
+                              {% endfor %}
                               </td>
                               <td>
-                                {{ task.invocontents[param] }}
+                                {{ task.invoc.contents[param] }}
                               </td>
                           </tr>
                           {% endfor %}
@@ -141,8 +150,8 @@ table.table-sm > tbody > tr > td{
                       <tbody>
                           <tr>
                               <td>
-                                <a href="{{ task.stdout }}">Output Log</a>,
-                                <a href="{{ task.stderr }}">Error Log</a>
+                                <a data-toggle="modal" data-target="#logModal" data-fname="stdout-{{task.id}}.txt" data-content="{{task.summary.out}}" data-name="Output Log (Task: {{task.id}})" href="#">Output Log</a>,
+                                <a data-toggle="modal" data-target="#logModal" data-fname="stderr-{{task.id}}.txt" data-content="{{task.summary.err}}" data-name="Error Log (Task: {{task.id}})" href="#">Error Log</a>
                               </td>
                           </tr>
                       </tbody>
@@ -154,7 +163,7 @@ table.table-sm > tbody > tr > td{
                       <tbody>
                           <tr>
                               <td>
-                                {{ task.duration }}
+                                {{ task.summary.duration }}
                               </td>
                           </tr>
                       </tbody>
@@ -165,5 +174,42 @@ table.table-sm > tbody > tr > td{
         </tbody>
     </table>
     </div></div>
+
+<script type="text/javascript">
+$('#logModal').on('show.bs.modal', function (event) {
+  var button = $(event.relatedTarget) // Button that triggered the modal
+  var name = button.data('name') // Extract info from data-* attributes
+  var content = button.data('content') // Extract info from data-* attributes
+  var filename = button.data('fname') // Extract info from data-* attributes
+  // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
+  // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
+  var modal = $(this)
+  modal.find('.modal-title').text(name)
+
+  if (filename.endsWith(".json")) {
+    content = content.replace(/True/g, true).replace(/False/g, false) // Replaces True and Falses'
+    content = content.replace(/"/g, '\\\"').replace(/'/g, '"') //  Replaces all quotes in string
+    content = JSON.stringify(JSON.parse(content), undefined, 2)
+  }
+  modal.find('.modal-body code').html(content)
+  modal.find('#download-modal').on('click', function a(event) {
+    var element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
+    element.setAttribute('download', filename);
+
+    element.style.display = 'none';
+    document.body.appendChild(element);
+
+    element.click();
+
+    document.body.removeChild(element);
+    element.remove();
+  })
+})
+$('#logModal').on('hide.bs.modal', function (event) {
+  var modal = $(this)
+  modal.find('#download-modal').off('click');
+})
+</script>
   </body>
 </html>

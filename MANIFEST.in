@@ -1,1 +1,2 @@
 include clowdr/templates/AWS/*.json
+include clowdr/templates/index.html
