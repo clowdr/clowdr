@@ -1,10 +1,10 @@
 {
-  "clowdrloc": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/",
+  "clowdrloc": "./examples/task/bids-example/clowdr/",
   "tool": {
-    "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/descriptor_d.json",
+    "key": "./examples/task/bids-example/clowdr/descriptor_d.json",
     "hostname": null,
     "date": "Mar 22, 2018 (14:19:06)",
-    "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/descriptor_d.json",
+    "fname": "./examples/task/bids-example/clowdr/descriptor_d.json",
     "url": null,
     "contents": {
       "command-line": "mkdir -p OUTPUT_DIR; /run.py BIDS_DIR OUTPUT_DIR ANALYSIS_LEVEL PARTICIPANT_LABEL SKIP_VALIDATOR",
@@ -170,10 +170,10 @@
   },
   "tasks": [
     {
-      "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/task-0.json",
+      "key": "./examples/task/bids-example/clowdr/task-0.json",
       "hostname": null,
       "date": "Mar 22, 2018 (14:19:06)",
-      "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/task-0.json",
+      "fname": "./examples/task/bids-example/clowdr/task-0.json",
       "url": null,
       "contents": {
         "taskloc": "/Users/greg/code/gkiar/clowdr/examples/task/2018-03-22-CA56LMEI/BIDS-example",
@@ -185,10 +185,10 @@
       },
       "id": "0",
       "invoc": {
-        "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/invocation_sub-01.json",
+        "key": "./examples/task/bids-example/clowdr/invocation_sub-01.json",
         "hostname": null,
         "date": "Mar 22, 2018 (14:19:06)",
-        "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/invocation_sub-01.json",
+        "fname": "./examples/task/bids-example/clowdr/invocation_sub-01.json",
         "url": null,
         "contents": {
           "bids_dir": "/data/ds114",
@@ -202,10 +202,10 @@
         "name": "invocation_sub-01.json"
       },
       "summary": {
-        "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/summary-0.json",
+        "key": "./examples/task/bids-example/clowdr/summary-0.json",
         "hostname": null,
         "date": "Mar 22, 2018 (14:19:22)",
-        "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/summary-0.json",
+        "fname": "./examples/task/bids-example/clowdr/summary-0.json",
         "url": null,
         "contents": {
           "duration": 16.738347053527832,
@@ -227,10 +227,10 @@
       }
     },
     {
-      "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/task-1.json",
+      "key": "./examples/task/bids-example/clowdr/task-1.json",
       "hostname": null,
       "date": "Mar 22, 2018 (14:19:06)",
-      "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/task-1.json",
+      "fname": "./examples/task/bids-example/clowdr/task-1.json",
       "url": null,
       "contents": {
         "taskloc": "/Users/greg/code/gkiar/clowdr/examples/task/2018-03-22-CA56LMEI/BIDS-example",
@@ -242,10 +242,10 @@
       },
       "id": "1",
       "invoc": {
-        "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/invocation_sub-02.json",
+        "key": "./examples/task/bids-example/clowdr/invocation_sub-02.json",
         "hostname": null,
         "date": "Mar 22, 2018 (14:19:06)",
-        "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/invocation_sub-02.json",
+        "fname": "./examples/task/bids-example/clowdr/invocation_sub-02.json",
         "url": null,
         "contents": {
           "bids_dir": "/data/ds114",
@@ -259,10 +259,10 @@
         "name": "invocation_sub-02.json"
       },
       "summary": {
-        "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/summary-1.json",
+        "key": "./examples/task/bids-example/clowdr/summary-1.json",
         "hostname": null,
         "date": "Mar 22, 2018 (14:19:30)",
-        "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/summary-1.json",
+        "fname": "./examples/task/bids-example/clowdr/summary-1.json",
         "url": null,
         "contents": {
           "duration": 7.975008964538574,
@@ -284,10 +284,10 @@
       }
     },
     {
-      "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/task-2.json",
+      "key": "./examples/task/bids-example/clowdr/task-2.json",
       "hostname": null,
       "date": "Mar 22, 2018 (14:19:06)",
-      "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/task-2.json",
+      "fname": "./examples/task/bids-example/clowdr/task-2.json",
       "url": null,
       "contents": {
         "taskloc": "/Users/greg/code/gkiar/clowdr/examples/task/2018-03-22-CA56LMEI/BIDS-example",
@@ -299,10 +299,10 @@
       },
       "id": "2",
       "invoc": {
-        "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/invocation_sub-03.json",
+        "key": "./examples/task/bids-example/clowdr/invocation_sub-03.json",
         "hostname": null,
         "date": "Mar 22, 2018 (14:19:06)",
-        "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/invocation_sub-03.json",
+        "fname": "./examples/task/bids-example/clowdr/invocation_sub-03.json",
         "url": null,
         "contents": {
           "bids_dir": "/data/ds114",
@@ -316,10 +316,10 @@
         "name": "invocation_sub-03.json"
       },
       "summary": {
-        "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/summary-2.json",
+        "key": "./examples/task/bids-example/clowdr/summary-2.json",
         "hostname": null,
         "date": "Mar 22, 2018 (14:19:44)",
-        "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/summary-2.json",
+        "fname": "./examples/task/bids-example/clowdr/summary-2.json",
         "url": null,
         "contents": {
           "duration": 13.241030931472778,
@@ -341,10 +341,10 @@
       }
     },
     {
-      "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/task-3.json",
+      "key": "./examples/task/bids-example/clowdr/task-3.json",
       "hostname": null,
       "date": "Mar 22, 2018 (14:19:06)",
-      "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/task-3.json",
+      "fname": "./examples/task/bids-example/clowdr/task-3.json",
       "url": null,
       "contents": {
         "taskloc": "/Users/greg/code/gkiar/clowdr/examples/task/2018-03-22-CA56LMEI/BIDS-example",
@@ -356,10 +356,10 @@
       },
       "id": "3",
       "invoc": {
-        "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/invocation_sub-04.json",
+        "key": "./examples/task/bids-example/clowdr/invocation_sub-04.json",
         "hostname": null,
         "date": "Mar 22, 2018 (14:19:06)",
-        "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/invocation_sub-04.json",
+        "fname": "./examples/task/bids-example/clowdr/invocation_sub-04.json",
         "url": null,
         "contents": {
           "bids_dir": "/data/ds114",
@@ -373,10 +373,10 @@
         "name": "invocation_sub-04.json"
       },
       "summary": {
-        "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/summary-3.json",
+        "key": "./examples/task/bids-example/clowdr/summary-3.json",
         "hostname": null,
         "date": "Mar 22, 2018 (14:19:57)",
-        "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/summary-3.json",
+        "fname": "./examples/task/bids-example/clowdr/summary-3.json",
         "url": null,
         "contents": {
           "duration": 13.61026406288147,
@@ -398,10 +398,10 @@
       }
     },
     {
-      "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/task-4.json",
+      "key": "./examples/task/bids-example/clowdr/task-4.json",
       "hostname": null,
       "date": "Mar 22, 2018 (14:19:06)",
-      "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/task-4.json",
+      "fname": "./examples/task/bids-example/clowdr/task-4.json",
       "url": null,
       "contents": {
         "taskloc": "/Users/greg/code/gkiar/clowdr/examples/task/2018-03-22-CA56LMEI/BIDS-example",
@@ -413,10 +413,10 @@
       },
       "id": "4",
       "invoc": {
-        "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/invocation_sub-05.json",
+        "key": "./examples/task/bids-example/clowdr/invocation_sub-05.json",
         "hostname": null,
         "date": "Mar 22, 2018 (14:19:06)",
-        "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/invocation_sub-05.json",
+        "fname": "./examples/task/bids-example/clowdr/invocation_sub-05.json",
         "url": null,
         "contents": {
           "bids_dir": "/data/ds114",
@@ -430,10 +430,10 @@
         "name": "invocation_sub-05.json"
       },
       "summary": {
-        "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/summary-4.json",
+        "key": "./examples/task/bids-example/clowdr/summary-4.json",
         "hostname": null,
         "date": "Mar 22, 2018 (14:20:06)",
-        "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/summary-4.json",
+        "fname": "./examples/task/bids-example/clowdr/summary-4.json",
         "url": null,
         "contents": {
           "duration": 9.135148048400879,
@@ -455,10 +455,10 @@
       }
     },
     {
-      "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/task-5.json",
+      "key": "./examples/task/bids-example/clowdr/task-5.json",
       "hostname": null,
       "date": "Mar 22, 2018 (14:19:06)",
-      "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/task-5.json",
+      "fname": "./examples/task/bids-example/clowdr/task-5.json",
       "url": null,
       "contents": {
         "taskloc": "/Users/greg/code/gkiar/clowdr/examples/task/2018-03-22-CA56LMEI/BIDS-example",
@@ -470,10 +470,10 @@
       },
       "id": "5",
       "invoc": {
-        "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/invocation_sub-06.json",
+        "key": "./examples/task/bids-example/clowdr/invocation_sub-06.json",
         "hostname": null,
         "date": "Mar 22, 2018 (14:19:06)",
-        "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/invocation_sub-06.json",
+        "fname": "./examples/task/bids-example/clowdr/invocation_sub-06.json",
         "url": null,
         "contents": {
           "bids_dir": "/data/ds114",
@@ -487,10 +487,10 @@
         "name": "invocation_sub-06.json"
       },
       "summary": {
-        "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/summary-5.json",
+        "key": "./examples/task/bids-example/clowdr/summary-5.json",
         "hostname": null,
         "date": "Mar 22, 2018 (14:20:24)",
-        "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/summary-5.json",
+        "fname": "./examples/task/bids-example/clowdr/summary-5.json",
         "url": null,
         "contents": {
           "duration": 17.171263933181763,
@@ -512,10 +512,10 @@
       }
     },
     {
-      "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/task-6.json",
+      "key": "./examples/task/bids-example/clowdr/task-6.json",
       "hostname": null,
       "date": "Mar 22, 2018 (14:19:06)",
-      "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/task-6.json",
+      "fname": "./examples/task/bids-example/clowdr/task-6.json",
       "url": null,
       "contents": {
         "taskloc": "/Users/greg/code/gkiar/clowdr/examples/task/2018-03-22-CA56LMEI/BIDS-example",
@@ -527,10 +527,10 @@
       },
       "id": "6",
       "invoc": {
-        "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/invocation_sub-07.json",
+        "key": "./examples/task/bids-example/clowdr/invocation_sub-07.json",
         "hostname": null,
         "date": "Mar 22, 2018 (14:19:06)",
-        "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/invocation_sub-07.json",
+        "fname": "./examples/task/bids-example/clowdr/invocation_sub-07.json",
         "url": null,
         "contents": {
           "bids_dir": "/data/ds114",
@@ -544,10 +544,10 @@
         "name": "invocation_sub-07.json"
       },
       "summary": {
-        "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/summary-6.json",
+        "key": "./examples/task/bids-example/clowdr/summary-6.json",
         "hostname": null,
         "date": "Mar 22, 2018 (14:20:32)",
-        "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/summary-6.json",
+        "fname": "./examples/task/bids-example/clowdr/summary-6.json",
         "url": null,
         "contents": {
           "duration": 8.699884176254272,
@@ -569,10 +569,10 @@
       }
     },
     {
-      "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/task-7.json",
+      "key": "./examples/task/bids-example/clowdr/task-7.json",
       "hostname": null,
       "date": "Mar 22, 2018 (14:19:06)",
-      "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/task-7.json",
+      "fname": "./examples/task/bids-example/clowdr/task-7.json",
       "url": null,
       "contents": {
         "taskloc": "/Users/greg/code/gkiar/clowdr/examples/task/2018-03-22-CA56LMEI/BIDS-example",
@@ -584,10 +584,10 @@
       },
       "id": "7",
       "invoc": {
-        "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/invocation_sub-08.json",
+        "key": "./examples/task/bids-example/clowdr/invocation_sub-08.json",
         "hostname": null,
         "date": "Mar 22, 2018 (14:19:06)",
-        "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/invocation_sub-08.json",
+        "fname": "./examples/task/bids-example/clowdr/invocation_sub-08.json",
         "url": null,
         "contents": {
           "bids_dir": "/data/ds114",
@@ -601,10 +601,10 @@
         "name": "invocation_sub-08.json"
       },
       "summary": {
-        "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/summary-7.json",
+        "key": "./examples/task/bids-example/clowdr/summary-7.json",
         "hostname": null,
         "date": "Mar 22, 2018 (14:20:44)",
-        "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/summary-7.json",
+        "fname": "./examples/task/bids-example/clowdr/summary-7.json",
         "url": null,
         "contents": {
           "duration": 11.99462604522705,
@@ -626,10 +626,10 @@
       }
     },
     {
-      "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/task-8.json",
+      "key": "./examples/task/bids-example/clowdr/task-8.json",
       "hostname": null,
       "date": "Mar 22, 2018 (14:19:06)",
-      "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/task-8.json",
+      "fname": "./examples/task/bids-example/clowdr/task-8.json",
       "url": null,
       "contents": {
         "taskloc": "/Users/greg/code/gkiar/clowdr/examples/task/2018-03-22-CA56LMEI/BIDS-example",
@@ -641,10 +641,10 @@
       },
       "id": "8",
       "invoc": {
-        "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/invocation_sub-09.json",
+        "key": "./examples/task/bids-example/clowdr/invocation_sub-09.json",
         "hostname": null,
         "date": "Mar 22, 2018 (14:19:06)",
-        "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/invocation_sub-09.json",
+        "fname": "./examples/task/bids-example/clowdr/invocation_sub-09.json",
         "url": null,
         "contents": {
           "bids_dir": "/data/ds114",
@@ -658,10 +658,10 @@
         "name": "invocation_sub-09.json"
       },
       "summary": {
-        "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/summary-8.json",
+        "key": "./examples/task/bids-example/clowdr/summary-8.json",
         "hostname": null,
         "date": "Mar 22, 2018 (14:20:57)",
-        "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/summary-8.json",
+        "fname": "./examples/task/bids-example/clowdr/summary-8.json",
         "url": null,
         "contents": {
           "duration": 12.405793905258179,
@@ -683,10 +683,10 @@
       }
     },
     {
-      "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/task-9.json",
+      "key": "./examples/task/bids-example/clowdr/task-9.json",
       "hostname": null,
       "date": "Mar 22, 2018 (14:19:06)",
-      "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/task-9.json",
+      "fname": "./examples/task/bids-example/clowdr/task-9.json",
       "url": null,
       "contents": {
         "taskloc": "/Users/greg/code/gkiar/clowdr/examples/task/2018-03-22-CA56LMEI/BIDS-example",
@@ -698,10 +698,10 @@
       },
       "id": "9",
       "invoc": {
-        "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/invocation_sub-10.json",
+        "key": "./examples/task/bids-example/clowdr/invocation_sub-10.json",
         "hostname": null,
         "date": "Mar 22, 2018 (14:19:06)",
-        "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/invocation_sub-10.json",
+        "fname": "./examples/task/bids-example/clowdr/invocation_sub-10.json",
         "url": null,
         "contents": {
           "bids_dir": "/data/ds114",
@@ -715,10 +715,10 @@
         "name": "invocation_sub-10.json"
       },
       "summary": {
-        "key": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/summary-9.json",
+        "key": "./examples/task/bids-example/clowdr/summary-9.json",
         "hostname": null,
         "date": "Mar 22, 2018 (14:21:09)",
-        "fname": "/Users/greg/code/gkiar/clowdr/examples/task/bids-example/clowdr/summary-9.json",
+        "fname": "./examples/task/bids-example/clowdr/summary-9.json",
         "url": null,
         "contents": {
           "duration": 11.822703123092651,
