@@ -1,7 +1,7 @@
 from setuptools import setup
 import os.path as op
 
-VERSION = "0.0.7.post1"
+VERSION = "0.0.7.post2"
 DEPS = [
          "boto3",
          "flask",
