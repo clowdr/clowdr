@@ -270,6 +270,7 @@ def main(args=None):
     parser_cls.add_argument("--slurm_args", action="store")
     parser_cls.add_argument("--workdir", "-w", action="store")
     parser_cls.add_argument("--volumes", "-v", action="append")
+    parser_cls.add_argument("--simg", "-s", action="store")
 
     parser_cls.add_argument("--verbose", "-V", action="store_true")
     parser_cls.add_argument("--bids", "-b", action="store_true")

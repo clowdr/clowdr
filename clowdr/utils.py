@@ -21,11 +21,14 @@ def getContainer(savedir, container, **kwargs):
             index = "shub://"
         elif not index.endswith("://"):
             index = index + "://"
-        cmd = "singularity pull --name \"{}.simg\" {}{}".format(local, index, name)
-        if kwargs.get("verbose"):
-            print(cmd)
-        p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
-        return p.communicate()
+        if kwargs.get("simg"):
+            return get(kwargs["simg"], local)
+        else:
+            cmd = "singularity pull --name \"{}.simg\" {}{}".format(local, index, name)
+            if kwargs.get("verbose"):
+                print(cmd)
+            p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
+            return p.communicate()
 
 
 def truepath(path):
