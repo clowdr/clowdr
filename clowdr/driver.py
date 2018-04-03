@@ -103,6 +103,8 @@ def cluster(tool, invocation, clowdrloc, dataloc, cluster, **kwargs):
     """
     # TODO: scrub inputs
     tool = utils.truepath(tool)
+    if kwargs.get("simg"):
+        kwargs["simg"] = utils.truepath(kwargs["simg"])
 
 
     from slurmpy import Slurm
@@ -128,7 +130,7 @@ def cluster(tool, invocation, clowdrloc, dataloc, cluster, **kwargs):
             print("Getting container...")
         outp = utils.getContainer(taskdir, container, **kwargs)
         if kwargs.get("verbose"):
-            print("\n".join(elem.decode("utf-8") for elem in outp))
+            print(outp)
 
     jobname = kwargs.get("jobname") if kwargs.get("jobname") else "clowdrtask"
     slurm_args = {}

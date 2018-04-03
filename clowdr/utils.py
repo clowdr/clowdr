@@ -22,7 +22,7 @@ def getContainer(savedir, container, **kwargs):
         elif not index.endswith("://"):
             index = index + "://"
         if kwargs.get("simg"):
-            return get(kwargs["simg"], local)
+            return get(kwargs["simg"], local + ".simg")
         else:
             cmd = "singularity pull --name \"{}.simg\" {}{}".format(local, index, name)
             if kwargs.get("verbose"):
