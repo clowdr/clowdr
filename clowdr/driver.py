@@ -137,7 +137,6 @@ def cluster(tool, invocation, clowdrloc, dataloc, cluster, **kwargs):
             k, v = opt.split(":")[0], opt.split(":")[1:]
             v = ":".join(v)
             slurm_args[k] = v
-    print(slurm_args)
     job = Slurm(jobname, slurm_args)
 
     script = "clowdr run {} -c {} --local"
