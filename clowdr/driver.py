@@ -131,7 +131,14 @@ def cluster(tool, invocation, clowdrloc, dataloc, cluster, **kwargs):
             print("\n".join(elem.decode("utf-8") for elem in outp))
 
     jobname = kwargs.get("jobname") if kwargs.get("jobname") else "clowdrtask"
-    job = Slurm(jobname, {"account": kwargs.get("account")})
+    slurm_args = {}
+    if kwargs.get("slurm_args"):
+        for opt in kwargs.get("slurm_args").split(","):
+            k, v = opt.split(":")[0], opt.split(":")[1:]
+            v = ":".join(v)
+            slurm_args[k] = v
+    print(slurm_args)
+    job = Slurm(jobname, slurm_args)
 
     script = "clowdr run {} -c {} --local"
     if kwargs.get("workdir"):
@@ -261,7 +268,7 @@ def main(args=None):
     parser_cls.add_argument("dataloc", help="location locally or s3 for data")
     parser_cls.add_argument("cluster", help="cluster type", choices=["slurm"])
     parser_cls.add_argument("--jobname", "-n", action="store")
-    parser_cls.add_argument("--account", "-a", action="store")
+    parser_cls.add_argument("--slurm_args", action="store")
     parser_cls.add_argument("--workdir", "-w", action="store")
     parser_cls.add_argument("--volumes", "-v", action="append")
 
