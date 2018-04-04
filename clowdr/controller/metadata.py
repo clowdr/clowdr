@@ -67,12 +67,14 @@ def consolidateTask(tool, invocation, clowdrloc, dataloc, **kwargs):
 
     # Case 1: User supplies directory of invocations
     if op.isdir(invocation):
-        invocations = os.listdir(invocation)
+        tempinvocations = os.listdir(invocation)
         taskdicts = []
-        for invoc in invocations:
+        invocations = []
+        for invoc in tempinvocations:
             tempdict = deepcopy(taskdict)
             tempinvo = utils.get(op.join(invocation, invoc), taskloc)
-            tempdict["invocation"] = tempinvo
+            tempdict["invocation"] = utils.truepath(tempinvo[0])
+            invocations += tempinvo
             taskdicts += [tempdict]
 
     # Case 2: User supplies a single invocation
