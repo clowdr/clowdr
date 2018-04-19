@@ -15,7 +15,7 @@ import re
 def getContainer(savedir, container, **kwargs):
     if container["type"] == "singularity":
         name = container.get("image")
-        local = name.replace("/", "-")
+        local = name.replace("/", "-").replace(":","-")
         index = container.get("index")
         if not index:
             index = "shub://"
