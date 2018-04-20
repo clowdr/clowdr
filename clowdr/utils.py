@@ -15,17 +15,22 @@ import re
 def getContainer(savedir, container, **kwargs):
     if container["type"] == "singularity":
         name = container.get("image")
-        local = name.replace("/", "-")
+        local = name.replace("/", "-").replace(":","-")
         index = container.get("index")
         if not index:
             index = "shub://"
         elif not index.endswith("://"):
             index = index + "://"
-        cmd = "singularity pull --name \"{}.simg\" {}{}".format(local, index, name)
-        if kwargs.get("verbose"):
-            print(cmd)
-        p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
-        return p.communicate()
+        if kwargs.get("simg"):
+            return get(kwargs["simg"], local + ".simg")
+        else:
+            cmd = "singularity pull --name \"{}.simg\" {}{}".format(local,
+                                                                    index,
+                                                                    name)
+            if kwargs.get("verbose"):
+                print(cmd)
+            p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
+            return p.communicate()
 
 
 def truepath(path):
@@ -93,7 +98,9 @@ def _awsget(remote, local):
     bucket, rpath = splitS3Path(remote)
 
     buck = s3.Bucket(bucket)
-    files = [obj.key for obj in buck.objects.filter(Prefix=rpath) if not os.path.isdir(obj.key)]
+    files = [obj.key
+             for obj in buck.objects.filter(Prefix=rpath)
+             if not os.path.isdir(obj.key)]
     files_local = []
     for fl in files:
         fl_local = op.join(local, fl)
