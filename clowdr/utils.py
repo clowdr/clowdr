@@ -24,7 +24,9 @@ def getContainer(savedir, container, **kwargs):
         if kwargs.get("simg"):
             return get(kwargs["simg"], local + ".simg")
         else:
-            cmd = "singularity pull --name \"{}.simg\" {}{}".format(local, index, name)
+            cmd = "singularity pull --name \"{}.simg\" {}{}".format(local,
+                                                                    index,
+                                                                    name)
             if kwargs.get("verbose"):
                 print(cmd)
             p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
@@ -96,7 +98,9 @@ def _awsget(remote, local):
     bucket, rpath = splitS3Path(remote)
 
     buck = s3.Bucket(bucket)
-    files = [obj.key for obj in buck.objects.filter(Prefix=rpath) if not os.path.isdir(obj.key)]
+    files = [obj.key
+             for obj in buck.objects.filter(Prefix=rpath)
+             if not os.path.isdir(obj.key)]
     files_local = []
     for fl in files:
         fl_local = op.join(local, fl)
