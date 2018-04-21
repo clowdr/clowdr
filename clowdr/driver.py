@@ -223,7 +223,7 @@ def provTask(metadata, clowdrloc=None, **kwargs):
                         ps.stats[key][4]]
                        for key in ps.stats.keys()]
     sorted_timing = sorted(reformed_timing, key=lambda i: i[-2])
-    timing_table = headings + sorted_timing
+    timing_table = [headings] + sorted_timing
     # To sync with RAM recording, look for rows with 'memory_profiler.py'
 
     print(timing_table[0:4])
