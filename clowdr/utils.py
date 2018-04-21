@@ -30,7 +30,13 @@ def getContainer(savedir, container, **kwargs):
             if kwargs.get("verbose"):
                 print(cmd)
             p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
-            return p.communicate()
+            stdout = p.communicate()
+            if kwargs.get("verbose"):
+                try:
+                    print(stdout.decode('utf-8'))
+                except:
+                    print(stdout)
+            return stdout
 
 
 def truepath(path):

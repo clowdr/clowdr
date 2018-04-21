@@ -58,7 +58,7 @@ def local(tool, invocation, clowdrloc, dataloc, **kwargs):
     taskdir = op.dirname(utils.truepath(tasks[0]))
     os.chdir(taskdir)
     for task in tasks:
-        processTask(task, taskdir, local=True, **kwargs)
+        provTask(task, taskdir, local=True, **kwargs)
 
     print(taskdir)
     return taskdir
@@ -129,8 +129,6 @@ def cluster(tool, invocation, clowdrloc, dataloc, cluster, **kwargs):
         if kwargs.get("verbose"):
             print("Getting container...")
         outp = utils.getContainer(taskdir, container, **kwargs)
-        if kwargs.get("verbose"):
-            print(outp)
 
     jobname = kwargs.get("jobname") if kwargs.get("jobname") else "clowdrtask"
     slurm_args = {}
@@ -201,6 +199,35 @@ def cloud(tool, invocation, clowdrloc, dataloc, endpoint, auth, **kwargs):
     taskdir = op.dirname(utils.truepath(tasks_remote[0]))
     print(taskdir)
     return taskdir, jids
+
+
+def provTask(metadata, clowdrloc=None, **kwargs):
+    from memory_profiler import memory_usage
+    import cProfile, pstats
+
+    pr = cProfile.Profile()
+    pr.enable()
+    mem_usage = memory_usage((processTask, (metadata, clowdrloc), kwargs),
+                              interval=0.5,
+                              include_children=True,
+                              multiprocess=True,
+                              timestamps=True)
+    pr.disable()
+    ps = pstats.Stats(pr).sort_stats("cumulative").reverse_order()
+    headings = ["process", "ncall", "norecall", "tottime", "cumtime", "subcalls"]
+    reformed_timing = [["{0}#{1}({2})".format(*key),
+                        ps.stats[key][0],
+                        ps.stats[key][1],
+                        ps.stats[key][2],
+                        ps.stats[key][3],
+                        ps.stats[key][4]]
+                       for key in ps.stats.keys()]
+    sorted_timing = sorted(reformed_timing, key=lambda i: i[-2])
+    timing_table = headings + sorted_timing
+    # To sync with RAM recording, look for rows with 'memory_profiler.py'
+
+    print(timing_table[0:4])
+    print(mem_usage)
 
 
 def share(clowdrloc, **kwargs):
@@ -314,7 +341,7 @@ def main(args=None):
 
     parser_run.add_argument("--verbose", "-V", action="store_true")
 
-    parser_run.set_defaults(func=processTask)
+    parser_run.set_defaults(func=provTask)
 
     # Parse arguments
     inps = parser.parse_args(args) if args is not None else parser.parse_args()
