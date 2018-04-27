@@ -58,9 +58,10 @@ def local(tool, invocation, clowdrloc, dataloc, **kwargs):
     taskdir = op.dirname(utils.truepath(tasks[0]))
     os.chdir(taskdir)
     for task in tasks:
-        processTask(task, taskdir, local=True, **kwargs)
+        processTask(task, taskdir, local=True, verbose=kwargs.get("verbose"), **kwargs)
 
-    print(taskdir)
+    if kwargs.get("verbose"):
+        print(taskdir)
     return taskdir
 
 
@@ -151,7 +152,8 @@ def cluster(tool, invocation, clowdrloc, dataloc, cluster, **kwargs):
     for task in tasks:
         job.run(script.format(task, taskdir))
 
-    print(taskdir)
+    if kwargs.get("verbose"):
+        print(taskdir)
     return taskdir
 
 
