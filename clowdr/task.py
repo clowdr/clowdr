@@ -69,8 +69,7 @@ def processTask(metadata, clowdrloc=None, **kwargs):
         stdout, stderr, ecode, _ = bosh.execute('launch', desc_local,
                                                 invo_local, '-v', volumes)
     else:
-        stdout, stderr, ecode, _ = bosh.execute('launch',  desc_local,
-                                                invo_local)
+        bosh_output = bosh.execute('launch',  desc_local, invo_local)
     duration = time.time() - start_time
 
     # Get list of bosh exec outputs
@@ -85,18 +84,18 @@ def processTask(metadata, clowdrloc=None, **kwargs):
     # Write stdout to file
     stdoutf = "stdout-{}.txt".format(task_id)
     with open(op.join(localtaskdir, stdoutf), "w") as fhandle:
-        fhandle.write(stdout.decode("utf-8"))
+        fhandle.write(bosh_output.stdout)
     utils.post(op.join(localtaskdir, stdoutf), remotetaskdir)
 
     # Write sterr to file
     stderrf = "stderr-{}.txt".format(task_id)
     with open(op.join(localtaskdir, stderrf), "w") as fhandle:
-        fhandle.write(stderr.decode("utf-8"))
+        fhandle.write(bosh_output.stderr)
     utils.post(op.join(localtaskdir, stderrf), remotetaskdir)
 
     # Write summary values to file, including:
     summary = {"duration": duration,
-               "exitcode": ecode,
+               "exitcode": bosh_output.exit_code,
                "outputs": [],
                "stdout": op.join(remotetaskdir, stdoutf),
                "stderr": op.join(remotetaskdir, stderrf)}
