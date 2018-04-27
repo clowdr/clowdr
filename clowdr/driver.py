@@ -60,7 +60,8 @@ def local(tool, invocation, clowdrloc, dataloc, **kwargs):
     for task in tasks:
         processTask(task, taskdir, local=True, **kwargs)
 
-    print(taskdir)
+    if kwargs.get("verbose"):
+        print(taskdir)
     return taskdir
 
 
@@ -151,7 +152,8 @@ def cluster(tool, invocation, clowdrloc, dataloc, cluster, **kwargs):
     for task in tasks:
         job.run(script.format(task, taskdir))
 
-    print(taskdir)
+    if kwargs.get("verbose"):
+        print(taskdir)
     return taskdir
 
 
