@@ -69,14 +69,16 @@ def processTask(metadata, clowdrloc=None, verbose=False, **kwargs):
         print("Beginning execution...")
     # Launch task
     start_time = time.time()
+    copts = ['launch', desc_local, invo_local]
     if kwargs.get("volumes"):
         volumes = " ".join(kwargs.get("volumes"))
-        bosh_output = bosh.execute('launch', desc_local,
-                                   invo_local, '-v', volumes)
-    else:
-        bosh_output = bosh.execute('launch',  desc_local, invo_local)
-        if(verbose):
-            print(bosh_output)
+        copts += ['-v', volumes]
+    if kwargs.get("user"):
+        copts += ['-u']
+
+    bosh_output = bosh.execute(*copts)
+    if(verbose):
+        print(bosh_output)
     duration = time.time() - start_time
 
     # Get list of bosh exec outputs
