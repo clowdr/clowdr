@@ -58,7 +58,7 @@ def local(tool, invocation, clowdrloc, dataloc, **kwargs):
     taskdir = op.dirname(utils.truepath(tasks[0]))
     os.chdir(taskdir)
     for task in tasks:
-        processTask(task, taskdir, local=True, verbose=kwargs.get("verbose"), **kwargs)
+        processTask(task, taskdir, local=True, **kwargs)
 
     if kwargs.get("verbose"):
         print(taskdir)
