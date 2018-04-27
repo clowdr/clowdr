@@ -41,7 +41,8 @@ def truepath(path):
 
 
 def randstring(k):
-    return "".join(rnd.choices(string.ascii_uppercase + string.digits, k=k))
+    return "".join([rnd.choice(string.ascii_uppercase + string.digits)
+                    for _ in range(k)])
 
 
 def splitS3Path(path):
