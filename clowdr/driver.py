@@ -60,7 +60,8 @@ def local(tool, invocation, clowdrloc, dataloc, **kwargs):
     for task in tasks:
         provTask(task, taskdir, local=True, **kwargs)
 
-    print(taskdir)
+    if kwargs.get("verbose"):
+        print(taskdir)
     return taskdir
 
 
@@ -149,7 +150,8 @@ def cluster(tool, invocation, clowdrloc, dataloc, cluster, **kwargs):
     for task in tasks:
         job.run(script.format(task, taskdir))
 
-    print(taskdir)
+    if kwargs.get("verbose"):
+        print(taskdir)
     return taskdir
 
 
@@ -281,6 +283,7 @@ def main(args=None):
     parser_loc.add_argument("dataloc", help="location locally or s3 for data")
     parser_loc.add_argument("--workdir", "-w", action="store")
     parser_loc.add_argument("--volumes", "-v", action="append")
+    parser_loc.add_argument("--user", "-u", action="store_true")
 
     parser_loc.add_argument("--verbose", "-V", action="store_true")
     parser_loc.add_argument("--bids", "-b", action="store_true")
