@@ -9,8 +9,10 @@
 
 from argparse import ArgumentParser
 from memory_profiler import memory_usage
-import cProfile, pstats
 import os.path as op
+import subprocess
+import cProfile
+import pstats
 import time
 import json
 import csv
@@ -154,7 +156,10 @@ class TaskHandler:
 
     def execWrapper(self, *options, **kwargs):
         # if reprozip: use it
-        self.output = bosh.execute(*options)
+        if not subprocess.Popen("type reprozip", shell=True).wait():
+            print("reprozip found")
+        else:
+            self.output = bosh.execute(*options)
 
     def provLaunch(self, options, **kwargs):
         pr = cProfile.Profile()
