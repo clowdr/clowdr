@@ -6,7 +6,8 @@ DEPS = [
          "boto3",
          "flask",
          "boutiques>=0.5.10",
-         "slurmpy"
+         "slurmpy",
+         "memory-profiler"
        ]
 
 setup(name="clowdr",
