@@ -30,19 +30,19 @@ class TaskHandler:
     def manageTask(self, metadata, clowdrloc=None, verbose=False, **kwargs):
         # Get metadata
         if clowdrloc is None:
-            localtaskdir = "/clowtask/"
+            self.localtaskdir = "/clowtask/"
         else:
-            localtaskdir = clowdrloc
+            self.localtaskdir = clowdrloc
 
-        localtaskdir = op.join(localtaskdir, "clowtask_"+utils.randstring(3))
-        if not op.exists(localtaskdir):
-            os.makedirs(localtaskdir)
+        self.localtaskdir = op.join(self.localtaskdir, "clowtask_"+utils.randstring(3))
+        if not op.exists(self.localtaskdir):
+            os.makedirs(self.localtaskdir)
 
         if(verbose):
             print("Fetching metadata...")
         remotetaskdir = op.dirname(metadata)
-        metadata = utils.get(metadata, localtaskdir)[0]
-        task_id = metadata.split('.')[0].split('-')[-1]
+        metadata = utils.get(metadata, self.localtaskdir)[0]
+        self.task_id = metadata.split('.')[0].split('-')[-1]
         # The above grabs an ID from the form: fname-#.ext
 
         # Parse metadata
@@ -55,15 +55,15 @@ class TaskHandler:
         if(verbose):
             print("Fetching descriptor and invocation...")
         # Get descriptor and invocation
-        desc_local = utils.get(descriptor, localtaskdir)[0]
-        invo_local = utils.get(invocation, localtaskdir)[0]
+        desc_local = utils.get(descriptor, self.localtaskdir)[0]
+        invo_local = utils.get(invocation, self.localtaskdir)[0]
 
         # Get input data, if running remotely
         if not kwargs.get("local") and \
            any([dl.startswith("s3://") for dl in input_data]):
             if(verbose):
                 print("Fetching input data...")
-            localdatadir = op.join(localtaskdir, "data")
+            localdatadir = op.join(self.localtaskdir, "data")
             for dataloc in input_data:
                 utils.get(dataloc, localdatadir)
             # Move to correct location
@@ -85,7 +85,7 @@ class TaskHandler:
             copts += ['-u']
 
         start_time = time.time()
-        self.provLaunch(copts, **kwargs)
+        self.provLaunch(copts, verbose=verbose, **kwargs)
         if(verbose):
             print(self.output)
         duration = time.time() - start_time
@@ -100,32 +100,32 @@ class TaskHandler:
             outputs_present += [outfile] if op.exists(outfile) else []
 
         # Write memory to file
-        memoutf = "task-{}-memory.csv".format(task_id)
-        with open(op.join(localtaskdir, memoutf), "w") as fhandle:
+        memoutf = "task-{}-memory.csv".format(self.task_id)
+        with open(op.join(self.localtaskdir, memoutf), "w") as fhandle:
             writer = csv.writer(fhandle, delimiter=',')
             for row in self.memory:
                 writer.writerow(row)
-        utils.post(op.join(localtaskdir, memoutf), remotetaskdir)
+        utils.post(op.join(self.localtaskdir, memoutf), remotetaskdir)
 
         # Write cpu timing to file
-        cpuoutf = "task-{}-cputiming.csv".format(task_id)
-        with open(op.join(localtaskdir, cpuoutf), "w") as fhandle:
+        cpuoutf = "task-{}-cputiming.csv".format(self.task_id)
+        with open(op.join(self.localtaskdir, cpuoutf), "w") as fhandle:
             writer = csv.writer(fhandle, delimiter=',')
             for row in self.cpu:
                 writer.writerow(row)
-        utils.post(op.join(localtaskdir, cpuoutf), remotetaskdir)
+        utils.post(op.join(self.localtaskdir, cpuoutf), remotetaskdir)
 
         # Write stdout to file
-        stdoutf = "task-{}-stdout.txt".format(task_id)
-        with open(op.join(localtaskdir, stdoutf), "w") as fhandle:
+        stdoutf = "task-{}-stdout.txt".format(self.task_id)
+        with open(op.join(self.localtaskdir, stdoutf), "w") as fhandle:
             fhandle.write(self.output.stdout)
-        utils.post(op.join(localtaskdir, stdoutf), remotetaskdir)
+        utils.post(op.join(self.localtaskdir, stdoutf), remotetaskdir)
 
         # Write sterr to file
-        stderrf = "task-{}-stderr.txt".format(task_id)
-        with open(op.join(localtaskdir, stderrf), "w") as fhandle:
+        stderrf = "task-{}-stderr.txt".format(self.task_id)
+        with open(op.join(self.localtaskdir, stderrf), "w") as fhandle:
             fhandle.write(self.output.stderr)
-        utils.post(op.join(localtaskdir, stderrf), remotetaskdir)
+        utils.post(op.join(self.localtaskdir, stderrf), remotetaskdir)
 
         # Write summary values to file, including:
         summary = {"duration": duration,
@@ -149,16 +149,30 @@ class TaskHandler:
                 print("Skipping uploading outputs (local execution)...")
             summary["outputs"] = outputs_present
 
-        summarf = "task-{}-summary.json".format(task_id)
-        with open(op.join(localtaskdir, summarf), "w") as fhandle:
+        summarf = "task-{}-summary.json".format(self.task_id)
+        with open(op.join(self.localtaskdir, summarf), "w") as fhandle:
             fhandle.write(json.dumps(summary, indent=4, sort_keys=True) + "\n")
-        utils.post(op.join(localtaskdir, summarf), remotetaskdir)
+        utils.post(op.join(self.localtaskdir, summarf), remotetaskdir)
 
     def execWrapper(self, *options, **kwargs):
         # if reprozip: use it
         if not subprocess.Popen("type reprozip", shell=True).wait():
-            print("reprozip found")
+            if kwargs.get("verbose"):
+                print("Reprozip found; will use to record provenance!")
+            cmd = 'reprozip usage_report --disable'
+            p = subprocess.Popen(cmd, shell=True).wait()
+
+            cmd = 'reprozip trace -w --dir={}/task-{}-reprozip/ bosh exec {}'
+            print(cmd.format(self.localtaskdir, self.task_id, " ".join(options)))
+            p = subprocess.Popen(cmd.format(self.localtaskdir,
+                                            self.task_id,
+                                            " ".join(options)), shell=True).wait()
+
+            cmd = 'reprozip pack --dir={0}/task-{1}-reprozip/ {0}/task-{1}-reprozip'.format(self.localtaskdir, self.task_id)
+            p = subprocess.Popen(cmd, shell=True).wait()
         else:
+            if kwargs.get("verbose"):
+                print("Reprozip not found; install to record more provenance!")
             self.output = bosh.execute(*options)
 
     def provLaunch(self, options, **kwargs):
