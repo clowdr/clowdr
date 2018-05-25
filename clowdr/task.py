@@ -156,14 +156,13 @@ class TaskHandler:
 
     def execWrapper(self, *options, **kwargs):
         # if reprozip: use it
-        if not subprocess.Popen("type reprozip", shell=True).wait():
+        if not subprocess.Popen("type reprozip 2>/dev/null", shell=True).wait():
             if kwargs.get("verbose"):
                 print("Reprozip found; will use to record provenance!")
             cmd = 'reprozip usage_report --disable'
             p = subprocess.Popen(cmd, shell=True).wait()
 
             cmd = 'reprozip trace -w --dir={}/task-{}-reprozip/ bosh exec {}'
-            print(cmd.format(self.localtaskdir, self.task_id, " ".join(options)))
             p = subprocess.Popen(cmd.format(self.localtaskdir,
                                             self.task_id,
                                             " ".join(options)), shell=True).wait()
