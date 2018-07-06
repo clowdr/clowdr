@@ -141,7 +141,7 @@ def cluster(tool, invocation, clowdrloc, dataloc, cluster, **kwargs):
             slurm_args[k] = v
     job = Slurm(jobname, slurm_args)
 
-    script = "clowdr task {} -c {} --local"
+    script = "clowdr task {} -p {} --local"
     if kwargs.get("workdir"):
         script += " -w {}".format(kwargs["workdir"])
     if kwargs.get("volumes"):
@@ -156,23 +156,23 @@ def cluster(tool, invocation, clowdrloc, dataloc, cluster, **kwargs):
     return taskdir
 
 
-def cloud(tool, invocation, clowdrloc, dataloc, endpoint, auth, **kwargs):
+def cloud(descriptor, invocation, provdir, s3, endpoint, credentials, **kwargs):
     """cloud
     Launches a pipeline locally at scale through Clowdr.
 
     Parameters
     ----------
-    tool : str
+    descriptor : str
         Path to a boutiques descriptor for the tool to be run
     invocation : str
         Path to a boutiques invocation for the tool and parameters to be run
-    clowdrloc : str
+    provdir : str
         Path on S3 for storing Clowdr intermediate files and outputs
-    dataloc : str
+    s3 : str
         Path on S3 for accessing input data
     endpoint : str
         Which endpoint to use for deployment
-    auth : str
+    credentials : str
         Credentials for Amazon with access to dataloc, clowdrloc, and Batch
     **kwargs : dict
         Arbitrary keyword arguments (i.e. {'verbose': True})
@@ -185,16 +185,16 @@ def cloud(tool, invocation, clowdrloc, dataloc, endpoint, auth, **kwargs):
     # TODO: scrub inputs better
     clowdrloc = clowdrloc.strip('/')
 
-    # Create temp dir for clowdrloc 
+    # Create temp dir for clowdrloc
     tmploc = utils.truepath(tempfile.mkdtemp())
 
-    [tasks, invocs] = metadata.consolidateTask(tool, invocation, tmploc,
-                                               dataloc, **kwargs)
-    metadata.prepareForRemote(tasks, tmploc, clowdrloc)
-    tasks_remote = [task for task in utils.post(tmploc, clowdrloc)
+    [tasks, invocs] = metadata.consolidateTask(descriptor, invocation, tmploc,
+                                               s3, **kwargs)
+    metadata.prepareForRemote(tasks, tmploc, provdir)
+    tasks_remote = [task for task in utils.post(tmploc, provdir)
                     if "task-" in task]
 
-    resource = launcher.configureResource(endpoint, auth, **kwargs)
+    resource = launcher.configureResource(endpoint, credentials, **kwargs)
     jids = []
     for task in tasks_remote:
         jids += [resource.launchJob(task)]
@@ -204,8 +204,9 @@ def cloud(tool, invocation, clowdrloc, dataloc, endpoint, auth, **kwargs):
     return taskdir, jids
 
 
-def run(metadata, **kwargs):
-    handler = TaskHandler(metadata, **kwargs)
+def runtask(tasklist, **kwargs):
+    for task in tasklist:
+        handler = TaskHandler(task, **kwargs)
 
 
 def share(clowdrloc, **kwargs):
@@ -372,9 +373,10 @@ on clusters, and in the cloud. For more information, go to our website:
                             help="Amazon S3 bucket and path for remote data. "
                                  "Accepted in the format: s3://{bucket}/{path}")
     parser_cld.add_argument("cloud", choices=["aws"],
-                            help="cloud endpoint")
-    parser_cld.add_argument("auth",
-                            help="credentials for the remote resource")
+                            help="Specifies which cloud endpoint you'd like to"
+                                 " use. Currently, only AWS is supported.")
+    parser_cld.add_argument("credentials",
+                            help="Your credentials file for the resource.")
 
     parser_cld.add_argument("--verbose", "-V", action="store_true",
                             help="Toggles verbose output statements.")
@@ -382,7 +384,7 @@ on clusters, and in the cloud. For more information, go to our website:
                             help="Launches only the first created task. This "
                                  "is intended for development purposes.")
     parser_cld.add_argument("--region", "-r", action="store",
-                            help="")
+                            help="The Amazon region to use for processing.")
     parser_cld.add_argument("--bids", "-b", action="store_true",
                             help="Indicates that the tool being launched is a "
                                  "BIDS app. BIDS is a data organization format"
@@ -393,23 +395,48 @@ on clusters, and in the cloud. For more information, go to our website:
 
     # Share Parser
     parser_shr = subparsers.add_parser("share")
-    parser_shr.add_argument("clowdrloc", help="local or s3 location for clowdr")
-    parser_shr.add_argument("--debug", "-d", action="store_true")
+    parser_shr.add_argument("provdir",
+                            help="Local or S3 directory where Clowdr provenance"
+                                 "records and metadata are stored. This path "
+                                 "was returned by running either clowdr cloud "
+                                 "or clowdr local.")
+    parser_shr.add_argument("--dev", "-d", action="store_true",
+                            help="Toggles server messages and logging. This "
+                                 "is intended for development purposes.")
 
     parser_shr.set_defaults(func=share)
 
     # Task Parser
     parser_task = subparsers.add_parser("task")
-    parser_task.add_argument("metadata", help="task metadata file")
-    parser_task.add_argument("--clowdrloc", "-c", action="store",
-                             help="task output directory")
-    parser_task.add_argument("--local", "-l", action="store_true")
-    parser_task.add_argument("--workdir", "-w", action="store")
-    parser_task.add_argument("--volumes", "-v", action="append")
+    parser_task.add_argument("tasklist", nargs="+",
+                             help="One or more Clowdr-created task.json files "
+                                  "summarizing the jobs to be run. These task "
+                                  "files are created by one of clowdr cloud or"
+                                  " clowdr local.")
 
-    parser_task.add_argument("--verbose", "-V", action="store_true")
+    parser_task.add_argument("--verbose", "-V", action="store_true",
+                             help="Toggles verbose output statements.")
+    parser_task.add_argument("--provdir", "-p", action="store",
+                             help="Local or directory where Clowdr provenance "
+                                  "records and metadata will be stored. This "
+                                  "is optional here because it will be stored "
+                                  "by default in a temporary location and "
+                                  "moved, unless this is specified.")
+    parser_task.add_argument("--local", "-l", action="store_true",
+                             help="Flag indicator to identify whether the task"
+                                  " is being launched on a cloud or local "
+                                  "resource. This is important to ensure data "
+                                  "is transferred off clouds before shut down.")
+    parser_task.add_argument("--workdir", "-w", action="store",
+                            help="Specifies the working directory to be used "
+                                 "by the tasks created.")
+    parser_task.add_argument("--volumes", "-v", action="append",
+                            help="Specifies any volumes to be mounted to the "
+                                 "container. This is usually related to the "
+                                 "path of any data files as specified in your "
+                                 "invocation(s).")
 
-    parser_task.set_defaults(func=run)
+    parser_task.set_defaults(func=runtask)
 
     # Parse arguments
     inps = parser.parse_args(args) if args is not None else parser.parse_args()
