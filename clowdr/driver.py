@@ -120,7 +120,6 @@ def local(descriptor, invocation, provdir, **kwargs):
 
         if kwargs.get("cluster"):
             tmptaskgroup = " ".join(taskgroup)
-            print(tmptaskgroup)
             job.run(script.format(tmptaskgroup, taskdir))
         else:
             runtask(taskgroup, provdir=taskdir, local=True, **kwargs)
