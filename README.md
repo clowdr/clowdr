@@ -4,6 +4,7 @@ Clowd is a command-line utility for iteratively developing pipelines, deploying 
 
 [![](https://img.shields.io/pypi/v/clowdr.svg)](https://pypi.python.org/pypi/clowdr)
 [![Build Status](https://travis-ci.org/clowdr/clowdr.svg?branch=master)](https://travis-ci.org/clowdr/clowdr)
+[![Documentation Status](//readthedocs.org/projects/clowdr-dev/badge/?version=latest)](https://clowdr-dev.readthedocs.io/en/latest/?badge=latest)
 ![Docker Pulls](https://img.shields.io/docker/pulls/clowdr/clowdr.svg)
 [![https://www.singularity-hub.org/static/img/hosted-singularity--hub-%23e32929.svg](https://www.singularity-hub.org/static/img/hosted-singularity--hub-%23e32929.svg)](https://singularity-hub.org/collections/663)
 [![DOI](https://zenodo.org/badge/121551982.svg)](https://zenodo.org/badge/latestdoi/121551982)
