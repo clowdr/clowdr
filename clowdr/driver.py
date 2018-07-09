@@ -15,7 +15,7 @@ import sys
 import os
 
 from clowdr.controller import metadata, launcher
-from clowdr.task import processTask
+from clowdr.task import TaskHandler
 from clowdr.server import shareapp, updateIndex
 from clowdr import utils
 
@@ -42,7 +42,7 @@ def local(tool, invocation, clowdrloc, dataloc, **kwargs):
         - dev : bool
             Toggle dev mode (only runs first execution in the specified set)
 
-        Additionally, transfers all keyword arguments accepted by "processTask"
+        Additionally, transfers all keyword arguments accepted by the "TaskHandler"
 
     Returns
     -------
@@ -58,7 +58,7 @@ def local(tool, invocation, clowdrloc, dataloc, **kwargs):
     taskdir = op.dirname(utils.truepath(tasks[0]))
     os.chdir(taskdir)
     for task in tasks:
-        processTask(task, taskdir, local=True, **kwargs)
+        run(task, clowdrloc=taskdir, local=True, **kwargs)
 
     if kwargs.get("verbose"):
         print(taskdir)
@@ -95,7 +95,7 @@ def cluster(tool, invocation, clowdrloc, dataloc, cluster, **kwargs):
             Toggle dev mode (only runs first execution in the specified set)
 
         Additionally, transfers all keyword arguments accepted by both of
-        "controller.metadata.consolidateTask" and "task.processTask"
+        "controller.metadata.consolidateTask" and "task.TaskHandler"
 
     Returns
     -------
@@ -130,8 +130,6 @@ def cluster(tool, invocation, clowdrloc, dataloc, cluster, **kwargs):
         if kwargs.get("verbose"):
             print("Getting container...")
         outp = utils.getContainer(taskdir, container, **kwargs)
-        if kwargs.get("verbose"):
-            print(outp)
 
     jobname = kwargs.get("jobname") if kwargs.get("jobname") else "clowdrtask"
     slurm_args = {}
@@ -203,6 +201,10 @@ def cloud(tool, invocation, clowdrloc, dataloc, endpoint, auth, **kwargs):
     taskdir = op.dirname(utils.truepath(tasks_remote[0]))
     print(taskdir)
     return taskdir, jids
+
+
+def run(metadata, **kwargs):
+    handler = TaskHandler(metadata, **kwargs)
 
 
 def share(clowdrloc, **kwargs):
@@ -317,7 +319,7 @@ def main(args=None):
 
     parser_run.add_argument("--verbose", "-V", action="store_true")
 
-    parser_run.set_defaults(func=processTask)
+    parser_run.set_defaults(func=run)
 
     # Parse arguments
     inps = parser.parse_args(args) if args is not None else parser.parse_args()

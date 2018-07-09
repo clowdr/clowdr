@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from .task import processTask
+from .task import TaskHandler
 from .controller import metadata, launcher
 from .endpoint import AWS, remote
 from .driver import local, cluster, cloud, share

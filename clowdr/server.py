@@ -118,8 +118,9 @@ def getRecords(clowdrloc, outdir, **kwargs):
                  "url": None}
                 for f in os.listdir(clowdrloc)]
 
-    task = [obj for obj in objs if "task-" in obj["key"]]
-    summ = [obj for obj in objs if "summary-" in obj["key"]]
+    task = [obj for obj in objs
+            if "task-" in obj["key"] and obj["key"].endswith('json') and "summary" not in obj["key"]]
+    summ = [obj for obj in objs if "-summary" in obj["key"]]
     desc = [obj for obj in objs if "descriptor" in obj["key"]]
     invo = [obj for obj in objs if "invocation" in obj["key"]]
     outs = [obj for obj in objs if ".txt" in obj["key"]]

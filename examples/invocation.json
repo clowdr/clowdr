@@ -1,6 +1,6 @@
 {
-    "bids_dir": "/data/ds114",
-    "output_dir_name": "/data/ds114/derivatives/bids-example/",
+    "bids_dir": "/project/6008063/gkiar/data/ds114/",
+    "output_dir_name": "/project/6008063/gkiar/data/ds114/derivatives/bids-example/",
     "analysis_level": "participant",
     "participant_label": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10"],
     "skip_validator": true
