@@ -21,52 +21,7 @@ from clowdr.server import shareapp, updateIndex
 from clowdr import utils
 
 
-def local(tool, invocation, clowdrloc, dataloc, **kwargs):
-    """local
-    Launches a pipeline locally through the Clowdr wrappers.
-
-    Parameters
-    ----------
-    tool : str
-        Path to a boutiques descriptor for the tool to be run
-    invocation : str
-        Path to a boutiques invocation for the tool and parameters to be run
-    clowdrloc : str
-        Path for storing Clowdr intermediate files and outputs
-    dataloc : str
-        Path for accessing input data. If local, provide the hostname and
-        optionally a path. If on S3, provide an S3 path.
-    **kwargs : dict
-        Arbitrary keyword arguments. Currently supported arguments:
-        - verbose : bool
-            Toggle verbose output printing
-        - dev : bool
-            Toggle dev mode (only runs first execution in the specified set)
-
-        Additionally, transfers all keyword arguments accepted by the "TaskHandler"
-
-    Returns
-    -------
-    int
-        The exit-code returned by the task being executed
-    """
-    # TODO: scrub inputs
-    [tasks, invocs] = metadata.consolidateTask(tool, invocation, clowdrloc,
-                                               dataloc, **kwargs)
-    if kwargs.get("dev"):
-        tasks = [tasks[0]]  # Just launch the first task in dev
-
-    taskdir = op.dirname(utils.truepath(tasks[0]))
-    os.chdir(taskdir)
-    for task in tasks:
-        run(task, clowdrloc=taskdir, local=True, **kwargs)
-
-    if kwargs.get("verbose"):
-        print(taskdir)
-    return taskdir
-
-
-def cluster(tool, invocation, clowdrloc, dataloc, cluster, **kwargs):
+def local(descriptor, invocation, provdir, **kwargs):
     """cluster
     Launches a pipeline locally through the Clowdr wrappers.
 
@@ -104,19 +59,17 @@ def cluster(tool, invocation, clowdrloc, dataloc, cluster, **kwargs):
         The exit-code returned by the task being executed
     """
     # TODO: scrub inputs
-    tool = utils.truepath(tool)
+    descriptor = descriptor.name
+    tool = utils.truepath(descriptor)
     if kwargs.get("simg"):
         kwargs["simg"] = utils.truepath(kwargs["simg"])
 
-
-    from slurmpy import Slurm
-
     if kwargs.get("verbose"):
         print("Consolidating metadata...")
-    [tasks, invocs] = metadata.consolidateTask(tool, invocation, clowdrloc,
+
+    dataloc = kwargs.get("s3") if kwargs.get("s3") else "localhost"
+    [tasks, invocs] = metadata.consolidateTask(descriptor, invocation, provdir,
                                                dataloc, **kwargs)
-    if kwargs.get("dev"):
-        tasks = [tasks[0]]  # Just launch the first task in dev
 
     taskdir = op.dirname(utils.truepath(tasks[0]))
     try:
@@ -127,29 +80,45 @@ def cluster(tool, invocation, clowdrloc, dataloc, cluster, **kwargs):
 
     with open(tool) as fhandle:
         container = json.load(fhandle).get("container-image")
+
     if container:
         if kwargs.get("verbose"):
             print("Getting container...")
         outp = utils.getContainer(taskdir, container, **kwargs)
 
-    jobname = kwargs.get("jobname") if kwargs.get("jobname") else "clowdrtask"
-    slurm_args = {}
-    if kwargs.get("slurm_args"):
-        for opt in kwargs.get("slurm_args").split(","):
-            k, v = opt.split(":")[0], opt.split(":")[1:]
-            v = ":".join(v)
-            slurm_args[k] = v
-    job = Slurm(jobname, slurm_args)
+    if kwargs.get("cluster"):
+        from slurmpy import Slurm
+        jobname = kwargs.get("jobname") if kwargs.get("jobname") else "clowdr"
+        slurm_args = {}
+        if kwargs.get("slurm_args"):
+            for opt in kwargs.get("slurm_args").split(","):
+                k, v = opt.split(":")[0], opt.split(":")[1:]
+                v = ":".join(v)
+                slurm_args[k] = v
+        job = Slurm(jobname, slurm_args)
 
-    script = "clowdr task {} -p {} --local"
-    if kwargs.get("workdir"):
-        script += " -w {}".format(kwargs["workdir"])
-    if kwargs.get("volumes"):
-        script += " ".join([" -v {}".format(vol)
-                            for vol in kwargs.get("volumes")])
+        script = "clowdr task {} -p {} --local"
+        if kwargs.get("workdir"):
+            script += " -w {}".format(kwargs["workdir"])
+        if kwargs.get("volumes"):
+            script += " ".join([" -v {}".format(vol)
+                                for vol in kwargs.get("volumes")])
 
+    # TODO: task grouping
+
+    if kwargs.get("dev"):
+        tasks = [[tasks[0]]]  # Just launch the first group of tasks in dev mode
+
+    if kwargs.get("verbose"):
+        print("Launching tasks...")
     for task in tasks:
-        job.run(script.format(task, taskdir))
+        if kwargs.get("verbose"):
+            print("... Processing task: {}".format(task))
+
+        if kwargs.get("cluster") == "slurm":
+            job.run(script.format(task, taskdir))
+        else:
+            runtask(task, provdir=taskdir, local=True, **kwargs)
 
     if kwargs.get("verbose"):
         print(taskdir)
@@ -346,7 +315,6 @@ on clusters, and in the cloud. For more information, go to our website:
                                  " this, go to https://bids.neuroimaging.io.")
 
     parser_loc.set_defaults(func=local)
-    # parser_cls.set_defaults(func=cluster)
 
     # Create the subparser for cloud execution.
     desc = ("Manages local and cluster deployment. Ideal for development, "
