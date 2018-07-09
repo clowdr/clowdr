@@ -104,21 +104,26 @@ def local(descriptor, invocation, provdir, **kwargs):
             script += " ".join([" -v {}".format(vol)
                                 for vol in kwargs.get("volumes")])
 
-    # TODO: task grouping
+    # Groups tasks into collections to be run together (default size = 1)
+    gsize = kwargs["groupby"] if kwargs.get("groupby") else 1
+    taskgroups = [tasks[i:i+gsize] for i in range(0, len(tasks), gsize)]
 
     if kwargs.get("dev"):
-        tasks = [[tasks[0]]]  # Just launch the first group of tasks in dev mode
+        taskgroups = [taskgroups[0]]  # Just launch the first in dev mode
 
     if kwargs.get("verbose"):
         print("Launching tasks...")
-    for task in tasks:
-        if kwargs.get("verbose"):
-            print("... Processing task: {}".format(task))
 
-        if kwargs.get("cluster") == "slurm":
-            job.run(script.format(task, taskdir))
+    for taskgroup in taskgroups:
+        if kwargs.get("verbose"):
+            print("... Processing task: {}".format(taskgroup))
+
+        if kwargs.get("cluster"):
+            tmptaskgroup = " ".join(taskgroup)
+            print(tmptaskgroup)
+            job.run(script.format(tmptaskgroup, taskdir))
         else:
-            runtask(task, provdir=taskdir, local=True, **kwargs)
+            runtask(taskgroup, provdir=taskdir, local=True, **kwargs)
 
     if kwargs.get("verbose"):
         print(taskdir)
@@ -280,6 +285,11 @@ on clusters, and in the cloud. For more information, go to our website:
                                  "container. This is usually related to the "
                                  "path of any data files as specified in your "
                                  "invocation(s).")
+    parser_loc.add_argument("--groupby", "-g", type=int,
+                            help="If you wish to run tasks in batches, specify "
+                                 "the number of tasks to group here. For "
+                                 "imperfect multiples, the last group will be "
+                                 "the remainder.")
     parser_loc.add_argument("--cluster", "-c", choices=["slurm"],
                             help="If you wish to submit your local tasks to a "
                                  "scheduler, you must specify it here. "

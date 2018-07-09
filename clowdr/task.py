@@ -25,7 +25,6 @@ from clowdr import utils
 
 class TaskHandler:
     def __init__(self, taskfile, **kwargs):
-        print(taskfile)
         self.manageTask(taskfile, **kwargs)
 
     def manageTask(self, taskfile, provdir=None, verbose=False, **kwargs):
