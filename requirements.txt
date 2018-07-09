@@ -12,7 +12,6 @@ boutiques==0.5.12
 certifi==2018.4.16
 chardet==3.0.4
 click==6.7
--e git+git@github.com:gkiar/clowdr.git@8af6156f812bb24a8080ac0bcf04d94456cc066d#egg=clowdr
 colorama==0.3.7
 decorator==4.2.1
 docutils==0.14
