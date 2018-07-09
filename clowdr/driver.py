@@ -207,7 +207,7 @@ def share(clowdrloc, **kwargs):
     shareapp.run(host=host, debug=kwargs.get("debug"))
 
 
-def main(args=None):
+def makeparser():
     """main
     Command-line API wrapper for Clowdr as a CLI, not Python API.
     For information about the command-line wrapper and arguments it accepts,
@@ -414,6 +414,11 @@ on clusters, and in the cloud. For more information, go to our website:
                                  "invocation(s).")
 
     parser_task.set_defaults(func=runtask)
+    return parser
+
+
+def main(args=None):
+    parser = makeparser()
 
     # Parse arguments
     inps = parser.parse_args(args) if args is not None else parser.parse_args()
@@ -426,4 +431,3 @@ on clusters, and in the cloud. For more information, go to our website:
 
 if __name__ == "__main__":
     main()
-
