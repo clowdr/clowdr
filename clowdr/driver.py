@@ -8,9 +8,11 @@
 # Email: gkiar@mcin.ca
 
 from argparse import ArgumentParser, RawTextHelpFormatter
+from subprocess import CalledProcessError
 import argparse
 import os.path as op
 import tempfile
+import time
 import json
 import sys
 import os
@@ -120,7 +122,23 @@ def local(descriptor, invocation, provdir, **kwargs):
 
         if kwargs.get("cluster"):
             tmptaskgroup = " ".join(taskgroup)
-            job.run(script.format(tmptaskgroup, taskdir))
+            # If submission fails for some reason, retry with exp. back-off
+            fibseq = [1, 2, 3, 5, 8, 13, 21]
+            count = 0
+            while True:
+                try:
+                    job.run(script.format(tmptaskgroup, taskdir))
+                    break
+                except CalledProcessError as e:
+                    if kwargs.get("verbose"):
+                        print("Failed to submit. Retry in: {}s".format(count))
+                    if count > 6:
+                        if kwargs.get("verbose"):
+                            print("Failed. Skipping: {}".format(tmptaskgroup))
+                        break
+                    time.sleep(fibseq[count])
+                    count += 1
+
         else:
             runtask(taskgroup, provdir=taskdir, local=True, **kwargs)
 
