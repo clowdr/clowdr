@@ -20,8 +20,6 @@ gitdb2==2.0.3
 GitPython==2.1.8
 idna==2.7
 imagesize==1.0.0
-ipython==6.2.1
-ipython-genutils==0.2.0
 isort==4.3.4
 itsdangerous==0.24
 jedi==0.11.1
@@ -64,7 +62,6 @@ s3transfer==0.1.13
 simplegeneric==0.8.1
 simplejson==3.16.0
 six==1.11.0
--e git+git@github.com:gkiar/slurmpy.git@75286ebc5e7952578fe017cfac800efaefc99bda#egg=slurmpy
 smmap2==2.0.3
 snowballstemmer==1.2.1
 Sphinx==1.7.5
