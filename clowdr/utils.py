@@ -18,8 +18,8 @@ def backoff(function, posargs, optargs, backoff_time=36000, **kwargs):
     fib_hi = 1
     while True:
         try:
-            function(*posargs, **optargs)
-            break
+            value = function(*posargs, **optargs)
+            return (0, value)
         except Exception as e:
             if kwargs.get("verbose"):
                 print("Failed ({}). Retrying in: {}s".format(type(e).__name__,
@@ -27,7 +27,7 @@ def backoff(function, posargs, optargs, backoff_time=36000, **kwargs):
             if fib_hi > backoff_time:
                 if kwargs.get("verbose"):
                     print("Failed. Skipping!")
-                break
+                return (-1, str(e))
             time.sleep(fib_hi)
             fib_lo, fib_hi = fib_hi, fib_lo + fib_hi
 
