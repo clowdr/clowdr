@@ -15,7 +15,7 @@ import json
 import sys
 import os
 
-from clowdr.controller import metadata, launcher
+from clowdr.controller import metadata, launcher, rerunner
 from clowdr.task import TaskHandler
 from clowdr.server import shareapp, updateIndex
 from clowdr import utils
@@ -70,8 +70,18 @@ def local(descriptor, invocation, provdir, backoff_time=36000, **kwargs):
         print("Consolidating metadata...")
 
     dataloc = kwargs.get("s3") if kwargs.get("s3") else "localhost"
-    [tasks, invocs] = metadata.consolidateTask(descriptor, invocation, provdir,
-                                               dataloc, **kwargs)
+    if kwargs.get("rerun"):
+        if not kwargs.get("run_id"):
+            raise SystemExit("**Error: Option --rerun requires --run_id")
+        tasks = rerunner.getTasks(provdir, kwargs["run_id"], kwargs["rerun"])
+        if not len(tasks):
+            if kwargs.get("verbose"):
+                print("No tasks to run.")
+            return 0
+
+    else:
+        [tasks, invocs] = metadata.consolidateTask(descriptor, invocation,
+                                                   provdir, dataloc, **kwargs)
 
     taskdir = op.dirname(utils.truepath(tasks[0]))
     try:
@@ -323,7 +333,7 @@ on clusters, and in the cloud. For more information, go to our website:
                             choices=["all", "failed", "incomplete"],
                             help="Allows user to re-run jobs in a previous "
                                  "execution that either failed or didn't "
-                                 "finish, etc. This requires the --rerun_id "
+                                 "finish, etc. This requires the --run_id "
                                  "argument to also be supplied. Three choices "
                                  "are: 'all' to re-run all tasks, 'failed' to "
                                  "re-run tasks which finished with a non-zero "
@@ -331,10 +341,12 @@ on clusters, and in the cloud. For more information, go to our website:
                                  "which have not yet indicated job completion."
                                  " While the descriptor and invocations will be"
                                  " adopted from the previous executions, other "
-                                 "options such as --clusterargs or --simg can "
+                                 "options such as clusterargs or volume can "
                                  "be set to different values, if they were the "
-                                 "source or errors.")
-    parser_loc.add_argument("--rerun_id", action="store",
+                                 "source or errors. Pairing the incomplete mode"
+                                 " with the --dev flag allows you to walk "
+                                 "through your dataset one group at a time.")
+    parser_loc.add_argument("--run_id", action="store",
                             help="Pairs with --rerun. This ID is the directory"
                                  " within the supplied provdir which contains "
                                  "execution you wish to relaunch. These IDs/"
