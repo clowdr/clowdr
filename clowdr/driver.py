@@ -8,11 +8,9 @@
 # Email: gkiar@mcin.ca
 
 from argparse import ArgumentParser, RawTextHelpFormatter
-from subprocess import CalledProcessError
 import argparse
 import os.path as op
 import tempfile
-import time
 import json
 import sys
 import os
@@ -124,24 +122,10 @@ def local(descriptor, invocation, provdir, backoff_time=36000, **kwargs):
 
         if kwargs.get("cluster"):
             tmptaskgroup = " ".join(taskgroup)
-
+            func = job.run
+            args = [script.format(tmptaskgroup, taskdir)]
             # Submit. If submission fails, retry with fibonnaci back-off
-            fib_lo = 0
-            fib_hi = 1
-            while True:
-                try:
-                    job.run(script.format(tmptaskgroup, taskdir))
-                    break
-                except CalledProcessError as e:
-                    if kwargs.get("verbose"):
-                        print("Failed to submit. Retry in: {}s".format(count))
-                    if fib_hi > backoff_time:
-                        if kwargs.get("verbose"):
-                            print("Failed. Skipping: {}".format(tmptaskgroup))
-                        break
-                    time.sleep(fib_hi)
-                    fib_lo, fib_hi = fib_hi, fib_lo + fib_hi
-
+            utils.backoff(func, args, backoff_time=backoff_time, **kwargs)
         else:
             runtask(taskgroup, provdir=taskdir, local=True, **kwargs)
 
@@ -335,6 +319,27 @@ on clusters, and in the cloud. For more information, go to our website:
                             help="If the Boutiques descriptor summarizes a "
                                  "tool wrapped in Docker, toggles propagating "
                                  "the current user within the container.")
+    parser_loc.add_argument("--rerun", "-R",
+                            choices=["all", "failed", "incomplete"],
+                            help="Allows user to re-run jobs in a previous "
+                                 "execution that either failed or didn't "
+                                 "finish, etc. This requires the --rerun_id "
+                                 "argument to also be supplied. Three choices "
+                                 "are: 'all' to re-run all tasks, 'failed' to "
+                                 "re-run tasks which finished with a non-zero "
+                                 "exit-code, 'incomplete' to re-run tasks "
+                                 "which have not yet indicated job completion."
+                                 " While the descriptor and invocations will be"
+                                 " adopted from the previous executions, other "
+                                 "options such as --clusterargs or --simg can "
+                                 "be set to different values, if they were the "
+                                 "source or errors.")
+    parser_loc.add_argument("--rerun_id", action="store",
+                            help="Pairs with --rerun. This ID is the directory"
+                                 " within the supplied provdir which contains "
+                                 "execution you wish to relaunch. These IDs/"
+                                 "directories are in the form: year-month-day_"
+                                 "hour-minute-second-8digitID.")
     parser_loc.add_argument("--s3", action="store",
                             help="Amazon S3 bucket and path for remote data. "
                                  "Accepted in the format: s3://{bucket}/{path}")
@@ -347,9 +352,9 @@ on clusters, and in the cloud. For more information, go to our website:
     parser_loc.set_defaults(func=local)
 
     # Create the subparser for cloud execution.
-    desc = ("Manages local and cluster deployment. Ideal for development, "
-            "testing, executing on local resources, or deployment on a "
-            "computing cluster environment.")
+    desc = ("Manages cloud deployment. Ideal for running jobs at scale on data "
+            "stored in Amazon Web Services S3 buckets (or similar object "
+            "store).")
     parser_cld = subparsers.add_parser("cloud", description=desc)
     parser_cld.add_argument("descriptor", type=argparse.FileType('r'),
                             help="Local path to Boutiques descriptor for the "
@@ -391,7 +396,10 @@ on clusters, and in the cloud. For more information, go to our website:
 
     parser_cld.set_defaults(func=cloud)
 
-    # Share Parser
+    # Create the subparser for sharing outputs
+    desc = ("Launches light-weight web service for exploring, managing, and "
+            "sharing the outputs and provenance recorded from Clowdr "
+            "executed workflows.")
     parser_shr = subparsers.add_parser("share")
     parser_shr.add_argument("provdir",
                             help="Local or S3 directory where Clowdr provenance"
@@ -404,7 +412,10 @@ on clusters, and in the cloud. For more information, go to our website:
 
     parser_shr.set_defaults(func=share)
 
-    # Task Parser
+    # Create the subparser for launching tasks
+    desc = ("Launches a list of tasks with provenance recording. This method "
+            "is what specifically wraps tool execution, is called by other "
+            "Clowdr modes, and can be used to re-execute or debug tasks.")
     parser_task = subparsers.add_parser("task")
     parser_task.add_argument("tasklist", nargs="+",
                              help="One or more Clowdr-created task.json files "

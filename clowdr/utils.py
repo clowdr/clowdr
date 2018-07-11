@@ -1,15 +1,34 @@
 #!/usr/bin/env python
 
 from shutil import copy, copytree, SameFileError
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, CalledProcessError
 import os.path as op
 import random as rnd
 import string
 import boto3
+import time
 import csv
 import sys
 import os
 import re
+
+
+def backoff(function, posargs, optargs, backoff_time=36000, **kwargs):
+    fib_lo = 0
+    fib_hi = 1
+    while True:
+        try:
+            function(*posargs, **optargs)
+            break
+        except CalledProcessError as e:
+            if kwargs.get("verbose"):
+                print("Failed to submit. Retry in: {}s".format(fib_hi))
+            if fib_hi > backoff_time:
+                if kwargs.get("verbose"):
+                    print("Failed. Skipping: {}".format(tmptaskgroup))
+                break
+            time.sleep(fib_hi)
+            fib_lo, fib_hi = fib_hi, fib_lo + fib_hi
 
 
 def getContainer(savedir, container, **kwargs):
