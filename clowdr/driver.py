@@ -23,7 +23,7 @@ from clowdr.server import shareapp, updateIndex
 from clowdr import utils
 
 
-def local(descriptor, invocation, provdir, **kwargs):
+def local(descriptor, invocation, provdir, backoff_time=36000, **kwargs):
     """cluster
     Launches a pipeline locally through the Clowdr wrappers.
 
@@ -47,6 +47,8 @@ def local(descriptor, invocation, provdir, **kwargs):
             Account for the cluster scheduler
         - jobname : str
             Base-name for the jobs as they will appear in the scheduler
+        - backoff_time: int
+            Time limit for wait times when resubmitting jobs to a scheduler
         - verbose : bool
             Toggle verbose output printing
         - dev : bool
@@ -122,9 +124,10 @@ def local(descriptor, invocation, provdir, **kwargs):
 
         if kwargs.get("cluster"):
             tmptaskgroup = " ".join(taskgroup)
-            # If submission fails for some reason, retry with exp. back-off
-            fibseq = [1, 2, 3, 5, 8, 13, 21]
-            count = 0
+
+            # Submit. If submission fails, retry with fibonnaci back-off
+            fib_lo = 0
+            fib_hi = 1
             while True:
                 try:
                     job.run(script.format(tmptaskgroup, taskdir))
@@ -132,12 +135,12 @@ def local(descriptor, invocation, provdir, **kwargs):
                 except CalledProcessError as e:
                     if kwargs.get("verbose"):
                         print("Failed to submit. Retry in: {}s".format(count))
-                    if count > 6:
+                    if fib_hi > backoff_time:
                         if kwargs.get("verbose"):
                             print("Failed. Skipping: {}".format(tmptaskgroup))
                         break
-                    time.sleep(fibseq[count])
-                    count += 1
+                    time.sleep(fib_hi)
+                    fib_lo, fib_hi = fib_hi, fib_lo + fib_hi
 
         else:
             runtask(taskgroup, provdir=taskdir, local=True, **kwargs)
