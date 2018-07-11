@@ -20,12 +20,13 @@ def backoff(function, posargs, optargs, backoff_time=36000, **kwargs):
         try:
             function(*posargs, **optargs)
             break
-        except CalledProcessError as e:
+        except Exception as e:
             if kwargs.get("verbose"):
-                print("Failed to submit. Retry in: {}s".format(fib_hi))
+                print("Failed ({}). Retrying in: {}s".format(type(e).__name__,
+                                                             fib_hi))
             if fib_hi > backoff_time:
                 if kwargs.get("verbose"):
-                    print("Failed. Skipping: {}".format(tmptaskgroup))
+                    print("Failed. Skipping!")
                 break
             time.sleep(fib_hi)
             fib_lo, fib_hi = fib_hi, fib_lo + fib_hi
