@@ -1,7 +1,7 @@
 from setuptools import setup
 import os.path as op
 
-VERSION = "0.0.12"
+VERSION = "0.0.13rc0"
 DEPS = [
          "boto3",
          "flask",
@@ -34,7 +34,7 @@ setup(name="clowdr",
       include_package_data=True,
       package_data = {"clowdr/templates": [op.join("templates", "AWS","*")]},
       test_suite="pytest",
-      tests_require=["pytest"],
+      tests_require=["pytest", "pytest-runner", "pycodestyle"],
       setup_requires=DEPS,
       install_requires=DEPS,
       entry_points = {

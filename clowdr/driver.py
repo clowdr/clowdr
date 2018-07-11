@@ -437,13 +437,13 @@ on clusters, and in the cloud. For more information, go to our website:
                                   "resource. This is important to ensure data "
                                   "is transferred off clouds before shut down.")
     parser_task.add_argument("--workdir", "-w", action="store",
-                            help="Specifies the working directory to be used "
-                                 "by the tasks created.")
+                             help="Specifies the working directory to be used "
+                                  "by the tasks created.")
     parser_task.add_argument("--volumes", "-v", action="append",
-                            help="Specifies any volumes to be mounted to the "
-                                 "container. This is usually related to the "
-                                 "path of any data files as specified in your "
-                                 "invocation(s).")
+                             help="Specifies any volumes to be mounted to the "
+                                  "container. This is usually related to the "
+                                  "path of any data files as specified in your "
+                                  "invocation(s).")
 
     parser_task.set_defaults(func=runtask)
     return parser
