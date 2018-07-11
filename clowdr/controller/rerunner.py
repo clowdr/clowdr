@@ -18,8 +18,6 @@ from clowdr import utils
 
 def getTasks(provdir, runid, rerun_mode):
     runpath = utils.truepath(op.join(provdir, runid, 'clowdr'))
-    if not op.exists(runpath):
-        SystemExit("**Error, please provide valid Clowdr provenance directory")
 
     files = os.listdir(runpath)
     r_all = re.compile('^.*task-([0-9]+)[.]json$')
