@@ -1,13 +1,10 @@
 #!/usr/bin/env python
 
 from unittest import TestCase
-from subprocess import Popen, PIPE
 from contextlib import redirect_stdout
 import os.path as op
 import json
-import sys
 import re
-import io
 
 from clowdr import driver
 

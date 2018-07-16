@@ -1,0 +1,7 @@
+{
+    "bids_dir": "/data/ds114/",
+    "output_dir_name": "/data/ds114/derivatives/bids-example/",
+    "analysis_level": "participant",
+    "session_label": ["test", "retest"],
+    "skip_validator": true
+}
