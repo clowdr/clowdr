@@ -16,7 +16,7 @@ class TestBackoff(TestCase):
     def test_backoff_to_failure(self):
         num1, num2, flag = 1, 5, True
         code, value = backoff(self.myfunction, [num1, num2], {'flag': flag},
-                              verbose=True, backoff_time=1)
+                              verbose=True, backoff_time=25)
 
         self.assertTrue(code == -1)
         err = "Command 'someExecution' returned non-zero exit status 42."

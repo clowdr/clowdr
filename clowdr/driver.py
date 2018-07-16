@@ -128,7 +128,7 @@ def local(descriptor, invocation, provdir, backoff_time=36000, **kwargs):
 
     for taskgroup in taskgroups:
         if kwargs.get("verbose"):
-            print("... Processing task: {}".format(taskgroup))
+            print("... Processing task: {}".format(", ".join(taskgroup)))
 
         if kwargs.get("cluster"):
             tmptaskgroup = " ".join(taskgroup)
