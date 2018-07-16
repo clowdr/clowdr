@@ -33,6 +33,7 @@ before_install:
 - docker run -v /var/run/docker.sock:/var/run/docker.sock -v ${HOME}:/output --privileged -t --rm singularityware/docker2singularity bids/example  1> ${HOME}/convert_log.txt
 - IMGNAME=$(cat ${HOME}/convert_log.txt  | grep "Done. Image can be found at:" | awk '{ print $7 }' | cut -d / -f 3 | cut -d . -f 1)
 - mv ${HOME}/${IMGNAME}.img ./bids-example.simg
+- cd ${TRAVIS_BUILD_DIR}/
 
 install:
 - pip install --upgrade setuptools
