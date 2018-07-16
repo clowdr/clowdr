@@ -20,6 +20,7 @@ before_install:
 - sudo apt-get update -qq
 - sudo apt-get install -y -qq python dh-autoreconf squashfs-tools build-essential
 - npm install jsonlint -g 
+- cd ${HOME}
 - wget https://github.com/singularityware/singularity/releases/download/$SINGVER/singularity-$SINGVER.tar.gz
 - tar xvf singularity-$SINGVER.tar.gz
 - cd singularity-$SINGVER
