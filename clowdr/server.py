@@ -116,11 +116,10 @@ def getRecords(clowdrloc, outdir, **kwargs):
             objs[idx]["fname"] = outfname
     else:
         tsp = datetime.datetime.fromtimestamp
-        date = tsp(op.getmtime(op.join(clowdrloc,
-                                       f))).strftime("%b %d, %Y (%T)")
         objs = [{"key": op.join(clowdrloc, f),
                  "hostname": hostname,
-                 "date": date,
+                 "date": tsp(op.getmtime(op.join(clowdrloc,
+                                         f))).strftime("%b %d, %Y (%T)"),
                  "fname": op.join(clowdrloc, f),
                  "url": None}
                 for f in os.listdir(clowdrloc)]

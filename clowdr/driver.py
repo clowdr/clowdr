@@ -197,13 +197,13 @@ def runtask(tasklist, **kwargs):
         handler = TaskHandler(task, **kwargs)
 
 
-def share(clowdrloc, **kwargs):
+def share(provdir, **kwargs):
     """share
     Launches a simple web server which showcases all runs at the clowdrloc.
 
     Parameters
     ----------
-    clowdrloc : str
+    provdir : str
         Path with Clowdr metdata files (returned from "local" and "deploy")
     **kwargs : dict
         Arbitrary keyword arguments (i.e. {'verbose': True})
@@ -213,10 +213,11 @@ def share(clowdrloc, **kwargs):
     None
     """
     # TODO: scrub inputs
-    shareapp.config["clowdrloc"] = clowdrloc
+    shareapp.config["clowdrloc"] = provdir
     shareapp.config["tmpdir"] = tempfile.mkdtemp()
 
     updateIndex()
+    print("passed here")
 
     host = kwargs["host"] if kwargs.get("host") else "0.0.0.0"
     if kwargs.get("testing"):
