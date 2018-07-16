@@ -219,6 +219,9 @@ def share(clowdrloc, **kwargs):
     updateIndex()
 
     host = kwargs["host"] if kwargs.get("host") else "0.0.0.0"
+    if kwargs.get("testing"):
+        shareapp.testing = True
+
     shareapp.run(host=host, debug=kwargs.get("debug"))
 
 
@@ -421,6 +424,8 @@ on clusters, and in the cloud. For more information, go to our website:
     parser_shr.add_argument("--dev", "-d", action="store_true",
                             help="Toggles server messages and logging. This "
                                  "is intended for development purposes.")
+    parser_shr.add_argument("--testing", "-t", action="store_true",
+                            help="Used in testing the Flask server.")
 
     parser_shr.set_defaults(func=share)
 
