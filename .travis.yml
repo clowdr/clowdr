@@ -45,9 +45,8 @@ script:
 - clowdr -h
 - pycodestyle --max-line-length=80 clowdr/*.py clowdr/tests/*.py
 - coverage run --source clowdr setup.py pytest
+- coverage report -m
 
 after_success:
 - coveralls
 
-# deploy:
-# - docker push clowdr/clowdr
