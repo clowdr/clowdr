@@ -223,7 +223,7 @@ def share(clowdrloc, **kwargs):
 
 
 def makeparser():
-    """main
+    """makeparser
     Command-line API wrapper for Clowdr as a CLI, not Python API.
     For information about the command-line wrapper and arguments it accepts,
     please try running "clowdr --help".
@@ -466,11 +466,18 @@ def main(args=None):
 
     # Parse arguments
     inps = parser.parse_args(args) if args is not None else parser.parse_args()
-    if len(sys.argv) == 1:
+
+    # If no args are provided, print help
+    if len(sys.argv) < 2 and args is None:
         parser.print_help()
         sys.exit()
     else:
-        inps.func(**vars(inps))
+        try:
+            inps.func(**vars(inps))
+            return 0
+        except Exception as e:
+            print(e)
+            return -1
 
 
 if __name__ == "__main__":
