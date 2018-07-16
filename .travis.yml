@@ -35,7 +35,7 @@ before_install:
 - IMGNAME=$(cat ${HOME}/convert_log.txt  | grep "Done. Image can be found at:" | awk '{ print $7 }' | cut -d / -f 3 | cut -d . -f 1)
 - mv ${HOME}/${IMGNAME}.img ./bids-example.simg
 - pip install awscli
-- mkdir -p /data/ds114
+- sudo mkdir -p /data/ds114 && sudo chmod -R 777 /data/
 - cd /data/ds114/
 - aws s3 cp --no-sign-request --recursive --exclude "*func/*" --exclude "*dwi/*" s3://openneuro/ds000114/ds000114_R2.0.1/uncompressed/ ./
 - cd ${TRAVIS_BUILD_DIR}/
