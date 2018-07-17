@@ -23,7 +23,7 @@ class TestLocal(TestCase):
                       "-g {}".format(groups)]
         return call_local
 
-    def evaluate_output(fname):
+    def evaluate_output(self, fname):
         with open(fname, 'w') as f:
             with redirect_stdout(f):
                 status = driver.main(args=call_local)
