@@ -23,7 +23,7 @@ class TestLocal(TestCase):
                       "-g {}".format(groups)]
         return call_local
 
-    def evaluate_output(self, fname):
+    def evaluate_output(self, fname, call_local):
         with open(fname, 'w') as f:
             with redirect_stdout(f):
                 status = driver.main(args=call_local)
@@ -55,7 +55,7 @@ class TestLocal(TestCase):
         groups = 3
         call_local = self.provide_local_call(groups=groups)
         fname = op.join(op.dirname(__file__), 'test_stdout_docker.txt')
-        self.evaluate_output(fname)
+        self.evaluate_output(fname, call_local)
 
     @pytest.mark.skipif(subprocess.Popen("type singularity", shell=True).wait(),
                         reason="Singularity not installed")
@@ -63,7 +63,8 @@ class TestLocal(TestCase):
         groups = 1
         call_local = self.provide_local_call(groups=groups, container="s")
         fname = op.join(op.dirname(__file__), 'test_stdout_singularity1.txt')
-        self.evaluate_output(fname)
+        self.evaluate_output(fname, call_local)
 
         call_local += ["--simg", "examples/bids-example.simg"]
         fname = op.join(op.dirname(__file__), 'test_stdout_singularity2.txt')
+        self.evaluate_output(fname, call_local)
