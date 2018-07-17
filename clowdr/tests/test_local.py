@@ -3,6 +3,7 @@
 from unittest import TestCase
 from contextlib import redirect_stdout
 import os.path as op
+import subprocess
 import pytest
 import json
 import re
