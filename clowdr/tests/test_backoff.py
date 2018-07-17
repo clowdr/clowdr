@@ -19,10 +19,10 @@ class TestBackoff(TestCase):
                               verbose=True, backoff_time=25)
 
         self.assertTrue(code == -1)
-        err = "Command 'someExecution' returned non-zero exit status 42."
+        err = "Command 'someExecution' returned non-zero exit status 42"
         print(value)
         print(err)
-        self.assertTrue(value == err)
+        self.assertTrue(err in value)
 
     def test_no_backoff(self):
         num1, num2, flag = 1, 5, False
