@@ -6,4 +6,4 @@ rm -rf ./examples/task/invocation* \
        ./examples/task/2018* \
        ./examples/task/clowdata \
        ./slurm-scripts/ \
-       ./clowdr/tests/test_stdout.txt
+       ./clowdr/tests/test_stdout_*.txt

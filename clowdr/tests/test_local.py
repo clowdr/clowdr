@@ -11,9 +11,9 @@ from clowdr import driver
 
 class TestLocal(TestCase):
 
-    def provide_local_call(self, groups=3):
+    def provide_local_call(self, groups=3, container="d"):
         call_local = ["local",
-                      "examples/descriptor_d.json",
+                      "examples/descriptor_{}.json".format(container),
                       "examples/invocation.json",
                       "examples/task/",
                       "-v", "/data/ds114/:/data/ds114",
@@ -21,11 +21,7 @@ class TestLocal(TestCase):
                       "-g {}".format(groups)]
         return call_local
 
-    def test_local_via_cli(self):
-        groups = 1
-        call_local = self.provide_local_call(groups=groups)
-        fname = op.join(op.dirname(__file__), 'test_stdout.txt')
-
+    def evaluate_output(fname):
         with open(fname, 'w') as f:
             with redirect_stdout(f):
                 status = driver.main(args=call_local)
@@ -49,5 +45,23 @@ class TestLocal(TestCase):
         taskmeta = task.strip('.json') + '-summary.json'
         with open(taskmeta, 'r') as f:
             taskmetadata = json.load(f)
-
         self.assertFalse(taskmetadata["exitcode"])
+
+    @pytest.mark.skipif(subprocess.Popen("type docker", shell=True).wait(),
+                        reason="Docker not installed")
+    def test_local_via_cli_docker(self):
+        groups = 3
+        call_local = self.provide_local_call(groups=groups)
+        fname = op.join(op.dirname(__file__), 'test_stdout_docker.txt')
+        self.evaluate_output(fname)
+
+    @pytest.mark.skipif(subprocess.Popen("type singularity", shell=True).wait(),
+                        reason="Singularity not installed")
+    def test_local_via_cli_docker(self):
+        groups = 1
+        call_local = self.provide_local_call(groups=groups, container="s")
+        fname = op.join(op.dirname(__file__), 'test_stdout_singularity1.txt')
+        self.evaluate_output(fname)
+
+        call_local += ["--simg", "examples/bids-example.simg"]
+        fname = op.join(op.dirname(__file__), 'test_stdout_singularity2.txt')
