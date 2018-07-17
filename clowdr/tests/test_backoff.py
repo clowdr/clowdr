@@ -20,6 +20,8 @@ class TestBackoff(TestCase):
 
         self.assertTrue(code == -1)
         err = "Command 'someExecution' returned non-zero exit status 42."
+        print(value)
+        print(err)
         self.assertTrue(value == err)
 
     def test_no_backoff(self):
