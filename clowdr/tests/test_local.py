@@ -8,19 +8,23 @@ import pytest
 import json
 import re
 
+from clowdr import __file__ as cfile
 from clowdr import driver
 
 
 class TestLocal(TestCase):
 
+    cdir = op.abspath(op.join(op.dirname(cfile), op.pardir))
+
     def provide_local_call(self, groups=3, container="d"):
         call_local = ["local",
-                      "examples/descriptor_{}.json".format(container),
-                      "examples/invocation.json",
-                      "examples/task/",
+                      op.join(self.cdir,
+                              "examples/descriptor_{}.json".format(container)),
+                      op.join(self.cdir, "examples/invocation.json"),
+                      op.join(self.cdir, "examples/task/"),
                       "-v", "/data/ds114/:/data/ds114",
                       "-bdV",
-                      "-g {}".format(groups)]
+                      "-g", "{}".format(groups)]
         return call_local
 
     def evaluate_output(self, fname, call_local, groups):
