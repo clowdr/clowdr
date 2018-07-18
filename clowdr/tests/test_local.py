@@ -57,7 +57,7 @@ class TestLocal(TestCase):
     @pytest.mark.skipif(subprocess.Popen("type docker", shell=True).wait(),
                         reason="Docker not installed")
     def test_local_via_cli_docker(self):
-        os.chdir(cdir)
+        os.chdir(self.cdir)
         groups = 3
         call_local = self.provide_local_call(groups=groups)
         fname = op.join(op.dirname(__file__), 'test_stdout_docker.txt')
@@ -66,12 +66,13 @@ class TestLocal(TestCase):
     @pytest.mark.skipif(subprocess.Popen("type singularity", shell=True).wait(),
                         reason="Singularity not installed")
     def test_local_via_cli_singularity(self):
-        os.chdir(cdir)
+        os.chdir(self.cdir)
         groups = 1
         call_local = self.provide_local_call(groups=groups, container="s")
         fname = op.join(op.dirname(__file__), 'test_stdout_singularity1.txt')
         self.evaluate_output(fname, call_local, groups)
 
-        call_local += ["--simg", op.join(cdir, "examples/bids-example.simg")]
+        call_local += ["--simg", op.join(self.cdir,
+                                         "examples/bids-example.simg")]
         fname = op.join(op.dirname(__file__), 'test_stdout_singularity2.txt')
         self.evaluate_output(fname, call_local, groups)
