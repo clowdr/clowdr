@@ -47,7 +47,7 @@ class TaskHandler:
         taskfile = utils.get(taskfile, self.localtaskdir)[0]
 
         # Parse metadata
-        taskinfo   = json.load(open(taskfile))
+        taskinfo = json.load(open(taskfile))
         descriptor = taskinfo['tool']
         invocation = taskinfo['invocation']
         input_data = taskinfo['dataloc']
@@ -166,9 +166,12 @@ class TaskHandler:
             cmd = 'reprozip trace -w --dir={}/task-{}-reprozip/ bosh exec {}'
             p = subprocess.Popen(cmd.format(self.localtaskdir,
                                             self.task_id,
-                                            " ".join(options)), shell=True).wait()
+                                            " ".join(options)),
+                                 shell=True).wait()
 
-            cmd = 'reprozip pack --dir={0}/task-{1}-reprozip/ {0}/task-{1}-reprozip'.format(self.localtaskdir, self.task_id)
+            cmd = ('reprozip pack --dir={0}/task-{1}-reprozip/ '
+                   '{0}/task-{1}-reprozip'.format(self.localtaskdir,
+                                                  self.task_id))
             p = subprocess.Popen(cmd, shell=True).wait()
         else:
             if kwargs.get("verbose"):
@@ -179,13 +182,14 @@ class TaskHandler:
         pr = cProfile.Profile()
         pr.enable()
         mem_usage = memory_usage((self.execWrapper, options, kwargs),
-                                  interval=0.5,
-                                  include_children=True,
-                                  multiprocess=True,
-                                  timestamps=True)
+                                 interval=0.5,
+                                 include_children=True,
+                                 multiprocess=True,
+                                 timestamps=True)
         pr.disable()
         ps = pstats.Stats(pr).sort_stats("cumulative").reverse_order()
-        headings = ["process", "ncall", "norecall", "totaltime", "cumulativetime", "subcalls"]
+        headings = ["process", "ncall", "norecall",
+                    "totaltime", "cumulativetime", "subcalls"]
         reformed_timing = [["{0}#{1}({2})".format(*key),
                             ps.stats[key][0],
                             ps.stats[key][1],

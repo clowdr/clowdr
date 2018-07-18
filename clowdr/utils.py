@@ -1,21 +1,41 @@
 #!/usr/bin/env python
 
 from shutil import copy, copytree, SameFileError
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, CalledProcessError
 import os.path as op
 import random as rnd
 import string
 import boto3
+import time
 import csv
 import sys
 import os
 import re
 
 
+def backoff(function, posargs, optargs, backoff_time=36000, **kwargs):
+    fib_lo = 0
+    fib_hi = 1
+    while True:
+        try:
+            value = function(*posargs, **optargs)
+            return (0, value)
+        except Exception as e:
+            if kwargs.get("verbose"):
+                print("Failed ({}). Retrying in: {}s".format(type(e).__name__,
+                                                             fib_hi))
+            if fib_hi > backoff_time:
+                if kwargs.get("verbose"):
+                    print("Failed. Skipping!")
+                return (-1, str(e))
+            time.sleep(fib_hi)
+            fib_lo, fib_hi = fib_hi, fib_lo + fib_hi
+
+
 def getContainer(savedir, container, **kwargs):
     if container["type"] == "singularity":
         name = container.get("image")
-        local = name.replace("/", "-").replace(":","-")
+        local = name.replace("/", "-").replace(":", "-")
         index = container.get("index")
         if not index:
             index = "shub://"
@@ -34,7 +54,7 @@ def getContainer(savedir, container, **kwargs):
             if kwargs.get("verbose"):
                 try:
                     print(stdout.decode('utf-8'))
-                except:
+                except Exception as e:
                     print(stdout)
             return stdout
 
@@ -52,7 +72,8 @@ def randstring(k):
 
 
 def splitS3Path(path):
-    return re.match('^s3:\/\/([\w\-\_]+)/([\w\-\_\/\.]+)', path).group(1, 2)
+    return re.match('^s3://([a-zA-Z0-9_-]+)/([a-zA-Z0-9_/.-]+)',
+                    path).group(1, 2)
 
 
 def get(remote, local, **kwargs):
@@ -69,14 +90,14 @@ def get(remote, local, **kwargs):
         if op.isdir(local) and op.isfile(remote):
             return [op.realpath(op.join(local, op.basename(remote)))]
         else:
-            return [op.realpath(local)] 
+            return [op.realpath(local)]
     except FileExistsError as e:
         if kwargs.get("verbose"):
             print("FileExistsWarning: some files may not have been moved")
         if op.isdir(local) and op.isfile(remote):
             return [op.realpath(op.join(local, op.basename(remote)))]
         else:
-            return [op.realpath(local)] 
+            return [op.realpath(local)]
 
 
 def post(local, remote, **kwargs):
@@ -96,7 +117,7 @@ def post(local, remote, **kwargs):
         if op.isdir(remote) and op.isfile(local):
             return [op.realpath(op.join(remote, op.basename(local)))]
         else:
-            return [op.realpath(remote)] 
+            return [op.realpath(remote)]
 
 
 def _awsget(remote, local):
@@ -114,7 +135,7 @@ def _awsget(remote, local):
         files_local += [fl_local]
         os.makedirs(op.dirname(fl_local), exist_ok=True)
         if fl_local.strip('/') == op.dirname(fl_local).strip('/'):
-            continue;  # Create, but don't try to download directories
+            continue  # Create, but don't try to download directories
         buck.download_file(fl, fl_local)
 
     return files_local

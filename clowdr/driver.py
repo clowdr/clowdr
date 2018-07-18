@@ -15,13 +15,13 @@ import json
 import sys
 import os
 
-from clowdr.controller import metadata, launcher
+from clowdr.controller import metadata, launcher, rerunner
 from clowdr.task import TaskHandler
 from clowdr.server import shareapp, updateIndex
 from clowdr import utils
 
 
-def local(descriptor, invocation, provdir, **kwargs):
+def local(descriptor, invocation, provdir, backoff_time=36000, **kwargs):
     """cluster
     Launches a pipeline locally through the Clowdr wrappers.
 
@@ -45,6 +45,8 @@ def local(descriptor, invocation, provdir, **kwargs):
             Account for the cluster scheduler
         - jobname : str
             Base-name for the jobs as they will appear in the scheduler
+        - backoff_time: int
+            Time limit for wait times when resubmitting jobs to a scheduler
         - verbose : bool
             Toggle verbose output printing
         - dev : bool
@@ -68,8 +70,18 @@ def local(descriptor, invocation, provdir, **kwargs):
         print("Consolidating metadata...")
 
     dataloc = kwargs.get("s3") if kwargs.get("s3") else "localhost"
-    [tasks, invocs] = metadata.consolidateTask(descriptor, invocation, provdir,
-                                               dataloc, **kwargs)
+    if kwargs.get("rerun"):
+        if not kwargs.get("run_id"):
+            raise SystemExit("**Error: Option --rerun requires --run_id")
+        tasks = rerunner.getTasks(provdir, kwargs["run_id"], kwargs["rerun"])
+        if not len(tasks):
+            if kwargs.get("verbose"):
+                print("No tasks to run.")
+            return 0
+
+    else:
+        [tasks, invocs] = metadata.consolidateTask(descriptor, invocation,
+                                                   provdir, dataloc, **kwargs)
 
     taskdir = op.dirname(utils.truepath(tasks[0]))
     try:
@@ -116,11 +128,14 @@ def local(descriptor, invocation, provdir, **kwargs):
 
     for taskgroup in taskgroups:
         if kwargs.get("verbose"):
-            print("... Processing task: {}".format(taskgroup))
+            print("... Processing task: {}".format(", ".join(taskgroup)))
 
         if kwargs.get("cluster"):
             tmptaskgroup = " ".join(taskgroup)
-            job.run(script.format(tmptaskgroup, taskdir))
+            func = job.run
+            args = [script.format(tmptaskgroup, taskdir)]
+            # Submit. If submission fails, retry with fibonnaci back-off
+            utils.backoff(func, args, backoff_time=backoff_time, **kwargs)
         else:
             runtask(taskgroup, provdir=taskdir, local=True, **kwargs)
 
@@ -182,13 +197,13 @@ def runtask(tasklist, **kwargs):
         handler = TaskHandler(task, **kwargs)
 
 
-def share(clowdrloc, **kwargs):
+def share(provdir, **kwargs):
     """share
     Launches a simple web server which showcases all runs at the clowdrloc.
 
     Parameters
     ----------
-    clowdrloc : str
+    provdir : str
         Path with Clowdr metdata files (returned from "local" and "deploy")
     **kwargs : dict
         Arbitrary keyword arguments (i.e. {'verbose': True})
@@ -198,17 +213,21 @@ def share(clowdrloc, **kwargs):
     None
     """
     # TODO: scrub inputs
-    shareapp.config["clowdrloc"] = clowdrloc
+    shareapp.config["clowdrloc"] = provdir
     shareapp.config["tmpdir"] = tempfile.mkdtemp()
 
     updateIndex()
+    print("passed here")
 
     host = kwargs["host"] if kwargs.get("host") else "0.0.0.0"
+    if kwargs.get("testing"):
+        shareapp.testing = True
+
     shareapp.run(host=host, debug=kwargs.get("debug"))
 
 
 def makeparser():
-    """main
+    """makeparser
     Command-line API wrapper for Clowdr as a CLI, not Python API.
     For information about the command-line wrapper and arguments it accepts,
     please try running "clowdr --help".
@@ -314,6 +333,29 @@ on clusters, and in the cloud. For more information, go to our website:
                             help="If the Boutiques descriptor summarizes a "
                                  "tool wrapped in Docker, toggles propagating "
                                  "the current user within the container.")
+    parser_loc.add_argument("--rerun", "-R",
+                            choices=["all", "failed", "incomplete"],
+                            help="Allows user to re-run jobs in a previous "
+                                 "execution that either failed or didn't "
+                                 "finish, etc. This requires the --run_id "
+                                 "argument to also be supplied. Three choices "
+                                 "are: 'all' to re-run all tasks, 'failed' to "
+                                 "re-run tasks which finished with a non-zero "
+                                 "exit-code, 'incomplete' to re-run tasks "
+                                 "which have not yet indicated job completion."
+                                 " While the descriptor and invocations will be"
+                                 " adopted from the previous executions, other "
+                                 "options such as clusterargs or volume can "
+                                 "be set to different values, if they were the "
+                                 "source or errors. Pairing the incomplete mode"
+                                 " with the --dev flag allows you to walk "
+                                 "through your dataset one group at a time.")
+    parser_loc.add_argument("--run_id", action="store",
+                            help="Pairs with --rerun. This ID is the directory"
+                                 " within the supplied provdir which contains "
+                                 "execution you wish to relaunch. These IDs/"
+                                 "directories are in the form: year-month-day_"
+                                 "hour-minute-second-8digitID.")
     parser_loc.add_argument("--s3", action="store",
                             help="Amazon S3 bucket and path for remote data. "
                                  "Accepted in the format: s3://{bucket}/{path}")
@@ -326,9 +368,9 @@ on clusters, and in the cloud. For more information, go to our website:
     parser_loc.set_defaults(func=local)
 
     # Create the subparser for cloud execution.
-    desc = ("Manages local and cluster deployment. Ideal for development, "
-            "testing, executing on local resources, or deployment on a "
-            "computing cluster environment.")
+    desc = ("Manages cloud deployment. Ideal for running jobs at scale on data "
+            "stored in Amazon Web Services S3 buckets (or similar object "
+            "store).")
     parser_cld = subparsers.add_parser("cloud", description=desc)
     parser_cld.add_argument("descriptor", type=argparse.FileType('r'),
                             help="Local path to Boutiques descriptor for the "
@@ -370,7 +412,10 @@ on clusters, and in the cloud. For more information, go to our website:
 
     parser_cld.set_defaults(func=cloud)
 
-    # Share Parser
+    # Create the subparser for sharing outputs
+    desc = ("Launches light-weight web service for exploring, managing, and "
+            "sharing the outputs and provenance recorded from Clowdr "
+            "executed workflows.")
     parser_shr = subparsers.add_parser("share")
     parser_shr.add_argument("provdir",
                             help="Local or S3 directory where Clowdr provenance"
@@ -380,10 +425,15 @@ on clusters, and in the cloud. For more information, go to our website:
     parser_shr.add_argument("--dev", "-d", action="store_true",
                             help="Toggles server messages and logging. This "
                                  "is intended for development purposes.")
+    parser_shr.add_argument("--testing", "-t", action="store_true",
+                            help="Used in testing the Flask server.")
 
     parser_shr.set_defaults(func=share)
 
-    # Task Parser
+    # Create the subparser for launching tasks
+    desc = ("Launches a list of tasks with provenance recording. This method "
+            "is what specifically wraps tool execution, is called by other "
+            "Clowdr modes, and can be used to re-execute or debug tasks.")
     parser_task = subparsers.add_parser("task")
     parser_task.add_argument("tasklist", nargs="+",
                              help="One or more Clowdr-created task.json files "
@@ -405,13 +455,13 @@ on clusters, and in the cloud. For more information, go to our website:
                                   "resource. This is important to ensure data "
                                   "is transferred off clouds before shut down.")
     parser_task.add_argument("--workdir", "-w", action="store",
-                            help="Specifies the working directory to be used "
-                                 "by the tasks created.")
+                             help="Specifies the working directory to be used "
+                                  "by the tasks created.")
     parser_task.add_argument("--volumes", "-v", action="append",
-                            help="Specifies any volumes to be mounted to the "
-                                 "container. This is usually related to the "
-                                 "path of any data files as specified in your "
-                                 "invocation(s).")
+                             help="Specifies any volumes to be mounted to the "
+                                  "container. This is usually related to the "
+                                  "path of any data files as specified in your "
+                                  "invocation(s).")
 
     parser_task.set_defaults(func=runtask)
     return parser
@@ -422,11 +472,18 @@ def main(args=None):
 
     # Parse arguments
     inps = parser.parse_args(args) if args is not None else parser.parse_args()
-    if len(sys.argv) == 1:
+
+    # If no args are provided, print help
+    if len(sys.argv) < 2 and args is None:
         parser.print_help()
         sys.exit()
     else:
-        inps.func(**vars(inps))
+        try:
+            inps.func(**vars(inps))
+            return 0
+        except Exception as e:
+            print(e)
+            return -1
 
 
 if __name__ == "__main__":

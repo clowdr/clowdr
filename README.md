@@ -4,9 +4,8 @@ Clowd is a command-line utility for iteratively developing pipelines, deploying 
 
 [![](https://img.shields.io/pypi/v/clowdr.svg)](https://pypi.python.org/pypi/clowdr)
 [![Build Status](https://travis-ci.org/clowdr/clowdr.svg?branch=master)](https://travis-ci.org/clowdr/clowdr)
+[![Coverage Status](https://coveralls.io/repos/github/clowdr/clowdr/badge.svg?branch=master)](https://coveralls.io/github/clowdr/clowdr?branch=master)
 [![Documentation Status](http://readthedocs.org/projects/clowdr-dev/badge/?version=latest)](https://clowdr-dev.readthedocs.io/en/latest/?badge=latest)
-![Docker Pulls](https://img.shields.io/docker/pulls/clowdr/clowdr.svg)
-[![https://www.singularity-hub.org/static/img/hosted-singularity--hub-%23e32929.svg](https://www.singularity-hub.org/static/img/hosted-singularity--hub-%23e32929.svg)](https://singularity-hub.org/collections/663)
 [![DOI](https://zenodo.org/badge/121551982.svg)](https://zenodo.org/badge/latestdoi/121551982)
 
 ## Contents
@@ -68,6 +67,8 @@ singularity pull clowdr/clowdr
 This doesn't exist yet - sorry!
 
 ## Usage
+(*For up to date command-lines please check out our (documentation)[#documentation]*)
+
 Below we'll explore each of the main three modes of operation for Clowdr. If in doubt, always feel free to turn back to the help-text:
 
 ```
@@ -128,8 +129,7 @@ clowdr share ./examples/task/bids-example/clowdr/ -d
 ```
 
 ## Documentation
-Currently, the only documentation on this project is in this README and some file docstrings - this section will be updated when an explicit
-function reference has been generated.
+For detailed and up-to-date documentation, check out our read-the-docs page, at [clowdr-dev.rtfd.io](http://clowdr-dev.rtfd.io).
 
 ## License
 This project is covered under the [MIT License](https://github.com/clowdr/clowdr/blob/master/LICENSE).

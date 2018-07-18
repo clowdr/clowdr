@@ -23,6 +23,7 @@ from clowdr import utils
 
 shareapp = Flask(__name__)
 
+
 @shareapp.route("/")
 def index():
     with open(shareapp.config.get("datapath")) as fhandle:
@@ -52,7 +53,8 @@ def parseJSON(outdir, objlist, s3bool=True, **kwargs):
         elif kwargs.get("invocation"):
             tmpdict["name"] = op.basename(key)
         elif kwargs.get("summary"):
-            tmpdict["id"] = op.splitext(op.basename(obj["fname"]))[0].split('-')[1]
+            tmpid = op.splitext(op.basename(obj["fname"]))[0].split('-')[1]
+            tmpdict["id"] = tmpid
             outfname = op.basename(tmpdict["contents"]["stdout"])
             with open(op.join(outdir, outfname)) as fhandle:
                 tmpdict["out"] = fhandle.read()
@@ -64,7 +66,8 @@ def parseJSON(outdir, objlist, s3bool=True, **kwargs):
             tmpdict["duration"] = str(datetime.timedelta(seconds=tmpdur))
             tmpdict["outputs"] = tmpdict["contents"]["outputs"]
         elif kwargs.get("task"):
-            tmpdict["id"] = op.splitext(op.basename(obj["fname"]))[0].split('-')[1]
+            tmpid = op.splitext(op.basename(obj["fname"]))[0].split('-')[1]
+            tmpdict["id"] = tmpid
             if kwargs.get("data").get("invocation"):
                 invocs = kwargs["data"]["invocation"]
                 invname = op.basename(tmpdict["contents"]["invocation"])
@@ -72,7 +75,9 @@ def parseJSON(outdir, objlist, s3bool=True, **kwargs):
                 tmpdict["invoc"] = invoc
             if kwargs.get("data").get("summary"):
                 summars = kwargs["data"]["summary"]
-                summar = [summ for summ in summars if summ["id"] == tmpdict["id"]]
+                summar = [summ
+                          for summ in summars
+                          if summ["id"] == tmpdict["id"]]
                 if len(summar) > 0:
                     tmpdict["summary"] = summar[0]
                 else:
@@ -92,18 +97,18 @@ def getRecords(clowdrloc, outdir, **kwargs):
         hostname = kwargs.get("hostname")
 
     if s3bool:
-        s3 = boto3.resource("s3") # , config=Config(signature_version=UNSIGNED))
-        # s3.meta.client.meta.events.register('choose-signer.s3.*', disable_signing)
-        cli = boto3.client("s3") # , config=Config(signature_version=UNSIGNED))
+        s3 = boto3.resource("s3")  # ,config=Config(signature_version=UNSIGNED))
+        cli = boto3.client("s3")  # ,config=Config(signature_version=UNSIGNED))
         buck = s3.Bucket(bucket)
+        presurl = cli.generate_presigned_url("get_object",
+                                             Params={"Bucket": obj.bucket_name,
+                                                     "Key": obj.key},
+                                             ExpiresIn=None)
         objs = buck.objects.filter(Prefix=rpath)
         objs = [{"key": obj.key,
                  "bucket_name": obj.bucket_name,
                  "date": obj.last_modified.strftime("%b %d, %Y (%T)"),
-                 "url": cli.generate_presigned_url("get_object",
-                                                   Params={"Bucket": obj.bucket_name,
-                                                           "Key": obj.key},
-                                                   ExpiresIn=None)}
+                 "url": presurl}
                 for obj in objs]
         for idx, obj in enumerate(objs):
             outfname = op.join(outdir, op.basename(obj["key"]))
@@ -113,13 +118,16 @@ def getRecords(clowdrloc, outdir, **kwargs):
         tsp = datetime.datetime.fromtimestamp
         objs = [{"key": op.join(clowdrloc, f),
                  "hostname": hostname,
-                 "date": tsp(op.getmtime(op.join(clowdrloc, f))).strftime("%b %d, %Y (%T)"),
+                 "date": tsp(op.getmtime(op.join(clowdrloc,
+                                         f))).strftime("%b %d, %Y (%T)"),
                  "fname": op.join(clowdrloc, f),
                  "url": None}
                 for f in os.listdir(clowdrloc)]
 
     task = [obj for obj in objs
-            if "task-" in obj["key"] and obj["key"].endswith('json') and "summary" not in obj["key"]]
+            if ("task-" in obj["key"] and
+                obj["key"].endswith('json') and
+                "summary" not in obj["key"])]
     summ = [obj for obj in objs if "-summary" in obj["key"]]
     desc = [obj for obj in objs if "descriptor" in obj["key"]]
     invo = [obj for obj in objs if "invocation" in obj["key"]]
@@ -141,11 +149,11 @@ def updateIndex(**kwargs):
                      data={"outs": outs})
     task = parseJSON(tmpdir, task, s3bool, task=True,
                      data={"invocation": invo,
-                           "summary"   : summ})
+                           "summary": summ})
 
-    data = {"clowdrloc" : clowdrloc,
-            "tool"      : desc,
-            "tasks"     : task}
+    data = {"clowdrloc": clowdrloc,
+            "tool": desc,
+            "tasks": task}
 
     fname = op.join(tmpdir, "clowdrsitedata.json")
     with open(fname, "w") as fhandle:
