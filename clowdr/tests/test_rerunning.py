@@ -26,7 +26,7 @@ class TestRerunner(TestCase):
         return call_local
 
     def test_rerun_all(self):
-        os.chdir(cdir)
+        os.chdir(self.cdir)
         groups = 1
         call_local = self.provide_local_call(groups=groups)
         fname = op.join(op.dirname(__file__), 'test_stdout.txt')
