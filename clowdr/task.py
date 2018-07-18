@@ -24,33 +24,34 @@ from clowdr import utils
 
 
 class TaskHandler:
-    def __init__(self, metadata, **kwargs):
-        self.manageTask(metadata, **kwargs)
+    def __init__(self, taskfile, **kwargs):
+        self.manageTask(taskfile, **kwargs)
 
-    def manageTask(self, metadata, clowdrloc=None, verbose=False, **kwargs):
+    def manageTask(self, taskfile, provdir=None, verbose=False, **kwargs):
         # Get metadata
-        if clowdrloc is None:
+        if provdir is None:
             self.localtaskdir = "/clowtask/"
         else:
-            self.localtaskdir = clowdrloc
+            self.localtaskdir = provdir
 
-        self.localtaskdir = op.join(self.localtaskdir, "clowtask_"+utils.randstring(3))
+        # The below grabs an ID from the form: /some/path/to/fname-#.ext
+        self.task_id = taskfile.split('.')[0].split('-')[-1]
+
+        self.localtaskdir = op.join(self.localtaskdir, "clowtask_"+self.task_id)
         if not op.exists(self.localtaskdir):
             os.makedirs(self.localtaskdir)
 
         if(verbose):
             print("Fetching metadata...")
-        remotetaskdir = op.dirname(metadata)
-        metadata = utils.get(metadata, self.localtaskdir)[0]
-        self.task_id = metadata.split('.')[0].split('-')[-1]
-        # The above grabs an ID from the form: fname-#.ext
+        remotetaskdir = op.dirname(taskfile)
+        taskfile = utils.get(taskfile, self.localtaskdir)[0]
 
         # Parse metadata
-        metadata   = json.load(open(metadata))
-        descriptor = metadata['tool']
-        invocation = metadata['invocation']
-        input_data = metadata['dataloc']
-        output_loc = utils.truepath(metadata['taskloc'])
+        taskinfo   = json.load(open(taskfile))
+        descriptor = taskinfo['tool']
+        invocation = taskinfo['invocation']
+        input_data = taskinfo['dataloc']
+        output_loc = utils.truepath(taskinfo['taskloc'])
 
         if(verbose):
             print("Fetching descriptor and invocation...")
