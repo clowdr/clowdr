@@ -13,4 +13,3 @@ class Endpoint:
     def __init__(self, auth):
         # TODO: document
         self.credentials = auth
-

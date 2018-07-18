@@ -43,7 +43,7 @@ def consolidateTask(tool, invocation, clowdrloc, dataloc, **kwargs):
     """
 
     ts = time.time()
-    dt = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
+    dt = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d_%H-%M-%S')
     randx = utils.randstring(8)
     modif = "{}-{}".format(dt, randx)
 
