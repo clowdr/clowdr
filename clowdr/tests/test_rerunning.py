@@ -5,6 +5,7 @@ from contextlib import redirect_stdout
 import os.path as op
 import json
 import re
+import os
 
 from clowdr import __file__ as cfile
 from clowdr import driver
