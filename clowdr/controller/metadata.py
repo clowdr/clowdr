@@ -83,7 +83,11 @@ def consolidateTask(tool, invocation, clowdrloc, dataloc, **kwargs):
         if kwargs.get("bids"):
             taskdicts, invocations = bidsTasks(taskloc, taskdict)
 
-        # Case 2b: User is quite simply just launching a single invocation
+        # Case 2b: User is performing a parameter sweep over invocations
+        else:
+            taskdicts, invocations = sweepTasks(taskloc, taskdict)
+
+        # Case 2c: User is quite simply just launching a single invocation
         else:
             taskdicts = [taskdict]
             invocations = [taskdict["invocation"]]
@@ -98,6 +102,9 @@ def consolidateTask(tool, invocation, clowdrloc, dataloc, **kwargs):
 
     return (taskdictnames, invocations)
 
+
+def sweepTasks(clowdrloc, taskdict):
+    pass
 
 def bidsTasks(clowdrloc, taskdict):
     """bidsTask

@@ -17,6 +17,7 @@ class TestMetadataGen(TestCase):
     invocation2 = op.join(cdir, "examples/invocation_ses.json")
     invocation3 = op.join(cdir, "examples/invocation_ses_nopart.json")
     invocation4 = op.join(cdir, "examples/invocs/")
+    invocation5 = op.join(cdir, "examples/invocation_sweep.json")
     provdir = op.join(cdir, "examples/task/")
     dataloc1 = "localhost"
     dataloc2 = "s3://mybucket/path/"
@@ -68,6 +69,14 @@ class TestMetadataGen(TestCase):
                                                    bids=False)
         self.assertTrue(len(tasks) == len(invocs) and
                         len(tasks) == len(os.listdir(self.invocation4)))
+
+    def test_metadata_sweep(self):
+        [tasks, invocs] = metadata.consolidateTask(self.descriptor,
+                                                   self.invocation5,
+                                                   self.provdir,
+                                                   self.dataloc1,
+                                                   verbose=True,
+                                                   sweep=True)
 
     def test_metadata_to_remote(self):
         [tasks, invocs] = metadata.consolidateTask(self.descriptor,

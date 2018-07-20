@@ -60,6 +60,8 @@ def local(descriptor, invocation, provdir, backoff_time=36000, **kwargs):
     int
         The exit-code returned by the task being executed
     """
+    print(kwargs.get("sweep"))
+    return -1
     # TODO: scrub inputs
     descriptor = descriptor.name
     tool = utils.truepath(descriptor)
@@ -308,6 +310,17 @@ on clusters, and in the cloud. For more information, go to our website:
                                  "the number of tasks to group here. For "
                                  "imperfect multiples, the last group will be "
                                  "the remainder.")
+    parser_loc.add_argument("--sweep", type=str, action="append",
+                            help="If you wish to perform a parameter sweep with"
+                                 " Clowdr, you can use this flag and provide "
+                                 "Boutiques parameter ID as the argument here. "
+                                 "This requires: 1) the parameter exists in "
+                                 "the provided invocation, and 2) that field "
+                                 "contains a list of the parameter values to "
+                                 "be used (if it is ordinarily a list, this "
+                                 "means it must be a list of lists here). This"
+                                 " option does not work with directories of "
+                                 "invocations, but only single files.")
     parser_loc.add_argument("--cluster", "-c", choices=["slurm"],
                             help="If you wish to submit your local tasks to a "
                                  "scheduler, you must specify it here. "
@@ -404,6 +417,17 @@ on clusters, and in the cloud. For more information, go to our website:
                                  "is intended for development purposes.")
     parser_cld.add_argument("--region", "-r", action="store",
                             help="The Amazon region to use for processing.")
+    parser_cld.add_argument("--sweep", type=str, action="append",
+                            help="If you wish to perform a parameter sweep with"
+                                 " Clowdr, you can use this flag and provide "
+                                 "Boutiques parameter ID as the argument here. "
+                                 "This requires: 1) the parameter exists in "
+                                 "the provided invocation, and 2) that field "
+                                 "contains a list of the parameter values to "
+                                 "be used (if it is ordinarily a list, this "
+                                 "means it must be a list of lists here). This"
+                                 " option does not work with directories of "
+                                 "invocations, but only single files.")
     parser_cld.add_argument("--bids", "-b", action="store_true",
                             help="Indicates that the tool being launched is a "
                                  "BIDS app. BIDS is a data organization format"
