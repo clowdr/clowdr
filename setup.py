@@ -1,13 +1,14 @@
 from setuptools import setup
 import os.path as op
 
-VERSION = "0.0.13"
+VERSION = "0.0.14"
 DEPS = [
          "boto3",
-         "flask",
          "boutiques>=0.5.10",
-         "slurmpy",
-         "memory-profiler"
+         "flask",
+         "memory-profiler",
+         "pandas",
+         "slurmpy"
        ]
 
 setup(name="clowdr",
