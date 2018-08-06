@@ -126,6 +126,23 @@ class TaskHandler:
         utils.post(op.join(self.localtaskdir, stderrf), remotetaskdir)
 
         # Write summary values to file, including:
+
+        summary_data = pd.DataFrame(columns=("task", "duration", "exitcode",
+                                             "len_stdout", "len_stderr",
+                                             "ram_max", "ram_avg", "ram_std"))
+        ramdat = np.asarray([p.ram
+                             for loc, p in self.cpu_ram_usage.iterrows()
+                             if not np.isnan(p.ram)])
+
+        summary_data.loc[0] = (self.task_id, duration, self.output.exit_code,
+                               len(self.output.stdout), len(self.output.stderr),
+                               np.max(ramdat), np.mean(ramdat), np.std(ramdat))
+
+        summardatf = "task-{}-usage_summary.csv".format(self.task_id)
+        summary_data.to_csv(op.join(self.localtaskdir, summardatf),
+                                   sep=',', index=False)
+        utils.post(op.join(self.localtaskdir, summardatf), remotetaskdir)
+
         summary = {"duration": duration,
                    "exitcode": self.output.exit_code,
                    "outputs": outputs_present,
