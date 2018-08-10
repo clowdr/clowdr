@@ -8,17 +8,24 @@
 # Email: gkiar@mcin.ca
 
 from botocore.exceptions import *
+import time
 import boto3
 import os.path as op
 import json
-import csv
+import warnings
 import os
 import re
+
+warnings.filterwarnings("ignore", message="numpy.dtype size changed")
+
+import pandas as pd
 
 from clowdr.endpoint.remote import Endpoint
 from clowdr import __path__ as clowfile
 
+
 clowfile = clowfile[0]
+
 
 class AWS(Endpoint):
     # TODO: document
@@ -26,16 +33,11 @@ class AWS(Endpoint):
     def setCredentials(self, **kwargs):
         # TODO: document 
 
-        credentials = self.credentials
-        with open(credentials) as fhandle:
-            reader = csv.reader(fhandle)
-            creds = []
-            for row in reader:
-                creds += row
-        os.environ["AWS_ACCESS_KEY_ID"] = creds[2]
-        os.environ["AWS_SECRET_ACCESS_KEY"] = creds[3]
-        self.access_key = creds[2]
-        self.secret_access = creds[3]
+        creds = pd.read_csv(self.credentials)
+        self.access_key = creds['Access key ID'][0]
+        self.secret_access = creds['Secret access key'][0]
+        os.environ["AWS_ACCESS_KEY_ID"] = self.access_key
+        os.environ["AWS_SECRET_ACCESS_KEY"] = self.secret_access
 
         if kwargs.get("region"):
             self.region = kwargs["region"]
@@ -80,7 +82,7 @@ class AWS(Endpoint):
                     self.iam.add_role_to_instance_profile(InstanceProfileName=name,
                                                           RoleName=name)
                     self.iam.attach_role_policy(RoleName=name,
-                                                PolicyArn=policies[rolename])
+                                                PolicyArn=policy[rolename])
                     roles[rolename] = role
             if kwargs.get("verbose"):
                 print("Role ARN: {}".format(roles[rolename]["Arn"]))
@@ -94,15 +96,11 @@ class AWS(Endpoint):
         net = [nets["SubnetId"] for nets in self.ec2.describe_subnets()["Subnets"]]
 
         def waitUntilDone(name, status):
-            try:
+            while True:
                 env = self.batch.describe_compute_environments(computeEnvironments=[name])
                 stat = env["computeEnvironments"][0]["status"]
-                if curr == status:
-                    waitUntilDone(status)
-                else:
+                if stat != status:
                     return
-            except:
-                return
 
         template = op.join(op.realpath(clowfile), "templates",
                            "AWS", "computeEnvironment.json")
@@ -144,6 +142,8 @@ class AWS(Endpoint):
 
                 response = self.batch.create_compute_environment(**compute)
                 waitUntilDone(name, "CREATING")
+                waitUntilDone(name, "UPDATING")
+                time.sleep(2)
                 compute["computeEnvironmentArn"] = response["computeEnvironmentArn"]
 
         if kwargs.get("verbose"):
@@ -168,13 +168,12 @@ class AWS(Endpoint):
                                       "describe_job_queues")
                 queue["jobQueueArn"] = response["jobQueues"][0]["jobQueueArn"]
         except ClientError as e:
-            if kwargs.get("verbose"):
-                print(e)
             if e.response["Error"]["Code"] == "NoSuchEntity":
                 if kwargs.get("verbose"):
                     print("Queue '{}' not found- creating.".format(name))
                 response = self.batch.create_job_queue(**queue)
                 queue["jobQueueArn"] = response["jobQueueArn"]
+                time.sleep(2)
         if kwargs.get("verbose"):
             print("Job Queue ARN: {}".format(queue["jobQueueArn"]))
 
