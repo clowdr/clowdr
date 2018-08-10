@@ -1,11 +1,13 @@
-FROM alpine:edge
+FROM python:3.7-slim
 MAINTAINER Greg Kiar <gkiar.github.io>
 
-RUN apk update && apk add --update bash python3-dev git wget tar docker
+RUN apt-get update && apt-get install -y git wget tar docker python-numpy
+RUN apt-get install -y gcc
 RUN mkdir -p /clowdata /clowtask /opt
 
-# COPY requirements.txt /opt/requirements.txt
-# COPY ./ /src/clowdr/
-RUN pip3 install clowdr==0.0.7
+COPY requirements.txt /opt/requirements.txt
+COPY ./ /src/clowdr/
+RUN pip install psutil
+RUN pip install -e /src/clowdr/
 
 ENTRYPOINT ["clowdr"]
