@@ -74,7 +74,8 @@ class AWS(Endpoint):
             except ClientError as e:
                 if e.response["Error"]["Code"] == "NoSuchEntity":
                     if kwargs.get("verbose"):
-                        print("Role '{}' not found- creating.".format(name))
+                        print("Role '{}' not found- creating.".format(name),
+                              flush=True)
                     role["AssumeRolePolicyDocument"] = json.dumps(role["AssumeRolePolicyDocument"])
                     response = self.iam.create_role(**role)
                     role["Arn"] = response["Role"]["Arn"]
@@ -85,7 +86,8 @@ class AWS(Endpoint):
                                                 PolicyArn=policy[rolename])
                     roles[rolename] = role
             if kwargs.get("verbose"):
-                print("Role ARN: {}".format(roles[rolename]["Arn"]))
+                print("Role ARN: {}".format(roles[rolename]["Arn"]),
+                      flush=True)
         self.roles = roles
 
     def configureBatch(self, **kwargs):
@@ -124,7 +126,8 @@ class AWS(Endpoint):
         except ClientError as e:
             if e.response["Error"]["Code"] == "InvalidEnvironment":
                 if kwargs.get("verbose"):
-                    print("Environment '{}' invalid- deleting.".format(name))
+                    print("Environment '{}' invalid- deleting.".format(name),
+                          flush=True)
                 response = self.batch.update_compute_environment(computeEnvironment=name,
                                                                  state="DISABLED")
                 waitUntilDone(name, "UPDATING")
@@ -134,7 +137,8 @@ class AWS(Endpoint):
             if (e.response["Error"]["Code"] == "NoSuchEntity" or
                 e.response["Error"]["Code"] == "InvalidEnvironment"):
                 if kwargs.get("verbose"):
-                    print("Environment '{}' not found- creating.".format(name))
+                    print("Environment '{}' not found- creating.".format(name),
+                          flush=True)
                 compute["computeResources"]["subnets"] = net
                 compute["computeResources"]["securityGroupIds"] = sg
                 compute["computeResources"]["instanceRole"] = self.roles["ecs"]["Arn"].replace("role", "instance-profile")
@@ -147,7 +151,8 @@ class AWS(Endpoint):
                 compute["computeEnvironmentArn"] = response["computeEnvironmentArn"]
 
         if kwargs.get("verbose"):
-            print("Compute Environment ARN: {}".format(compute["computeEnvironmentArn"]))
+            print("Compute Environment ARN: {}".format(compute["computeEnvironmentArn"]),
+                  flush=True)
 
         template = op.join(op.realpath(clowfile), "templates",
                            "AWS", "jobQueue.json")
@@ -170,12 +175,14 @@ class AWS(Endpoint):
         except ClientError as e:
             if e.response["Error"]["Code"] == "NoSuchEntity":
                 if kwargs.get("verbose"):
-                    print("Queue '{}' not found- creating.".format(name))
+                    print("Queue '{}' not found- creating.".format(name),
+                          flush=True)
                 response = self.batch.create_job_queue(**queue)
                 queue["jobQueueArn"] = response["jobQueueArn"]
                 time.sleep(2)
         if kwargs.get("verbose"):
-            print("Job Queue ARN: {}".format(queue["jobQueueArn"]))
+            print("Job Queue ARN: {}".format(queue["jobQueueArn"]),
+                  flush=True)
 
         template = op.join(op.realpath(clowfile), "templates",
                            "AWS", "jobDefinition.json")
@@ -194,12 +201,14 @@ class AWS(Endpoint):
         except ClientError as e:
             if e.response["Error"]["Code"] == "NoSuchEntity":
                 if kwargs.get("verbose"):
-                    print("Job '{}' not found- creating.".format(name))
+                    print("Job '{}' not found- creating.".format(name),
+                          flush=True)
                 response = self.batch.register_job_definition(**job)
                 job["jobDefinitionArn"] = response["jobDefinitionArn"]
 
         if kwargs.get("verbose"):
-            print("Job Definition ARN: {}".format(job["jobDefinitionArn"]))
+            print("Job Definition ARN: {}".format(job["jobDefinitionArn"]),
+                  flush=True)
 
     def launchJob(self, taskloc):
         # TODO: document
@@ -207,8 +216,9 @@ class AWS(Endpoint):
                                   "value":self.access_key},
                                  {"name":"AWS_SECRET_ACCESS_KEY",
                                   "value":self.secret_access}],
-                  "command":["run", taskloc]}
-        p1, p2 = re.match('.+\/.+-(\w+)\/clowdr\/task-([A-Za-z0-9]+).json', taskloc).group(1, 2)
+                  "command":["task", taskloc, "-V"]}
+        p1, p2 = re.match('.+\/.+-(\w+)\/clowdr\/task-([A-Za-z0-9]+).json',
+                          taskloc).group(1, 2)
         response = self.batch.submit_job(jobName="clowdr_{}-{}".format(p1, p2),
                                          jobQueue="clowdr-q",
                                          jobDefinition="clowdr",
