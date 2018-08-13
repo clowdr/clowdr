@@ -9,6 +9,7 @@
 
 from argparse import ArgumentParser
 from memory_profiler import memory_usage
+import numpy as np
 import os.path as op
 import subprocess
 import cProfile
@@ -18,6 +19,12 @@ import json
 import csv
 import os
 import re
+import warnings
+
+
+warnings.filterwarnings("ignore", message="numpy.dtype size changed")
+
+import pandas as pd
 
 import boutiques as bosh
 from clowdr import utils
@@ -100,21 +107,11 @@ class TaskHandler:
         for outfile in outputs_all.values():
             outputs_present += [outfile] if op.exists(outfile) else []
 
-        # Write memory to file
-        memoutf = "task-{}-memory.csv".format(self.task_id)
-        with open(op.join(self.localtaskdir, memoutf), "w") as fhandle:
-            writer = csv.writer(fhandle, delimiter=',')
-            for row in self.memory:
-                writer.writerow(row)
-        utils.post(op.join(self.localtaskdir, memoutf), remotetaskdir)
-
-        # Write cpu timing to file
-        cpuoutf = "task-{}-cputiming.csv".format(self.task_id)
-        with open(op.join(self.localtaskdir, cpuoutf), "w") as fhandle:
-            writer = csv.writer(fhandle, delimiter=',')
-            for row in self.cpu:
-                writer.writerow(row)
-        utils.post(op.join(self.localtaskdir, cpuoutf), remotetaskdir)
+        # Write memory/cpu stats to file
+        usagef = "task-{}-usage.csv".format(self.task_id)
+        self.cpu_ram_usage.to_csv(op.join(self.localtaskdir, usagef),
+                                  sep=',', index=False)
+        utils.post(op.join(self.localtaskdir, usagef), remotetaskdir)
 
         # Write stdout to file
         stdoutf = "task-{}-stdout.txt".format(self.task_id)
@@ -129,11 +126,27 @@ class TaskHandler:
         utils.post(op.join(self.localtaskdir, stderrf), remotetaskdir)
 
         # Write summary values to file, including:
+
+        summary_data = pd.DataFrame(columns=("task", "duration", "exitcode",
+                                             "len_stdout", "len_stderr",
+                                             "ram_max", "ram_avg", "ram_std"))
+        ramdat = np.asarray([p.ram
+                             for loc, p in self.cpu_ram_usage.iterrows()
+                             if not np.isnan(p.ram)])
+
+        summary_data.loc[0] = (self.task_id, duration, self.output.exit_code,
+                               len(self.output.stdout), len(self.output.stderr),
+                               np.max(ramdat), np.mean(ramdat), np.std(ramdat))
+
+        summardatf = "task-{}-usage_summary.csv".format(self.task_id)
+        summary_data.to_csv(op.join(self.localtaskdir, summardatf),
+                                   sep=',', index=False)
+        utils.post(op.join(self.localtaskdir, summardatf), remotetaskdir)
+
         summary = {"duration": duration,
                    "exitcode": self.output.exit_code,
-                   "outputs": [],
-                   "mem": op.join(remotetaskdir, memoutf),
-                   "cpu": op.join(remotetaskdir, cpuoutf),
+                   "outputs": outputs_present,
+                   "usage": op.join(remotetaskdir, usagef),
                    "stdout": op.join(remotetaskdir, stdoutf),
                    "stderr": op.join(remotetaskdir, stderrf)}
 
@@ -192,18 +205,38 @@ class TaskHandler:
                                  timestamps=True)
         pr.disable()
         ps = pstats.Stats(pr).sort_stats("cumulative").reverse_order()
-        headings = ["process", "ncall", "norecall",
-                    "totaltime", "cumulativetime", "subcalls"]
-        reformed_timing = [["{0}#{1}({2})".format(*key),
-                            ps.stats[key][0],
-                            ps.stats[key][1],
-                            ps.stats[key][2],
-                            ps.stats[key][3],
-                            ps.stats[key][4]]
-                           for key in ps.stats.keys()]
-        sorted_timing = sorted(reformed_timing, key=lambda i: i[-2])
-        timing_table = [headings] + sorted_timing
-        # To sync with RAM recording, look for rows with 'memory_profiler.py'
+        cpu_cols = ['time', 'process', 'duration',
+                    'ncall', 'nrecall', 'subprocesses']
+        cpu_data = [[ps.stats[key][3], # time
+                     "{0}#{1}({2})".format(*key), # process
+                     ps.stats[key][2], # duration
+                     ps.stats[key][0], # ncall
+                     ps.stats[key][1], # nrecall
+                     ps.stats[key][4]] # subprocesses
+                    for key in ps.stats.keys()]
+        sorted_cpu_data = sorted(cpu_data, key=lambda i: i[0])
+        cpu_table = cpu_cols + sorted_cpu_data
 
-        self.cpu = timing_table
-        self.memory = [("RAM (MB)", "systemtime")] + mem_usage
+        # To sync with RAM recording, look for rows with 'memory_profiler.py'
+        cpu_df = pd.DataFrame(sorted_cpu_data, columns=cpu_cols)
+        cpu_time = cpu_df.time
+        sync_time = [p.time
+                     for loc, p in cpu_df.iterrows()
+                     if "memory_profiler" in p.process and
+                        "__init__" in p.process][0]
+
+        ram_cols = ['time', 'ram']
+        ram_data = [[time - mem_usage[0][1] + sync_time, ram]
+                    for ram, time in mem_usage]
+        ram_df = pd.DataFrame(ram_data, columns=ram_cols)
+
+        total_df = pd.DataFrame(columns=['time'] + ram_cols[1:] + cpu_cols[1:])
+        time = np.sort(np.unique(cpu_df.time.append(ram_df.time)))
+        for t in time:
+            coincident_cpu = cpu_df.loc[cpu_df.time == t]
+            coincident_ram = ram_df.loc[ram_df.time == t]
+
+            total_df = pd.concat([total_df, coincident_cpu, coincident_ram],
+                                 sort=False, ignore_index=True)
+
+        self.cpu_ram_usage = total_df
