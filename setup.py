@@ -7,7 +7,7 @@ DEPS = [
          "boutiques>=0.5.10",
          "slurmpy",
          "memory-profiler",
-         "pandas"
+         "pandas",
          "flask",
        ]
 

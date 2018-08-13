@@ -71,7 +71,7 @@ class TaskHandler:
            any([dl.startswith("s3://") for dl in input_data]):
             if(verbose):
                 print("Fetching input data...", flush=True)
-            localdatadir = op.join(self.localtaskdir, "data")
+            localdatadir = op.join("/data")
             for dataloc in input_data:
                 utils.get(dataloc, localdatadir)
             # Move to correct location
