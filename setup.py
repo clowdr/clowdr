@@ -1,7 +1,7 @@
 from setuptools import setup
 import os.path as op
 
-VERSION = "0.0.15rc0"
+VERSION = "0.0.15rc1"
 DEPS = [
          "boto3",
          "boutiques>=0.5.10",
