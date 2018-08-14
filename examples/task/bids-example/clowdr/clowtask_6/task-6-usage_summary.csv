@@ -1,0 +1,2 @@
+task,duration,exitcode,len_stdout,len_stderr,ram_max,ram_avg,ram_std
+6,12.920732021331787,0,268,0,49.09765625,46.39375,5.709886616718519

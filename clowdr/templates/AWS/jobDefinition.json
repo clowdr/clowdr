@@ -3,7 +3,7 @@
     "type": "container",
     "parameters": {},
     "containerProperties": {
-        "image": "clowdr/clowdr",
+        "image": "clowdr/clowdr:0.0.15rc1",
         "vcpus": 2,
         "memory": 12000,
         "command": [
@@ -13,9 +13,9 @@
         "volumes": [
             {
                 "host": {
-                    "sourcePath": "/clowtask"
+                    "sourcePath": "/data"
                 },
-                "name": "task-volume"
+                "name": "data-volume"
             },
             {
                 "host": {
@@ -27,9 +27,9 @@
         "environment": [],
         "mountPoints": [
             {
-                "containerPath": "/clowtask",
+                "containerPath": "/data",
                 "readOnly": false,
-                "sourceVolume": "task-volume"
+                "sourceVolume": "data-volume"
             },
             {
                 "containerPath": "/var/run/docker.sock",

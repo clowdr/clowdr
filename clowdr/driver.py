@@ -128,7 +128,7 @@ def local(descriptor, invocation, provdir, backoff_time=36000, **kwargs):
 
     for taskgroup in taskgroups:
         if kwargs.get("verbose"):
-            print("... Processing task: {}".format(", ".join(taskgroup)))
+            print("... Processing task(s): {}".format(", ".join(taskgroup)))
 
         if kwargs.get("cluster"):
             tmptaskgroup = " ".join(taskgroup)
@@ -144,7 +144,7 @@ def local(descriptor, invocation, provdir, backoff_time=36000, **kwargs):
     return taskdir
 
 
-def cloud(descriptor, invocation, provdir, s3, endpoint, credentials, **kwargs):
+def cloud(descriptor, invocation, provdir, s3, cloud, credentials, **kwargs):
     """cloud
     Launches a pipeline locally at scale through Clowdr.
 
@@ -158,7 +158,7 @@ def cloud(descriptor, invocation, provdir, s3, endpoint, credentials, **kwargs):
         Path on S3 for storing Clowdr intermediate files and outputs
     s3 : str
         Path on S3 for accessing input data
-    endpoint : str
+    cloud : str
         Which endpoint to use for deployment
     credentials : str
         Credentials for Amazon with access to dataloc, clowdrloc, and Batch
@@ -171,7 +171,8 @@ def cloud(descriptor, invocation, provdir, s3, endpoint, credentials, **kwargs):
         The exit-code returned by the task being executed
     """
     # TODO: scrub inputs better
-    clowdrloc = clowdrloc.strip('/')
+    descriptor = descriptor.name
+    provdir = provdir.strip('/')
 
     # Create temp dir for clowdrloc
     tmploc = utils.truepath(tempfile.mkdtemp())
@@ -179,10 +180,14 @@ def cloud(descriptor, invocation, provdir, s3, endpoint, credentials, **kwargs):
     [tasks, invocs] = metadata.consolidateTask(descriptor, invocation, tmploc,
                                                s3, **kwargs)
     metadata.prepareForRemote(tasks, tmploc, provdir)
+    resource = launcher.configureResource(cloud, credentials, **kwargs)
+
     tasks_remote = [task for task in utils.post(tmploc, provdir)
                     if "task-" in task]
 
-    resource = launcher.configureResource(endpoint, credentials, **kwargs)
+    if kwargs.get("dev"):
+        tasks_remote = [tasks_remote[0]]  # Just launch the first in dev mode
+
     jids = []
     for task in tasks_remote:
         jids += [resource.launchJob(task)]
@@ -478,12 +483,8 @@ def main(args=None):
         parser.print_help()
         sys.exit()
     else:
-        try:
-            inps.func(**vars(inps))
-            return 0
-        except Exception as e:
-            print(e)
-            return -1
+        inps.func(**vars(inps))
+        return 0
 
 
 if __name__ == "__main__":
