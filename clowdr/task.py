@@ -129,14 +129,14 @@ class TaskHandler:
 
         summary_data = pd.DataFrame(columns=("task", "duration", "exitcode",
                                              "len_stdout", "len_stderr",
-                                             "ram_max", "ram_avg", "ram_std"))
+                                             "ram"))
         ramdat = np.asarray([p.ram
                              for loc, p in self.cpu_ram_usage.iterrows()
                              if not np.isnan(p.ram)])
 
         summary_data.loc[0] = (self.task_id, duration, self.output.exit_code,
                                len(self.output.stdout), len(self.output.stderr),
-                               np.max(ramdat), np.mean(ramdat), np.std(ramdat))
+                               str(ramdat))
 
         summardatf = "task-{}-usage_summary.csv".format(self.task_id)
         summary_data.to_csv(op.join(self.localtaskdir, summardatf),
