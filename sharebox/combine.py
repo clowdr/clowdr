@@ -21,6 +21,8 @@ for idx, f in enumerate(files):
         with open(f2) as fhandle2:
             tmp_invo = json.load(fhandle2)
 
+        f3 = op.join(indir, 'task-' + tsk_id + '-summary.json')
+
     tmp_df = pd.read_csv(f)
     tmp_df = tmp_df.loc[tmp_df['ram'] > -1][['time', 'ram']].reset_index(drop=True)
 
