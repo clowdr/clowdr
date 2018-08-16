@@ -45,31 +45,30 @@ app.layout = html.Div([
                 multi=True,
             )
         ],
-        style={'width': '45%', 'display': 'inline-block'}),
+        style={'width': '48%', 'display': 'inline-block'}),
         html.Div([
             html.Div([
-                html.H6('X-Axis:', style={'display':'inline'}),
+                html.H6('X-Axis:', style={'display':'inline-block'}),
                     dcc.Dropdown(
                         id='crossfilter-xaxis-column',
                         options=[{'label': i.title(), 'value': i} for i in df.columns],
                         value='time'
-            )], style={'width': '100%', 'float': 'right',
+            )], style={'width': '48%', 'float': 'left',
                        'display': 'inline-block'}),
 
             html.Div([
-                html.H6('Y-Axis:', style={'display':'inline'}),
+                html.H6('Y-Axis:', style={'display':'inline-block'}),
                     dcc.Dropdown(
                         id='crossfilter-yaxis-column',
                         options=[{'label': i.title(), 'value': i} for i in df.columns],
                         value='ram'
-            )], style={'width': '100%', 'float': 'right', 'display': 'inline-block'})
-        ], style={'width': '49%', 'float': 'right', 'display': 'inline-block'}),
-        html.Div([html.Br()]),
+            )], style={'width': '48%', 'float': 'right', 'display': 'inline-block'})
+        ], style={'width': '48%', 'float': 'right', 'display': 'inline-block',
+                  'clear': 'both'})
     ], style={
         'borderBottom': 'thin lightgrey solid',
         'backgroundColor': 'rgb(250, 250, 250)',
         'padding': '10px 5px',
-        'wrap': 'flex'
     }),
     html.Div([
         dcc.Graph(
