@@ -48,21 +48,32 @@ app.layout = html.Div([
         style={'width': '48%', 'display': 'inline-block'}),
         html.Div([
             html.Div([
-                html.H6('X-Axis:', style={'display':'inline-block'}),
-                    dcc.Dropdown(
-                        id='crossfilter-xaxis-column',
-                        options=[{'label': i.title(), 'value': i} for i in df.columns],
-                        value='time'
-            )], style={'width': '48%', 'float': 'left',
-                       'display': 'inline-block'}),
-
+                html.H6('Y-Axis', style={'display':'inline-block'}),
+                dcc.Dropdown(
+                    id='crossfilter-yaxis-column',
+                    options=[{'label': i.title(), 'value': i} for i in df.columns],
+                    value='ram'),
+                    dcc.RadioItems(
+                        id='crossfilter-yaxis-type',
+                        options=[{'label': i.title(), 'value': i}
+                                 for i in ['linear', 'log', 'histogram']],
+                        value='linear',
+                        labelStyle={'display': 'inline-block'})
+                    ], style={'width': '48%', 'float': 'left', 'display': 'inline-block'}),
             html.Div([
-                html.H6('Y-Axis:', style={'display':'inline-block'}),
-                    dcc.Dropdown(
-                        id='crossfilter-yaxis-column',
-                        options=[{'label': i.title(), 'value': i} for i in df.columns],
-                        value='ram'
-            )], style={'width': '48%', 'float': 'right', 'display': 'inline-block'})
+                html.H6('X-Axis', style={'display':'inline-block'}),
+                dcc.Dropdown(
+                    id='crossfilter-xaxis-column',
+                    options=[{'label': i.title(), 'value': i} for i in df.columns],
+                    value='time'),
+                    dcc.RadioItems(
+                        id='crossfilter-xaxis-type',
+                        options=[{'label': i.title(), 'value': i}
+                                 for i in ['linear', 'log']],
+                        value='linear',
+                        labelStyle={'display': 'inline-block'})
+                    ], style={'width': '48%', 'float': 'right',
+                       'display': 'inline-block'})
         ], style={'width': '48%', 'float': 'right', 'display': 'inline-block',
                   'clear': 'both'})
     ], style={
@@ -89,12 +100,30 @@ app.layout = html.Div([
 app.css.append_css({"external_url": "https://codepen.io/chriddyp/pen/bWLwgP.css"})
 
 
+# @app.callback(
+#     dash.dependencies.Output('crossfilter-xaxis-type', 'option'),
+#     [dash.dependencies.Input('crossfilter-xaxis-type', 'value')])
+# def disable_xaxis_button(yaxis_type):
+#     print('disable')
+#     return yaxis_type == 'histogram'
+# 
+# @app.callback(
+#     dash.dependencies.Output('crossfilter-xaxis-column', 'disabled'),
+#     [dash.dependencies.Input('crossfilter-xaxis-type', 'value')])
+# def disable_xaxis_column(yaxis_type):
+#     print('disable')
+#     return yaxis_type == 'histogram'
+
+
 @app.callback(
     dash.dependencies.Output('crossfilter-indicator-scatter', 'figure'),
     [dash.dependencies.Input('crossfilter-xaxis-column', 'value'),
      dash.dependencies.Input('crossfilter-yaxis-column', 'value'),
+     dash.dependencies.Input('crossfilter-xaxis-type', 'value'),
+     dash.dependencies.Input('crossfilter-yaxis-type', 'value'),
      dash.dependencies.Input('crossfilter-task', 'value')])
-def update_graph(xaxis_column_name, yaxis_column_name, task_value):
+def update_graph(xaxis_column_name, yaxis_column_name,
+                 xaxis_type, yaxis_type, task_value):
     dff = df[df['task'].isin(task_value)]
     import colorlover as cl
     colours = cl.scales['11']['qual']['Paired']
@@ -118,11 +147,11 @@ def update_graph(xaxis_column_name, yaxis_column_name, task_value):
             'layout': go.Layout(
                 xaxis={
                        'title': xaxis_column_name,
-                       'type': 'linear'
+                       'type': xaxis_type
                 },
                 yaxis={
                        'title': yaxis_column_name,
-                       'type': 'linear'
+                       'type': yaxis_type
                 },
                 margin={'l': 40, 'b': 30, 't': 10, 'r': 0},
                 height=450,

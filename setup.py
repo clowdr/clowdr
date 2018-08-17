@@ -4,11 +4,17 @@ import os.path as op
 VERSION = "0.0.14"
 DEPS = [
          "boto3",
-         "boutiques>=0.5.10",
          "flask",
-         "memory-profiler",
-         "pandas",
-         "slurmpy"
+         "boutiques>=0.5.10",
+         "memory-profiler==0.54.0",
+         "pandas==0.23.4",
+         "slurmpy==0.0.7",
+         "dash==0.24.1",
+         "dash-renderer==0.13.0",
+         "dash-html-components==0.11.0",
+         "dash-core-components==0.27.1",
+         "colorlover",
+         "plotly"
        ]
 
 setup(name="clowdr",
