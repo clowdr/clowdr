@@ -80,7 +80,7 @@ for idx, task_file in enumerate(tasks):
     task_dict['RAM: Max (MB)'] = tmp_max
     task_dict['RAM: Series (MB)'] = tmp_ram
     task_dict['Time: Total (s)'] = tmp_durr
-    task_dict['Time: Usage (s)'] = tmp_tim
+    task_dict['Time: Series (s)'] = tmp_tim
     task_dict.update(tmp_invo_dict)
     task_dict['Log: Output'] = tmp_sout
     task_dict['Log: Error'] = tmp_serr
@@ -89,5 +89,5 @@ for idx, task_file in enumerate(tasks):
     experiment += [task_dict]
 
 # Save experiment to file
-with open('clowdr-summary.json', 'w') as fhandle:
+with open('./sharebox/clowdr-summary.json', 'w') as fhandle:
     fhandle.write(json.dumps(experiment, indent=4, sort_keys=True))
