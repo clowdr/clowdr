@@ -30,7 +30,7 @@ for exp in experiment_dict:
     invo_dict += [tmp_dict]
 
 print(invo_dict[0].keys())
-print(experiment_dict[0].keys())
+print(task_dict[0].keys())
 
 app.layout = html.Div([
     html.H4('Clowdr Experiment Explorer'),
@@ -42,9 +42,7 @@ app.layout = html.Div([
                 children=[
                     dt.DataTable(
                         rows=task_dict,
-                        # optional - sets the order of columns
                         columns=list(task_dict[0].keys()),
-
                         row_selectable=True,
                         filterable=True,
                         sortable=True,
@@ -57,9 +55,7 @@ app.layout = html.Div([
                 children=[
                     dt.DataTable(
                         rows=invo_dict,
-                        # optional - sets the order of columns
                         columns=list(invo_dict[0].keys()),
-
                         row_selectable=True,
                         filterable=True,
                         sortable=True,
@@ -77,11 +73,11 @@ app.layout = html.Div([
 @app.callback(
     Output('invotable-clowdrexp', 'selected_row_indices'),
     [Input('graph-clowdrexp', 'clickData'),
-     Input('datatable-clowdrexp', 'rows'),
+     Input('invotable-clowdrexp', 'rows'),
      Input('tabs', 'value')],
     [State('datatable-clowdrexp', 'selected_row_indices'),
      State('invotable-clowdrexp', 'selected_row_indices')])
-def update_selected_row_indices(clickData, rows, tab, data_rows, invo_rows):
+def update_invo_row_indices(clickData, rows, tab, data_rows, invo_rows):
     if clickData and tab == 'invo-tab':
         for point in clickData['points']:
             curve = point['curveNumber'] // 3  # TODO: replace with # of graphs
@@ -102,7 +98,7 @@ def update_selected_row_indices(clickData, rows, tab, data_rows, invo_rows):
      Input('tabs', 'value')],
     [State('datatable-clowdrexp', 'selected_row_indices'),
      State('invotable-clowdrexp', 'selected_row_indices')])
-def update_selected_row_indices(clickData, rows, tab, data_rows, invo_rows):
+def update_data_row_indices(clickData, rows, tab, data_rows, invo_rows):
     if clickData and tab == 'stats-tab':
         for point in clickData['points']:
             curve = point['curveNumber'] // 3  # TODO: replace with # of graphs
@@ -111,7 +107,7 @@ def update_selected_row_indices(clickData, rows, tab, data_rows, invo_rows):
             else:
                 data_rows.append(curve)
     elif tab == 'stats-tab':
-        return invo_rows
+        return data_rows
     else:
         return data_rows
 
@@ -119,14 +115,17 @@ def update_selected_row_indices(clickData, rows, tab, data_rows, invo_rows):
 @app.callback(
     Output('graph-clowdrexp', 'figure'),
     [Input('datatable-clowdrexp', 'rows'),
+     Input('invotable-clowdrexp', 'rows'),
      Input('datatable-clowdrexp', 'selected_row_indices'),
      Input('invotable-clowdrexp', 'selected_row_indices')],
     [State('tabs', 'value')])
-def update_figure(rows, data_rows, invo_rows, tab):
+def update_figure(data_rows, invo_rows, data_indices, invo_indices, tab):
     if tab == 'stats-tab':
-        indices = data_rows
+        indices = data_indices
+        rows = data_rows
     elif tab == 'invo-tab':
-        indices = invo_rows
+        indices = invo_indices
+        rows = invo_rows
     rows = [exp
             for row in rows
             for exp in experiment_dict
