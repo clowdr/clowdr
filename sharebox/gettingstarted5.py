@@ -11,73 +11,122 @@ import plotly
 app = dash.Dash()
 
 app.scripts.config.serve_locally = True
-# app.css.config.serve_locally = True
-
-DF_GAPMINDER = pd.read_csv(
-    'https://raw.githubusercontent.com/plotly/datasets/master/gapminderDataFiveYear.csv'
-)
-DF_GAPMINDER = DF_GAPMINDER[DF_GAPMINDER['year'] == 2007]
-DF_GAPMINDER.loc[0:20]
 
 with open('./sharebox/clowdr-summary.json') as usage_fhandle:
     experiment_dict = json.load(usage_fhandle)
 
-table_dict = []
+task_dict = []
+invo_dict= []
 for exp in experiment_dict:
-    table_dict += [{'Task': exp['Task ID']}]
-table_dict 
-#plotting_dict() = 1
-#param_dict() = 1
+    task_dict += [{'Task': exp['Task ID'],
+                   'Tool': exp['Tool Name'],
+                   'Duration (s)': exp['Time: Total (s)'],
+                   'Max RAM (MB)': exp['RAM: Max (MB)'],
+                   'Exit Code': exp['Exit Code']}]
+    tmp_dict = {'Task' : exp['Task ID']}
+    tmp_dict.update({key.replace('Param: ', ''): exp[key]
+                     for key in exp.keys()
+                     if key.startswith('Param: ')})
+    invo_dict += [tmp_dict]
 
+print(invo_dict[0].keys())
 print(experiment_dict[0].keys())
 
-#import pdb;pdb.set_trace()
-#table_columns = ['Task ID', 'Tool Name', 'Time: Total (s)']
-
 app.layout = html.Div([
-    html.H4('Gapminder DataTable'),
-    dt.DataTable(
-        # rows=DF_GAPMINDER.to_dict('records'),
-        rows=table_dict,
+    html.H4('Clowdr Experiment Explorer'),
+    dcc.Tabs(id='tabs',
+             value='stats-tab',
+             children=[
+        dcc.Tab(label="Statistics",
+                value='stats-tab',
+                children=[
+                    dt.DataTable(
+                        rows=task_dict,
+                        # optional - sets the order of columns
+                        columns=list(task_dict[0].keys()),
 
-        # optional - sets the order of columns
-        # columns=sorted(DF_GAPMINDER.columns),
-        columns=list(table_dict[0].keys()),
+                        row_selectable=True,
+                        filterable=True,
+                        sortable=True,
+                        editable=False,
+                        selected_row_indices=[],
+                        id='datatable-clowdrexp')
+                ]),
+        dcc.Tab(label="Invocations",
+                value='invo-tab',
+                children=[
+                    dt.DataTable(
+                        rows=invo_dict,
+                        # optional - sets the order of columns
+                        columns=list(invo_dict[0].keys()),
 
-        row_selectable=True,
-        filterable=True,
-        sortable=True,
-        selected_row_indices=[],
-        id='datatable-gapminder'
-    ),
-    html.Div(id='selected-indexes'),
+                        row_selectable=True,
+                        filterable=True,
+                        sortable=True,
+                        editable=False,
+                        selected_row_indices=[],
+                        id='invotable-clowdrexp')
+                ])
+    ]),
     dcc.Graph(
-        id='graph-gapminder'
+        id='graph-clowdrexp'
     ),
 ], className="container")
 
 
 @app.callback(
-    Output('datatable-gapminder', 'selected_row_indices'),
-    [Input('graph-gapminder', 'clickData'),
-     Input('datatable-gapminder', 'rows')],
-    [State('datatable-gapminder', 'selected_row_indices')])
-def update_selected_row_indices(clickData, rows, selected_row_indices):
-    if clickData:
+    Output('invotable-clowdrexp', 'selected_row_indices'),
+    [Input('graph-clowdrexp', 'clickData'),
+     Input('datatable-clowdrexp', 'rows'),
+     Input('tabs', 'value')],
+    [State('datatable-clowdrexp', 'selected_row_indices'),
+     State('invotable-clowdrexp', 'selected_row_indices')])
+def update_selected_row_indices(clickData, rows, tab, data_rows, invo_rows):
+    if clickData and tab == 'invo-tab':
         for point in clickData['points']:
-            curve = point['curveNumber'] // 3
-            if curve in selected_row_indices:
-                selected_row_indices.remove(curve)
+            curve = point['curveNumber'] // 3  # TODO: replace with # of graphs
+            if curve in data_rows:
+                invo_rows.remove(curve)
             else:
-                selected_row_indices.append(curve)
-    return selected_row_indices
+                invo_rows.append(curve)
+    elif tab == 'invo-tab':
+        return data_rows
+    else:
+        return invo_rows
 
 
 @app.callback(
-    Output('graph-gapminder', 'figure'),
-    [Input('datatable-gapminder', 'rows'),
-     Input('datatable-gapminder', 'selected_row_indices')])
-def update_figure(rows, selected_row_indices):
+    Output('datatable-clowdrexp', 'selected_row_indices'),
+    [Input('graph-clowdrexp', 'clickData'),
+     Input('datatable-clowdrexp', 'rows'),
+     Input('tabs', 'value')],
+    [State('datatable-clowdrexp', 'selected_row_indices'),
+     State('invotable-clowdrexp', 'selected_row_indices')])
+def update_selected_row_indices(clickData, rows, tab, data_rows, invo_rows):
+    if clickData and tab == 'stats-tab':
+        for point in clickData['points']:
+            curve = point['curveNumber'] // 3  # TODO: replace with # of graphs
+            if curve in data_rows:
+                data_rows.remove(curve)
+            else:
+                data_rows.append(curve)
+    elif tab == 'stats-tab':
+        return invo_rows
+    else:
+        return data_rows
+
+
+@app.callback(
+    Output('graph-clowdrexp', 'figure'),
+    [Input('datatable-clowdrexp', 'rows'),
+     Input('datatable-clowdrexp', 'selected_row_indices'),
+     Input('invotable-clowdrexp', 'selected_row_indices')],
+    [State('tabs', 'value')])
+def update_figure(rows, data_rows, invo_rows, tab):
+    if tab == 'stats-tab':
+        indices = data_rows
+    elif tab == 'invo-tab':
+        indices = invo_rows
     rows = [exp
             for row in rows
             for exp in experiment_dict
@@ -87,7 +136,7 @@ def update_figure(rows, selected_row_indices):
         subplot_titles=('Memory Profile', 'Time Profile', 'Memory Profile',),
         shared_xaxes=True)
     marker = {'color': ['#0074D9']*len(rows)}
-    for i in (selected_row_indices or []):
+    for i in (indices or []):
         marker['color'][i] = '#FF851B'
     for i, row in enumerate(rows):
         fig.append_trace({
