@@ -9,6 +9,8 @@
 
 from argparse import ArgumentParser
 from memory_profiler import memory_usage
+from datetime import datetime
+from time import mktime, localtime
 import numpy as np
 import os.path as op
 import subprocess
@@ -126,7 +128,6 @@ class TaskHandler:
         utils.post(op.join(self.localtaskdir, stderrf), remotetaskdir)
 
         # Write summary values to file, including:
-
         summary_data = pd.DataFrame(columns=("task", "duration", "exitcode",
                                              "len_stdout", "len_stderr",
                                              "ram"))
@@ -143,7 +144,9 @@ class TaskHandler:
                                    sep=',', index=False)
         utils.post(op.join(self.localtaskdir, summardatf), remotetaskdir)
 
+        start_time = datetime.fromtimestamp(mktime(localtime(start_time)))
         summary = {"duration": duration,
+                   "launchtime": str(start_time),
                    "exitcode": self.output.exit_code,
                    "outputs": outputs_present,
                    "usage": op.join(remotetaskdir, usagef),
@@ -216,6 +219,7 @@ class TaskHandler:
         # To sync with RAM recording, look for rows with 'memory_profiler.py'
         cpu_df = pd.DataFrame(sorted_cpu_data, columns=cpu_cols)
         cpu_time = cpu_df.time
+        self.start_time = cpu_time[0]
         sync_time = [p.time
                      for loc, p in cpu_df.iterrows()
                      if "memory_profiler" in p.process and

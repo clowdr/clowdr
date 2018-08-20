@@ -1,10 +1,11 @@
 {
-    "duration": 25.557554006576538,
+    "duration": 18.05638313293457,
     "exitcode": 0,
+    "launchtime": "2018-08-20 15:57:09",
     "outputs": [
         "/data/ds114/derivatives/bids-example/"
     ],
-    "stderr": "/Users/gkiar/code/gkiar/clowdr/examples/task/2018-08-06_14-17-49-C2ZEUSKV/clowdr/task-2-stderr.txt",
-    "stdout": "/Users/gkiar/code/gkiar/clowdr/examples/task/2018-08-06_14-17-49-C2ZEUSKV/clowdr/task-2-stdout.txt",
-    "usage": "/Users/gkiar/code/gkiar/clowdr/examples/task/2018-08-06_14-17-49-C2ZEUSKV/clowdr/task-2-usage.csv"
+    "stderr": "/Users/gkiar/code/gkiar/clowdr/examples/task/2018-08-20_15-56-38-SUFVLD26/clowdr/task-2-stderr.txt",
+    "stdout": "/Users/gkiar/code/gkiar/clowdr/examples/task/2018-08-20_15-56-38-SUFVLD26/clowdr/task-2-stdout.txt",
+    "usage": "/Users/gkiar/code/gkiar/clowdr/examples/task/2018-08-20_15-56-38-SUFVLD26/clowdr/task-2-usage.csv"
 }

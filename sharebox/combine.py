@@ -8,7 +8,7 @@ import os
 import re
 
 # Set input directory, get list of tasks
-indir = 'examples/task/bids-example/clowdr/'
+indir = '/Users/gkiar/code/gkiar/clowdr/examples/task/2018-08-20_15-56-38-SUFVLD26/clowdr'
 tasks = [op.join(indir, f)
          for f in os.listdir(indir)
          if re.match(r'task-[0-9]+.json', f)]
@@ -49,6 +49,7 @@ for idx, task_file in enumerate(tasks):
     with open(summary_file) as summary_fhandle:
         # ... and extract the exit code and duration
         tmp_summ = json.load(summary_fhandle)
+        tmp_time = tmp_summ['launchtime']
         tmp_ecod = tmp_summ['exitcode']
         tmp_durr = tmp_summ['duration']
 
@@ -81,6 +82,7 @@ for idx, task_file in enumerate(tasks):
     task_dict['RAM: Series (MB)'] = tmp_ram
     task_dict['Time: Total (s)'] = tmp_durr
     task_dict['Time: Series (s)'] = tmp_tim
+    task_dict['Time: Start'] = tmp_time
     task_dict.update(tmp_invo_dict)
     task_dict['Log: Output'] = tmp_sout
     task_dict['Log: Error'] = tmp_serr
