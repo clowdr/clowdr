@@ -14,10 +14,51 @@ import pandas as pd
 import numpy as np
 import json
 
-# Initialize Dash app
-app = dash.Dash()
-app.scripts.config.serve_locally = True
+# Initialize Dash app with custom wrapper that lets us set page title
+class CustomDash(dash.Dash):
+    def interpolate_index(self, **kwargs):
+        # Inspect the arguments by printing them
+        print(kwargs)
+        return '''
+        <!DOCTYPE html>
+        <html>
+            <head>
+            <title>Clowdr Explorer</title>
+            <link rel="stylesheet" href="https://unpkg.com/react-select@1.0.0-rc.3/dist/react-select.min.css">
+            <link rel="stylesheet" href="https://unpkg.com/react-virtualized@9.9.0/styles.css">
+            <link rel="stylesheet" href="https://unpkg.com/react-virtualized-select@3.1.0/styles.css">
+            <link rel="stylesheet" href="https://unpkg.com/rc-slider@6.1.2/assets/index.css">
+            <link rel="stylesheet" href="https://unpkg.com/dash-core-components@0.27.1/dash_core_components/react-dates@12.3.0.css">
+            <link rel="stylesheet" href="https://unpkg.com/dash-table-experiments@0.6.0/dash_table_experiments/dash_table_experiments.css">
+            <link rel="stylesheet" href="https://codepen.io/chriddyp/pen/bWLwgP.css">
+            <link rel="stylesheet" href="/assets/banner.css?mod=1534778913.0">
+            </head>
+            <body>
+                {app_entry}
+                {config}
+                {scripts}
+            <footer>
+            <script src="https://unpkg.com/react@15.4.2/dist/react.min.js"></script>
+            <script src="https://unpkg.com/react-dom@15.4.2/dist/react-dom.min.js"></script>
+            <script src="https://unpkg.com/dash-html-components@0.11.0/dash_html_components/bundle.js"></script>
+            <script src="https://cdn.plot.ly/plotly-1.39.1.min.js"></script>
+            <script src="https://unpkg.com/dash-core-components@0.27.1/dash_core_components/bundle.js"></script>
+            <script src="https://unpkg.com/dash-table-experiments@0.6.0/dash_table_experiments/bundle.js"></script>
+            <script src="https://unpkg.com/dash-renderer@0.13.0/dash_renderer/bundle.js"></script>
+            </footer>
+            </body>
+        </html>
+        '''.format(
+            app_entry=kwargs['app_entry'],
+            config=kwargs['config'],
+            scripts=kwargs['scripts'])
 
+app = CustomDash()
+
+# Add CSS to page
+app.css.append_css({
+    'external_url': 'https://codepen.io/chriddyp/pen/bWLwgP.css'
+})
 
 # Load and groom dataset
 # -----> /start data grooming
@@ -120,7 +161,7 @@ def create_figure():
     # Initialize plotting space
     fig = plotly.tools.make_subplots(rows=3, cols=1,
                                      subplot_titles=('Memory Usage',
-                                                     'Task Launch Order',
+                                                     'Task Gantt',
                                                      'Memory Profile'),
                                      shared_xaxes=False)
 
@@ -150,9 +191,13 @@ def create_figure():
     fig['layout']['xaxis1']['title'] = 'Time (s)'
 
     # Set layout info for Gantt plot
-    fig['layout']['yaxis2']['title'] = 'Task'
-    fig['layout']['yaxis2']['autorange'] = 'reversed'
-    fig['layout']['yaxis2']['zeroline'] = False
+    # RAM y-axis
+    fig['layout']['yaxis2']['title'] = 'Max RAM (MB)'
+    fig['layout']['yaxis2']['zeroline'] = True
+    # Task y-axis
+    # fig['layout']['yaxis2']['title'] = 'Task'
+    # fig['layout']['yaxis2']['autorange'] = 'reversed'
+    # fig['layout']['yaxis2']['zeroline'] = False
     fig['layout']['xaxis2']['title'] = 'Datetime'
     fig['layout']['xaxis2']['showgrid'] = False
     fig['layout']['xaxis2']['type'] = 'date'
@@ -175,7 +220,10 @@ def append_trace(fig, data_row, idx, colour=main_colour):
                                'Start': data_row['Time: Start'],
                                'Finish': data_row['Time: End']}])
     gantt_dat = tmpfig['data'][0]
-    gantt_dat['y'] = (idx, idx)
+    # RAM y-axis
+    gantt_dat['y'] = tuple([data_row['RAM: Max (MB)']] * 2)
+    # Task y-axis
+    # gantt_dat['y'] = (idx, idx)
     gantt_dat['mode'] = 'lines'
     gantt_dat['line'] = {'color': colour, 'width': 5}
     gantt_dat['name'] = 'Task {}'.format(data_row['Task ID'])
@@ -295,11 +343,6 @@ def update_figure(rows, selected_indices, figure):
     return figure
 # <------ /stop callback management
 
-
-# Add CSS to page
-app.css.append_css({
-    'external_url': 'https://codepen.io/chriddyp/pen/bWLwgP.css'
-})
 
 # Set server launch when run as main app
 if __name__ == '__main__':
