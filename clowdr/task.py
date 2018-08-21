@@ -141,7 +141,7 @@ class TaskHandler:
 
         summardatf = "task-{}-usage_summary.csv".format(self.task_id)
         summary_data.to_csv(op.join(self.localtaskdir, summardatf),
-                                   sep=',', index=False)
+                            sep=',', index=False)
         utils.post(op.join(self.localtaskdir, summardatf), remotetaskdir)
 
         start_time = datetime.fromtimestamp(mktime(localtime(start_time)))
@@ -206,12 +206,12 @@ class TaskHandler:
         ps = pstats.Stats(pr).sort_stats("cumulative").reverse_order()
         cpu_cols = ['time', 'process', 'duration',
                     'ncall', 'nrecall', 'subprocesses']
-        cpu_data = [[ps.stats[key][3], # time
-                     "{0}#{1}({2})".format(*key), # process
-                     ps.stats[key][2], # duration
-                     ps.stats[key][0], # ncall
-                     ps.stats[key][1], # nrecall
-                     ps.stats[key][4]] # subprocesses
+        cpu_data = [[ps.stats[key][3],  # time
+                     "{0}#{1}({2})".format(*key),  # process
+                     ps.stats[key][2],  # duration
+                     ps.stats[key][0],  # ncall
+                     ps.stats[key][1],  # nrecall
+                     ps.stats[key][4]]  # subprocesses
                     for key in ps.stats.keys()]
         sorted_cpu_data = sorted(cpu_data, key=lambda i: i[0])
         cpu_table = cpu_cols + sorted_cpu_data

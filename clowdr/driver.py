@@ -17,7 +17,8 @@ import os
 
 from clowdr.controller import metadata, launcher, rerunner
 from clowdr.task import TaskHandler
-from clowdr.server import shareapp, updateIndex
+# from clowdr.server import shareapp, updateIndex
+from clowdr.share import consolidate, portal
 from clowdr import utils
 
 
@@ -212,18 +213,15 @@ def share(provdir, **kwargs):
     -------
     None
     """
-    # TODO: scrub inputs
-    shareapp.config["clowdrloc"] = provdir
-    shareapp.config["tmpdir"] = tempfile.mkdtemp()
+    # TODO: start from a directory
+    summary = op.join(provdir, 'clowdr-summary.json')
+    experiment_dict = consolidate.summary(provdir, summary)
 
-    updateIndex()
-    print("passed here")
+    customDash = portal.CreatePortal(experiment_dict)
+    app = customDash.launch()
 
     host = kwargs["host"] if kwargs.get("host") else "0.0.0.0"
-    if kwargs.get("testing"):
-        shareapp.testing = True
-
-    shareapp.run(host=host, debug=kwargs.get("debug"))
+    app.run_server(host=host, debug=kwargs.get("debug"))
 
 
 def makeparser():
@@ -422,11 +420,9 @@ on clusters, and in the cloud. For more information, go to our website:
                                  "records and metadata are stored. This path "
                                  "was returned by running either clowdr cloud "
                                  "or clowdr local.")
-    parser_shr.add_argument("--dev", "-d", action="store_true",
+    parser_shr.add_argument("--debug", "-d", action="store_true",
                             help="Toggles server messages and logging. This "
                                  "is intended for development purposes.")
-    parser_shr.add_argument("--testing", "-t", action="store_true",
-                            help="Used in testing the Flask server.")
 
     parser_shr.set_defaults(func=share)
 
