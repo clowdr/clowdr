@@ -51,7 +51,7 @@ class TaskHandler:
             os.makedirs(self.localtaskdir)
 
         if(verbose):
-            print("Fetching metadata...")
+            print("Fetching metadata...", flush=True)
         remotetaskdir = op.dirname(taskfile)
         taskfile = utils.get(taskfile, self.localtaskdir)[0]
 
@@ -63,7 +63,7 @@ class TaskHandler:
         output_loc = utils.truepath(taskinfo['taskloc'])
 
         if(verbose):
-            print("Fetching descriptor and invocation...")
+            print("Fetching descriptor and invocation...", flush=True)
         # Get descriptor and invocation
         desc_local = utils.get(descriptor, self.localtaskdir)[0]
         invo_local = utils.get(invocation, self.localtaskdir)[0]
@@ -72,20 +72,20 @@ class TaskHandler:
         if not kwargs.get("local") and \
            any([dl.startswith("s3://") for dl in input_data]):
             if(verbose):
-                print("Fetching input data...")
-            localdatadir = op.join(self.localtaskdir, "data")
+                print("Fetching input data...", flush=True)
+            localdatadir = op.join("/data")
             for dataloc in input_data:
                 utils.get(dataloc, localdatadir)
             # Move to correct location
             os.chdir(localdatadir)
         else:
             if(verbose):
-                print("Skipping data fetch (local execution)...")
+                print("Skipping data fetch (local execution)...", flush=True)
             if kwargs.get("workdir") and op.exists(kwargs.get("workdir")):
                 os.chdir(kwargs["workdir"])
 
         if(verbose):
-            print("Beginning execution...")
+            print("Beginning execution...", flush=True)
         # Launch task
         copts = ['launch', desc_local, invo_local]
         if kwargs.get("volumes"):
@@ -97,7 +97,7 @@ class TaskHandler:
         start_time = time.time()
         self.provLaunch(copts, verbose=verbose, **kwargs)
         if(verbose):
-            print(self.output)
+            print(self.output, flush=True)
         duration = time.time() - start_time
 
         # Get list of bosh exec outputs
@@ -155,15 +155,17 @@ class TaskHandler:
 
         if not kwargs.get("local"):
             if(verbose):
-                print("Uploading outputs...")
+                print("Uploading outputs...", flush=True)
             # Push outputs
             for local_output in outputs_present:
                 if(verbose):
-                    print("{} --> {}".format(local_output, output_loc))
+                    print("{} --> {}".format(local_output, output_loc),
+                          flush=True)
                 summary["outputs"] += utils.post(local_output, output_loc)
         else:
             if(verbose):
-                print("Skipping uploading outputs (local execution)...")
+                print("Skipping uploading outputs (local execution)...",
+                      flush=True)
             summary["outputs"] = outputs_present
 
         summarf = "task-{}-summary.json".format(self.task_id)
@@ -175,7 +177,8 @@ class TaskHandler:
         # if reprozip: use it
         if not subprocess.Popen("type reprozip 2>/dev/null", shell=True).wait():
             if kwargs.get("verbose"):
-                print("Reprozip found; will use to record provenance!")
+                print("Reprozip found; will use to record provenance!",
+                      flush=True)
             cmd = 'reprozip usage_report --disable'
             p = subprocess.Popen(cmd, shell=True).wait()
 
@@ -191,7 +194,8 @@ class TaskHandler:
             p = subprocess.Popen(cmd, shell=True).wait()
         else:
             if kwargs.get("verbose"):
-                print("Reprozip not found; install to record more provenance!")
+                print("Reprozip not found; install to record more provenance!",
+                      flush=True)
             self.output = bosh.execute(*options)
 
     def provLaunch(self, options, **kwargs):
