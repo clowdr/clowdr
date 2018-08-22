@@ -10,7 +10,7 @@
         "instanceTypes": [
             "m4.xlarge",
             "r4.large",
-            "r4.xlarge",
+            "r4.xlarge"
         ],
         "subnets": [
         ],
