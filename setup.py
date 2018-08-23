@@ -1,12 +1,11 @@
 from setuptools import setup
 import os.path as op
 
-VERSION = "0.0.16rc0"
+VERSION = "0.0.16rc1"
 DEPS = [
          "boto3",
          "flask",
          "boutiques>=0.5.10",
-         "memory-profiler==0.54.0",
          "pandas>=0.23.4",
          "slurmpy==0.0.7",
          "dash>=0.24.1",
