@@ -5,6 +5,6 @@ RUN apk update && apk add --update bash python3-dev git wget tar docker build-ba
 RUN mkdir -p /clowdata /clowtask /opt
 
 RUN pip3 install --upgrade pip && pip3 install numpy==1.14.3
-RUN pip3 install clowdr==0.0.15rc1
+RUN pip3 install clowdr==0.0.16rc0
 
 ENTRYPOINT ["clowdr"]

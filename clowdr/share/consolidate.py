@@ -82,22 +82,26 @@ def summary(indir, outfile):
         if op.isfile(usage_file):
             tmp_df = pd.read_csv(usage_file)
             # ... and extract the RAM time series and summary of it
-            tmp_df = tmp_df.loc[tmp_df['ram'] > -1]  # All rows with RAM info
-            tmp_df = tmp_df[['time', 'ram']].reset_index(drop=True)
             tmp_tim = [w for v in tmp_df[['time']].values.tolist() for w in v]
             tmp_ram = [w for v in tmp_df[['ram']].values.tolist() for w in v]
-            tmp_max = np.max(tmp_ram)
+            tmp_cpu = [w for v in tmp_df[['cpu']].values.tolist() for w in v]
+            tmp_max_ram = np.max(tmp_ram)
+            tmp_max_cpu = np.max(tmp_cpu)
         else:
             tmp_tim = None
             tmp_ram = None
-            tmp_max = None
+            tmp_cpu = None
+            tmp_max_ram = None
+            tmp_max_cpu = None
 
         # Put useful pieces into dictionary
         task_dict['Tool Name'] = tmp_name
         task_dict['Task ID'] = task_id
         task_dict['Exit Code'] = tmp_ecod
-        task_dict['RAM: Max (MB)'] = tmp_max
+        task_dict['RAM: Max (MB)'] = tmp_max_ram
         task_dict['RAM: Series (MB)'] = tmp_ram
+        task_dict['CPU: Max (%)'] = tmp_max_cpu
+        task_dict['CPU: Series (%)'] = tmp_cpu
         task_dict['Time: Total (s)'] = tmp_durr
         task_dict['Time: Series (s)'] = tmp_tim
         task_dict['Time: Start'] = tmp_time

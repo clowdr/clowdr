@@ -46,6 +46,7 @@ class CreatePortal():
                                 'Tool': exp['Tool Name'],
                                 'Duration (s)': exp['Time: Total (s)'],
                                 'Max RAM (MB)': exp['RAM: Max (MB)'],
+                                'Max CPU (%)': exp['CPU: Max (%)'],
                                 'Exit Code': exp['Exit Code']}]
 
             # Add relevant info to invocation dict
@@ -213,7 +214,7 @@ class CreatePortal():
         fig = plotly.tools.make_subplots(rows=3, cols=1,
                                          subplot_titles=('Memory Usage',
                                                          'Task Gantt',
-                                                         'Memory Profile'),
+                                                         'CPU Usage'),
                                          shared_xaxes=False)
 
         # Add every row of table to graph with the main colour
@@ -282,7 +283,7 @@ class CreatePortal():
         # TODO: replace with table of std out/err info
         fig.append_trace({
             'x': data_row['Time: Series (s)'],
-            'y': data_row['RAM: Series (MB)'],
+            'y': data_row['CPU: Series (%)'],
             'mode': 'lines',
             'line': {'color': colour},
             'opacity': 0.8,
