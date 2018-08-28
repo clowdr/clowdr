@@ -224,8 +224,8 @@ class CreatePortal():
         # Initialize plotting space
         fig = plotly.tools.make_subplots(rows=3, cols=1,
                                          subplot_titles=('Memory Usage',
-                                                         'Task Gantt',
-                                                         'CPU Usage'),
+                                                         'CPU Usage',
+                                                         'Tasks'),
                                          shared_xaxes=False)
 
         # Add every row of table to graph with the main colour
@@ -255,15 +255,12 @@ class CreatePortal():
         fig['layout']['yaxis1']['spikemode'] = 'toaxis'
         fig['layout']['xaxis1']['title'] = 'Time (s)'
         fig['layout']['xaxis1']['spikemode'] = 'toaxis'
+        fig['layout']['xaxis2']['anchor'] = 'x'
 
         # Set layout info for Gantt plot
-        # RAM y-axis
-        fig['layout']['yaxis3']['title'] = 'Max RAM (MB)'
-        fig['layout']['yaxis3']['zeroline'] = True
-        # Task y-axis
-        # fig['layout']['yaxis2']['title'] = 'Task'
-        # fig['layout']['yaxis2']['autorange'] = 'reversed'
-        # fig['layout']['yaxis2']['zeroline'] = False
+        fig['layout']['yaxis3']['title'] = 'Task'
+        fig['layout']['yaxis3']['autorange'] = 'reversed'
+        fig['layout']['yaxis3']['zeroline'] = False
         fig['layout']['xaxis3']['title'] = 'Datetime'
         fig['layout']['xaxis3']['showgrid'] = False
         fig['layout']['xaxis3']['type'] = 'date'
@@ -279,8 +276,8 @@ class CreatePortal():
             'mode': 'lines+markers',
             'line': {'color': colour},
             'opacity': 0.6,
-            'xaxis': 'x1',
-            'yaxis': 'y1',
+            'xaxis': 'x',
+            'yaxis': 'y',
             'name': 'Task {}'.format(data_row['Task ID'])
         }, 1, 1)
 
@@ -290,8 +287,8 @@ class CreatePortal():
             'mode': 'lines',
             'line': {'color': colour},
             'opacity': 0.8,
-            'xaxis': 'x1',
-            'yaxis': 'y2',
+            'xaxis': 'x',
+            'yaxis': 'y',
             'name': 'Task {}'.format(data_row['Task ID'])
         }, 2, 1)
 
@@ -299,10 +296,7 @@ class CreatePortal():
                                    'Start': data_row['Time: Start'],
                                    'Finish': data_row['Time: End']}])
         gantt_dat = tmpfig['data'][0]
-        # RAM y-axis
-        gantt_dat['y'] = tuple([data_row['RAM: Max (MB)']] * 2)
-        # Task y-axis
-        # gantt_dat['y'] = (idx, idx)
+        gantt_dat['y'] = (idx, idx)
         gantt_dat['mode'] = 'lines'
         gantt_dat['line'] = {'color': colour, 'width': 5}
         gantt_dat['name'] = 'Task {}'.format(data_row['Task ID'])

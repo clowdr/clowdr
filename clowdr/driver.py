@@ -222,7 +222,8 @@ def share(provdir, **kwargs):
         # Create temp dir for clowdrloc
         tmploc = utils.truepath(tempfile.mkdtemp())
         utils.get(provdir, tmploc, **kwargs)
-        provdir = tmploc
+        tmpdir = op.join(tmploc, utils.splitS3Path(provdir)[1])
+        provdir = tmpdir
         if kwargs.get("verbose"):
             print("Local cache of directory: {}".format(provdir))
 
