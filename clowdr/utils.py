@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from shutil import copy, copytree, SameFileError
+from shutil import copy, copytree, rmtree, SameFileError
 from subprocess import Popen, PIPE, CalledProcessError
 import os.path as op
 import random as rnd
@@ -121,11 +121,13 @@ def post(local, remote, **kwargs):
 
 
 def remove(local):
-    if op.isfile(local):
-        os.remove(local)
-    elif op.isdir(local):
-        for local_file in os.listdir(local):
-            remove(local_file)
+    try:
+        if op.isfile(local):
+            os.remove(local)
+        elif op.isdir(local):
+            rmtree(local)
+    except FileNotFoundError as e:
+        pass
 
 
 def _awsget(remote, local):

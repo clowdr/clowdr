@@ -3,7 +3,7 @@
     "type": "container",
     "parameters": {},
     "containerProperties": {
-        "image": "clowdr/clowdr:0.0.16rc6",
+        "image": "clowdr/clowdr:0.0.17rc0",
         "vcpus": 2,
         "memory": 14000,
         "command": [

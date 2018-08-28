@@ -18,6 +18,6 @@ RUN pip3 install boto3 \
                  colorlover \
                  plotly>=3.1.1 \
                  psutil
-RUN pip3 install clowdr==0.0.16rc6
+RUN pip3 install clowdr==0.0.17rc0
 
 ENTRYPOINT ["clowdr"]

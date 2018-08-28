@@ -132,7 +132,7 @@ class TaskHandler:
         summary = {"duration": duration,
                    "launchtime": str(start_time),
                    "exitcode": self.output.exit_code,
-                   "outputs": outputs_present,
+                   "outputs": [],
                    "usage": op.join(remotetaskdir, usagef),
                    "stdout": op.join(remotetaskdir, stdoutf),
                    "stderr": op.join(remotetaskdir, stderrf)}
@@ -145,7 +145,9 @@ class TaskHandler:
                 if(verbose):
                     print("{} --> {}".format(local_output, output_loc),
                           flush=True)
-                summary["outputs"] += utils.post(local_output, output_loc)
+                tmpouts = utils.post(local_output, output_loc)
+                print(tmpouts)
+                summary["outputs"] += tmpouts
         else:
             if(verbose):
                 print("Skipping uploading outputs (local execution)...",
@@ -159,9 +161,11 @@ class TaskHandler:
 
         # If not local, delete all: inputs, outputs, and summaries
         if not kwargs.get("local"):
-            utils.remove(local_input_data)
+            for local_output in outputs_present:
+                utils.remove(local_output)
             utils.remove(self.localtaskdir)
-            utils.remove(outputs_present)
+            for local_input in local_input_data:
+                utils.remove(local_input)
 
     def execWrapper(self, sender):
         # if reprozip: use it
