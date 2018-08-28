@@ -120,6 +120,14 @@ def post(local, remote, **kwargs):
             return [op.realpath(remote)]
 
 
+def remove(local):
+    if op.isfile(local):
+        os.remove(local)
+    elif op.isdir(local):
+        for local_file in os.listdir(local):
+            remove(local_file)
+
+
 def _awsget(remote, local):
     s3 = boto3.resource("s3")
 

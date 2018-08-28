@@ -74,8 +74,9 @@ class TaskHandler:
             if(verbose):
                 print("Fetching input data...", flush=True)
             localdatadir = op.join("/data")
+            local_input_data = []
             for dataloc in input_data:
-                utils.get(dataloc, localdatadir)
+                local_input_data += utils.get(dataloc, localdatadir)
             # Move to correct location
             os.chdir(localdatadir)
         else:
@@ -156,6 +157,12 @@ class TaskHandler:
             fhandle.write(json.dumps(summary, indent=4, sort_keys=True) + "\n")
         utils.post(op.join(self.localtaskdir, summarf), remotetaskdir)
 
+        # If not local, delete all: inputs, outputs, and summaries
+        if not kwargs.get("local"):
+            utils.remove(local_input_data)
+            utils.remove(self.localtaskdir)
+            utils.remove(outputs_present)
+
     def execWrapper(self, sender):
         # if reprozip: use it
         if not subprocess.Popen("type reprozip 2>/dev/null", shell=True).wait():
@@ -184,7 +191,7 @@ class TaskHandler:
     def provLaunch(self, options, **kwargs):
         self.runner_args = options
         self.runner_kwargs = kwargs
-        timing, cpu, ram = self.monitor(self.execWrapper)
+        timing, cpu, ram = self.monitor(self.execWrapper, **kwargs)
 
         basetime = timing[0]
 
@@ -194,7 +201,7 @@ class TaskHandler:
 
         self.cpu_ram_usage = total_df
 
-    def monitor(self, target):
+    def monitor(self, target, **kwargs):
         ram_lut = {'B': 1/1024/1024,
                    'KiB': 1/1024,
                    'MiB': 1,
@@ -232,7 +239,9 @@ class TaskHandler:
                                         stdout=PIPE, stderr=PIPE)
                     tinfo = json.loads(tcmd.communicate()[0].decode('utf-8'))
                     for tcon in tinfo:
-                        if call in tcon['Config']['Cmd']:
+                        if (tcon.get("Config") and
+                           tcon.get("Config").get("Cmd") and
+                           call in tcon['Config']['Cmd']):
                             tid = tcon['Id']
                             tcmd = psutil.Popen([
                                                  "docker",
@@ -248,7 +257,6 @@ class TaskHandler:
 
                             try:
                                 _ram, _, _, _cpu = tout.split(' ')
-                                print (_ram, _cpu)
                                 _ram, ending = re.match('([0-9.]+)([MGK]?i?B)',
                                                         _ram).groups()
                                 ram += float(_ram) * ram_lut[ending]
@@ -259,6 +267,9 @@ class TaskHandler:
                 else:
                     cpu += subproc_dict['cpu_percent']
                     ram += subproc_dict['memory_info'][0] * ram_lut['B']
+
+                if kwargs.get('verbose'):
+                    print(cpu, ram)
 
             log_time.append(tim)
             log_cpu.append(cpu)

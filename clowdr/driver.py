@@ -218,7 +218,14 @@ def share(provdir, **kwargs):
     -------
     None
     """
-    # TODO: start from a directory
+    if provdir.startswith("s3://"):
+        # Create temp dir for clowdrloc
+        tmploc = utils.truepath(tempfile.mkdtemp())
+        utils.get(provdir, tmploc, **kwargs)
+        provdir = tmploc
+        if kwargs.get("verbose"):
+            print("Local cache of directory: {}".format(provdir))
+
     summary = op.join(provdir, 'clowdr-summary.json')
     experiment_dict = consolidate.summary(provdir, summary)
 
@@ -428,6 +435,8 @@ on clusters, and in the cloud. For more information, go to our website:
     parser_shr.add_argument("--debug", "-d", action="store_true",
                             help="Toggles server messages and logging. This "
                                  "is intended for development purposes.")
+    parser_shr.add_argument("--verbose", "-V", action="store_true",
+                            help="Toggles verbose output statements.")
 
     parser_shr.set_defaults(func=share)
 

@@ -3,9 +3,9 @@
     "type": "container",
     "parameters": {},
     "containerProperties": {
-        "image": "clowdr/clowdr:0.0.16rc1",
+        "image": "clowdr/clowdr:0.0.16rc6",
         "vcpus": 2,
-        "memory": 12000,
+        "memory": 14000,
         "command": [
             "docker",
             "ps"

@@ -8,9 +8,7 @@
         "maxvCpus": 512,
         "desiredvCpus": 2,
         "instanceTypes": [
-            "m4.xlarge",
-            "r4.large",
-            "r4.xlarge"
+            "r4.large"
         ],
         "subnets": [
         ],

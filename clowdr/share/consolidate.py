@@ -56,7 +56,7 @@ def summary(indir, outfile):
         else:
             tmp_summ = None
             tmp_time = None
-            tmp_ecod = None
+            tmp_ecod = "Incomplete"
             tmp_durr = None
 
         # Load stdout...

@@ -37,8 +37,11 @@ class CreatePortal():
         for exp in experiment_dict:
             # Coerce task ID into integer value
             exp['Task ID'] = int(exp['Task ID'])
-            time_s = datetime.strptime(exp['Time: Start'], "%Y-%m-%d %H:%M:%S")
-            time_e = time_s + timedelta(0, exp['Time: Total (s)'])
+            if exp['Time: Start'] is not None:
+                time_s = datetime.strptime(exp['Time: Start'], "%Y-%m-%d %H:%M:%S")
+                time_e = time_s + timedelta(0, exp['Time: Total (s)'])
+            else:
+                time_e = None
             exp['Time: End'] = str(time_e)
 
             # Add relevant info to stats dict
@@ -54,6 +57,10 @@ class CreatePortal():
             tmp_dict.update({key.replace('Param: ', ''): exp[key]
                              for key in exp.keys()
                              if key.startswith('Param: ')})
+            tmp_dict = {k: str(tmp_dict[k])
+                        if type(tmp_dict[k]) == bool
+                        else tmp_dict[k]
+                        for k in tmp_dict.keys()}
             self.invo_dict += [tmp_dict]
 
             # Save the minor updates back to the dictionary
@@ -77,6 +84,9 @@ class CreatePortal():
     def create_dashboard(self):
         # Create page objects and their content
         # ------> /start page creation
+        config = {'scrollZoom': True, # , 'toggleSpikeLines': True}
+                  'modeBarButtonsToRemove': ['sendDataToCloud'],
+                  'SpikeLines': True}
         self.app.layout = html.Div([
             # Page title/header
             html.H4('Clowdr Experiment Explorer'),
@@ -89,7 +99,8 @@ class CreatePortal():
 
             # Graph container (to be populated by callbacks)
             dcc.Graph(id='graph-clowdrexp',
-                      figure=self.create_figure())
+                      figure=self.create_figure(),
+                      config=config)
             ], className="container")
         # <------ /stop page creation
 
@@ -227,7 +238,6 @@ class CreatePortal():
         tmpfig = ff.create_gantt([{'Task': exp['Task ID'],
                                    'Start': exp['Time: Start'],
                                    'Finish': exp['Time: End']}])
-        gantt_lay = tmpfig['layout']
         fig['layout']['showlegend'] = False
         fig['layout']['height'] = 800
         fig['layout']['margin'] = {
@@ -240,19 +250,24 @@ class CreatePortal():
         # Set layout info for RAM plot
         fig['layout']['yaxis1']['title'] = 'RAM (MB)'
         fig['layout']['yaxis1']['rangemode'] = 'tozero'
+        fig['layout']['yaxis1']['spikedash'] = 'dash'
+        fig['layout']['yaxis1']['spikesnap'] = 'data'
+        fig['layout']['yaxis1']['spikemode'] = 'toaxis'
         fig['layout']['xaxis1']['title'] = 'Time (s)'
+        fig['layout']['xaxis1']['spikemode'] = 'toaxis'
 
         # Set layout info for Gantt plot
         # RAM y-axis
-        fig['layout']['yaxis2']['title'] = 'Max RAM (MB)'
-        fig['layout']['yaxis2']['zeroline'] = True
+        fig['layout']['yaxis3']['title'] = 'Max RAM (MB)'
+        fig['layout']['yaxis3']['zeroline'] = True
         # Task y-axis
         # fig['layout']['yaxis2']['title'] = 'Task'
         # fig['layout']['yaxis2']['autorange'] = 'reversed'
         # fig['layout']['yaxis2']['zeroline'] = False
-        fig['layout']['xaxis2']['title'] = 'Datetime'
-        fig['layout']['xaxis2']['showgrid'] = False
-        fig['layout']['xaxis2']['type'] = 'date'
+        fig['layout']['xaxis3']['title'] = 'Datetime'
+        fig['layout']['xaxis3']['showgrid'] = False
+        fig['layout']['xaxis3']['type'] = 'date'
+
         return fig
 
     # Utility for adding a trace back to the graph
@@ -264,8 +279,21 @@ class CreatePortal():
             'mode': 'lines+markers',
             'line': {'color': colour},
             'opacity': 0.6,
+            'xaxis': 'x1',
+            'yaxis': 'y1',
             'name': 'Task {}'.format(data_row['Task ID'])
         }, 1, 1)
+
+        fig.append_trace({
+            'x': data_row['Time: Series (s)'],
+            'y': data_row['CPU: Series (%)'],
+            'mode': 'lines',
+            'line': {'color': colour},
+            'opacity': 0.8,
+            'xaxis': 'x1',
+            'yaxis': 'y2',
+            'name': 'Task {}'.format(data_row['Task ID'])
+        }, 2, 1)
 
         tmpfig = ff.create_gantt([{'Task': data_row['Task ID'],
                                    'Start': data_row['Time: Start'],
@@ -278,17 +306,7 @@ class CreatePortal():
         gantt_dat['mode'] = 'lines'
         gantt_dat['line'] = {'color': colour, 'width': 5}
         gantt_dat['name'] = 'Task {}'.format(data_row['Task ID'])
-        fig.append_trace(gantt_dat, 2, 1)
-
-        # TODO: replace with table of std out/err info
-        fig.append_trace({
-            'x': data_row['Time: Series (s)'],
-            'y': data_row['CPU: Series (%)'],
-            'mode': 'lines',
-            'line': {'color': colour},
-            'opacity': 0.8,
-            'name': 'Task {}'.format(data_row['Task ID'])
-        }, 3, 1)
+        fig.append_trace(gantt_dat, 3, 1)
         return fig
 
     # Utility for getting the global index from index on subset
