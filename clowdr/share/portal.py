@@ -7,6 +7,7 @@ import dash_table_experiments as dt
 import dash
 
 import plotly.figure_factory as ff
+import plotly.graph_objs as go
 import plotly
 
 from datetime import datetime, timedelta
@@ -85,8 +86,7 @@ class CreatePortal():
         # Create page objects and their content
         # ------> /start page creation
         config = {'scrollZoom': True, # , 'toggleSpikeLines': True}
-                  'modeBarButtonsToRemove': ['sendDataToCloud'],
-                  'SpikeLines': True}
+                  'modeBarButtonsToRemove': ['sendDataToCloud']}
         self.app.layout = html.Div([
             # Page title/header
             html.H4('Clowdr Experiment Explorer'),
@@ -94,12 +94,12 @@ class CreatePortal():
             # Tabs & tables
             dcc.Tabs(id='tabs', value='stats-tab',
                      children=self.create_tabs_children('stats-tab',
-                                                        [],
+                                                        [0],
                                                         self.stat_dict)),
 
             # Graph container (to be populated by callbacks)
             dcc.Graph(id='graph-clowdrexp',
-                      figure=self.create_figure(),
+                      figure=self.create_figure([0]),
                       config=config)
             ], className="container")
         # <------ /stop page creation
@@ -125,7 +125,7 @@ class CreatePortal():
         def update_selected_rows(clickData, selected_indices):
             if clickData:
                 point = clickData['points'][0]
-                curve = point['curveNumber'] // 3  # TODO: replace # of graphs
+                curve = point['curveNumber'] // 2  # TODO: replace # of graphs
                 if curve in selected_indices:
                     selected_indices.remove(curve)
                 else:
@@ -139,40 +139,9 @@ class CreatePortal():
              Input('table-clowdrexp', 'selected_row_indices')],
             [State('graph-clowdrexp', 'figure')])
         def update_figure(rows, selected_indices, figure):
-            # Grab traces from figure
-            traces = figure['data']
-
-            # Identify which traces to make invisible, and do it
-            row_ids = [r["Task"] for r in rows]
-            hidden_ids = [exp['Task ID']
-                          for exp in self.experiment_dict
-                          if exp['Task ID'] not in row_ids]
-            hidden_locs = [loc
-                           for hid in hidden_ids
-                           for loc in self.get_trace_locations(traces, hid)]
-
-            # Identify which traces whould be which colour
+            # Create new figure based on selected rows
             global_indices = self.get_global_index(rows, selected_indices)
-            selected_ids = [self.experiment_dict[indx]['Task ID']
-                            for indx in global_indices]
-            selected_locs = [loc
-                             for sid in selected_ids
-                             for loc in self.get_trace_locations(traces, sid)]
-
-            # Hide the hidden traces, and unhide the rest
-            # Also, recolour based on if selected
-            for loc in range(len(traces)):
-                if loc in hidden_locs:
-                    traces[loc]['visible'] = False
-                else:
-                    traces[loc]['visible'] = True
-
-                if loc in selected_locs:
-                    traces[loc]['line']['color'] = self.accent_colour
-                else:
-                    traces[loc]['line']['color'] = self.main_colour
-
-            figure['data'] = traces
+            figure = self.create_figure(global_indices)
             return figure
     # <------ /stop callback management
 
@@ -186,6 +155,7 @@ class CreatePortal():
                     columns=list(data_dict[0].keys()),  # Column names
                     row_selectable=True,  # Able to select independent rows
                     filterable=True,  # Able to filter columns by value
+                    debounced=True,  # Delay after filtering before callback
                     sortable=True,  # Able to sort by column values
                     editable=False,  # Not able to edit values
                     resizable=True,  # Able to resize columns to fit data
@@ -220,88 +190,108 @@ class CreatePortal():
                         children=invo_child)]
         return tabs
 
-    def create_figure(self):
+    def create_figure(self, global_indices):
+        plotting_data = [self.experiment_dict[idx] for idx in global_indices]
+
         # Initialize plotting space
         fig = plotly.tools.make_subplots(rows=3, cols=1,
-                                         subplot_titles=('Memory Usage',
+                                         subplot_titles=('RAM Usage',
                                                          'CPU Usage',
-                                                         'Tasks'),
-                                         shared_xaxes=False)
+                                                         'Tasks'))
 
-        # Add every row of table to graph with the main colour
+        data = []
         id_list = []
-        for i, exp in enumerate(self.experiment_dict):
+        opacity = 2/(len(plotting_data)+1)
+        for i, exp in enumerate(plotting_data):
             id_list += [exp['Task ID']]
-            fig = self.append_trace(fig, exp, i, colour=self.main_colour)
+            #1 fig = self.append_trace(fig, exp, i)
+            data += self.append_trace(exp, i, opacity)
 
-        # Create a to-be-destroyed gantt chart just to steal the layout info
-        tmpfig = ff.create_gantt([{'Task': exp['Task ID'],
-                                   'Start': exp['Time: Start'],
-                                   'Finish': exp['Time: End']}])
-        fig['layout']['showlegend'] = False
-        fig['layout']['height'] = 800
-        fig['layout']['margin'] = {
-            'l': 40,
-            'r': 10,
-            't': 60,
-            'b': 200
+        # Create the generic gantt chart
+        ganttdat = []
+        for i, exp in enumerate(self.experiment_dict):
+            tmpfig = ff.create_gantt([{'Task': exp['Task ID'],
+                                       'Start': exp['Time: Start'],
+                                       'Finish': exp['Time: End']}])
+            t3 = tmpfig['data'][0]
+            t3['y'] = (i, i)
+            t3['yaxis'] = 'y3'
+            t3['xaxis'] = 'x2'
+            t3['mode'] = 'lines'
+            if i in global_indices:
+                tcolour = self.accent_colour
+            else:
+                tcolour = self.main_colour
+            t3['line'] = {'color': tcolour, 'width': 5}
+            t3['name'] = 'Task {}'.format(exp['Task ID'])
+            ganttdat += [t3]
+
+        data += ganttdat
+        layout = {
+            'showlegend': False,
+            'height': 600,
+            'xaxis': {
+                'title': 'Time (s)',
+                'domain': [0, 1]
+            },
+            'xaxis2': {
+                'title': 'Datetime',
+                'anchor': 'y3',
+                'domain': [0, 1]
+            },
+            'yaxis': {
+                'title': 'RAM (MB)',
+                'rangemode': 'tozero',
+                'domain': [0.35, 0.7]
+            },
+            'yaxis2': {
+                'title': 'CPU (%)',
+                'autorange': 'reversed',
+                'rangemode': 'tozero',
+                'side': 'left',
+                'domain': [0.0, 0.35]
+            },
+            'yaxis3': {
+                'title': 'Task',
+                'domain': [0.85, 1]
+            },
+
         }
 
-        # Set layout info for RAM plot
-        fig['layout']['yaxis1']['title'] = 'RAM (MB)'
-        fig['layout']['yaxis1']['rangemode'] = 'tozero'
-        fig['layout']['yaxis1']['spikedash'] = 'dash'
-        fig['layout']['yaxis1']['spikesnap'] = 'data'
-        fig['layout']['yaxis1']['spikemode'] = 'toaxis'
-        fig['layout']['xaxis1']['title'] = 'Time (s)'
-        fig['layout']['xaxis1']['spikemode'] = 'toaxis'
-        fig['layout']['xaxis2']['anchor'] = 'x'
-
-        # Set layout info for Gantt plot
-        fig['layout']['yaxis3']['title'] = 'Task'
-        fig['layout']['yaxis3']['autorange'] = 'reversed'
-        fig['layout']['yaxis3']['zeroline'] = False
-        fig['layout']['xaxis3']['title'] = 'Datetime'
-        fig['layout']['xaxis3']['showgrid'] = False
-        fig['layout']['xaxis3']['type'] = 'date'
-
+        fig = go.Figure(data, layout)
+        print(fig)
         return fig
 
     # Utility for adding a trace back to the graph
-    def append_trace(self, fig, data_row, idx, colour):
+    def append_trace(self, data_row, idx, opacity=0.6):
         # RAM Time series plot
-        fig.append_trace({
-            'x': data_row['Time: Series (s)'],
-            'y': data_row['RAM: Series (MB)'],
-            'mode': 'lines+markers',
-            'line': {'color': colour},
-            'opacity': 0.6,
-            'xaxis': 'x',
-            'yaxis': 'y',
-            'name': 'Task {}'.format(data_row['Task ID'])
-        }, 1, 1)
+        t1 = go.Scattergl(
+            x=data_row['Time: Series (s)'],
+            y=data_row['RAM: Series (MB)'],
+            mode='lines+markers',
+            line={'color': self.main_colour},
+            opacity=opacity,
+            fill='tozeroy',
+            xaxis='x',
+            yaxis='y',
+            name='Task {}'.format(data_row['Task ID'])
+        )
 
-        fig.append_trace({
-            'x': data_row['Time: Series (s)'],
-            'y': data_row['CPU: Series (%)'],
-            'mode': 'lines',
-            'line': {'color': colour},
-            'opacity': 0.8,
-            'xaxis': 'x',
-            'yaxis': 'y',
-            'name': 'Task {}'.format(data_row['Task ID'])
-        }, 2, 1)
+        # CPU Time series plot
+        t2 = go.Scattergl(
+            x=data_row['Time: Series (s)'],
+            y=data_row['CPU: Series (%)'],
+            mode='lines+markers',
+            line={'color': self.accent_colour},
+            opacity=opacity,
+            fill='tozeroy',
+            xaxis='x',
+            yaxis='y2',
+            name='Task {}'.format(data_row['Task ID'])
+        )
 
-        tmpfig = ff.create_gantt([{'Task': data_row['Task ID'],
-                                   'Start': data_row['Time: Start'],
-                                   'Finish': data_row['Time: End']}])
-        gantt_dat = tmpfig['data'][0]
-        gantt_dat['y'] = (idx, idx)
-        gantt_dat['mode'] = 'lines'
-        gantt_dat['line'] = {'color': colour, 'width': 5}
-        gantt_dat['name'] = 'Task {}'.format(data_row['Task ID'])
-        fig.append_trace(gantt_dat, 3, 1)
-        return fig
+        data = [t1, t2]
+        return data
 
     # Utility for getting the global index from index on subset
     def get_global_index(self, rows, selected_indices):
