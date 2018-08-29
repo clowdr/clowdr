@@ -85,8 +85,7 @@ class CreatePortal():
     def create_dashboard(self):
         # Create page objects and their content
         # ------> /start page creation
-        config = {'scrollZoom': True, # , 'toggleSpikeLines': True}
-                  'modeBarButtonsToRemove': ['sendDataToCloud']}
+        config = {'modeBarButtonsToRemove': ['sendDataToCloud']}
         self.app.layout = html.Div([
             # Page title/header
             html.H4('Clowdr Experiment Explorer'),
@@ -99,7 +98,7 @@ class CreatePortal():
 
             # Graph container (to be populated by callbacks)
             dcc.Graph(id='graph-clowdrexp',
-                      figure=self.create_figure([0]),
+                      figure=self.create_figure(self.stat_dict, [0]),
                       config=config)
             ], className="container")
         # <------ /stop page creation
@@ -121,27 +120,29 @@ class CreatePortal():
         @self.app.callback(
             Output('table-clowdrexp', 'selected_row_indices'),
             [Input('graph-clowdrexp', 'clickData')],
-            [State('table-clowdrexp', 'selected_row_indices')])
-        def update_selected_rows(clickData, selected_indices):
+            [State('table-clowdrexp', 'selected_row_indices'),
+             State('table-clowdrexp', 'rows')])
+        def update_selected_rows(clickData, selected_indices, rows):
+            # global_indices = self.get_global_index(rows, selected_indices)
             if clickData:
                 point = clickData['points'][0]
-                curve = point['curveNumber'] // 2  # TODO: replace # of graphs
-                if curve in selected_indices:
-                    selected_indices.remove(curve)
-                else:
-                    selected_indices.append(curve)
+                if point['customdata'] == 'task':
+                    curve = point['curveNumber'] - (len(selected_indices) * 2)
+                    if curve in selected_indices:
+                        selected_indices.remove(curve)
+                    else:
+                        selected_indices.append(curve)
             return selected_indices
 
         # Callback: update figure based on selected/present data
         @self.app.callback(
             Output('graph-clowdrexp', 'figure'),
             [Input('table-clowdrexp', 'rows'),
-             Input('table-clowdrexp', 'selected_row_indices')],
-            [State('graph-clowdrexp', 'figure')])
-        def update_figure(rows, selected_indices, figure):
+             Input('table-clowdrexp', 'selected_row_indices')])
+        def update_figure(rows, selected_indices):
             # Create new figure based on selected rows
             global_indices = self.get_global_index(rows, selected_indices)
-            figure = self.create_figure(global_indices)
+            figure = self.create_figure(rows, global_indices)
             return figure
     # <------ /stop callback management
 
@@ -190,8 +191,9 @@ class CreatePortal():
                         children=invo_child)]
         return tabs
 
-    def create_figure(self, global_indices):
+    def create_figure(self, rows, global_indices):
         plotting_data = [self.experiment_dict[idx] for idx in global_indices]
+        row_ids = [r['Task'] for r in rows]
 
         # Initialize plotting space
         fig = plotly.tools.make_subplots(rows=3, cols=1,
@@ -216,13 +218,20 @@ class CreatePortal():
             t3 = tmpfig['data'][0]
             t3['y'] = (i, i)
             t3['yaxis'] = 'y3'
+            t3['customdata'] = ['task'] * 2
+            t3['hoverinfo'] = 'name'
             t3['xaxis'] = 'x2'
             t3['mode'] = 'lines'
             if i in global_indices:
                 tcolour = self.accent_colour
             else:
                 tcolour = self.main_colour
-            t3['line'] = {'color': tcolour, 'width': 5}
+
+            if exp['Task ID'] in row_ids:
+                twidth = 5
+            else:
+                twidth = 2
+            t3['line'] = {'color': tcolour, 'width': twidth}
             t3['name'] = 'Task {}'.format(exp['Task ID'])
             ganttdat += [t3]
 
@@ -253,13 +262,14 @@ class CreatePortal():
             },
             'yaxis3': {
                 'title': 'Task',
-                'domain': [0.85, 1]
+                'autorange': 'reversed',
+                'zeroline': False,
+                'domain': [0.85, 1],
             },
-
+            'hovermode': 'closest'
         }
 
         fig = go.Figure(data, layout)
-        print(fig)
         return fig
 
     # Utility for adding a trace back to the graph
@@ -274,6 +284,7 @@ class CreatePortal():
             fill='tozeroy',
             xaxis='x',
             yaxis='y',
+            customdata=['ram'] * len(data_row['Time: Series (s)']),
             name='Task {}'.format(data_row['Task ID'])
         )
 
@@ -287,6 +298,7 @@ class CreatePortal():
             fill='tozeroy',
             xaxis='x',
             yaxis='y2',
+            customdata=['cpu'] * len(data_row['Time: Series (s)']),
             name='Task {}'.format(data_row['Task ID'])
         )
 
