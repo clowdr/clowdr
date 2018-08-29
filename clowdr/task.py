@@ -219,66 +219,68 @@ class TaskHandler:
         log_cpu = []
         log_mem = []
         while worker_process.is_alive():
-            tim = time.time()
             try:
                 cpu = p.cpu_percent()
                 ram = p.memory_info()[0]*ram_lut['B']
-            except psutil._exceptions.AccessDenied:
-                continue
 
-            for subproc in p.children(recursive=True):
-                if not subproc.is_running():
-                    continue
+                for subproc in p.children(recursive=True):
+                    if not subproc.is_running():
+                        continue
 
-                subproc_dict = subproc.as_dict(attrs=['pid',
-                                                      'name',
-                                                      'cmdline',
-                                                      'cpu_percent',
-                                                      'memory_info'])
-                if subproc_dict['name'] == 'docker':
-                    call = subproc_dict['cmdline'][-1]
-                    tcmd = psutil.Popen(["docker", "ps", "-q"], stdout=PIPE)
-                    running = tcmd.communicate()[0].decode('utf-8').split('\n')
-                    tcmd = psutil.Popen(["docker", "inspect"] + running,
-                                        stdout=PIPE, stderr=PIPE)
-                    tinfo = json.loads(tcmd.communicate()[0].decode('utf-8'))
-                    for tcon in tinfo:
-                        if (tcon.get("Config") and
-                           tcon.get("Config").get("Cmd") and
-                           call in tcon['Config']['Cmd']):
-                            tid = tcon['Id']
-                            tcmd = psutil.Popen([
-                                                 "docker",
-                                                 "stats",
-                                                 tid,
-                                                 "--no-stream",
-                                                 "--format",
-                                                 "'{{.MemUsage}} {{.CPUPerc}}'"
-                                                ],
-                                                stdout=PIPE)
-                            tout = tcmd.communicate()[0].decode('utf-8')
-                            tout = tout.strip('\n').replace("'", "")
+                    subproc_dict = subproc.as_dict(attrs=['pid',
+                                                          'name',
+                                                          'cmdline',
+                                                          'cpu_percent',
+                                                          'memory_info'])
+                    if subproc_dict['name'] == 'docker':
+                        call = subproc_dict['cmdline'][-1]
+                        tcmd = psutil.Popen(["docker", "ps", "-q"], stdout=PIPE)
+                        running = tcmd.communicate()[0].decode('utf-8')
+                        running = running.split('\n')
+                        tcmd = psutil.Popen(["docker", "inspect"] + running,
+                                            stdout=PIPE, stderr=PIPE)
+                        tinf = json.loads(tcmd.communicate()[0].decode('utf-8'))
+                        for tcon in tinf:
+                            if (tcon.get("Config") and
+                               tcon.get("Config").get("Cmd") and
+                               call in tcon['Config']['Cmd']):
+                                tid = tcon['Id']
+                                tcmd = psutil.Popen([
+                                                     "docker",
+                                                     "stats",
+                                                     tid,
+                                                     "--no-stream",
+                                                     "--format",
+                                                     "'{{.MemUsage}} " +\
+                                                     "{{.CPUPerc}}'"
+                                                    ],
+                                                    stdout=PIPE)
+                                tout = tcmd.communicate()[0].decode('utf-8')
+                                tout = tout.strip('\n').replace("'", "")
 
-                            try:
                                 _ram, _, _, _cpu = tout.split(' ')
                                 _ram, ending = re.match('([0-9.]+)([MGK]?i?B)',
                                                         _ram).groups()
                                 ram += float(_ram) * ram_lut[ending]
                                 cpu += float(_cpu.strip('%'))
-                            except (ValueError, AttributeError) as e:
-                                continue
 
-                else:
-                    cpu += subproc_dict['cpu_percent']
-                    ram += subproc_dict['memory_info'][0] * ram_lut['B']
+                    else:
+                        cpu += subproc_dict['cpu_percent']
+                        ram += subproc_dict['memory_info'][0] * ram_lut['B']
 
-                if kwargs.get('verbose'):
-                    print(cpu, ram)
+                    if kwargs.get('verbose'):
+                        print(cpu, ram)
 
-            log_time.append(tim)
-            log_cpu.append(cpu)
-            log_mem.append(ram)
-            time.sleep(0.1)
+                tim = time.time()
+                log_time.append(tim)
+                log_cpu.append(cpu)
+                log_mem.append(ram)
+                time.sleep(0.1)
+
+            except (psutil._exceptions.AccessDenied,
+                    psutil._exceptions.NoSuchProcess,
+                    TypeError, ValueError, AttributeError) as e:
+                continue
 
         worker_process.join()
         self.output = self.output.recv()
