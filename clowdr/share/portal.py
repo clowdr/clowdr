@@ -39,11 +39,33 @@ class CreatePortal():
             # Coerce task ID into integer value
             exp['Task ID'] = int(exp['Task ID'])
             if exp['Time: Start'] is not None:
-                time_s = datetime.strptime(exp['Time: Start'], "%Y-%m-%d %H:%M:%S")
+                time_s = datetime.strptime(exp['Time: Start'],
+                                           "%Y-%m-%d %H:%M:%S")
                 time_e = time_s + timedelta(0, exp['Time: Total (s)'])
             else:
                 time_e = None
             exp['Time: End'] = str(time_e)
+
+            if exp['Exit Code'] != "Incomplete":
+                tmpexp_ram = exp['RAM: Series (MB)']
+                tmpexp_tim = exp['Time: Series (s)']
+                tmpexp_cpu = exp['CPU: Series (%)']
+
+                N = 100
+                timlin = np.linspace(tmpexp_tim[0], tmpexp_tim[-1], N)
+                tmpexp_tim_resamp = []
+                tidx = []
+                for tl in timlin:
+                    tmpexp_tim_resamp += [min(tmpexp_tim,
+                                              key=lambda x: abs(x-tl))]
+                    tidx += [tmpexp_tim.index(tmpexp_tim_resamp[-1])]
+
+                tmpexp_ram_resamp = [tmpexp_ram[ti] for ti in tidx]
+                tmpexp_cpu_resamp = [tmpexp_cpu[ti] for ti in tidx]
+
+                exp['RAM: Series (MB)'] = tmpexp_ram_resamp
+                exp['Time: Series (s)'] = tmpexp_tim_resamp
+                exp['CPU: Series (%)'] = tmpexp_cpu_resamp
 
             # Add relevant info to stats dict
             self.stat_dict += [{'Task': exp['Task ID'],
@@ -97,9 +119,9 @@ class CreatePortal():
                                                         self.stat_dict)),
 
             # Gantt container (to be updated by callbacks)
-            # dcc.Graph(id='gantt-clowdrexp',
-            #           figure=self.create_gantt(self.stat_dict, [0]),
-            #           config=config),
+            dcc.Graph(id='gantt-clowdrexp',
+                      figure=self.create_gantt(self.stat_dict, [0]),
+                      config=config),
             # TODO create gantt function; new callback to update gantt area
 
             # Graph container (to be populated by callbacks)
@@ -149,6 +171,16 @@ class CreatePortal():
             # Create new figure based on selected rows
             global_indices = self.get_global_index(rows, selected_indices)
             figure = self.create_figure(rows, global_indices)
+            return figure
+
+        # Callback: update gantt based on selected/present data
+        @self.app.callback(
+            Output('gantt-clowdrexp', 'figure'),
+            [Input('table-clowdrexp', 'selected_row_indices'),
+             Input('table-clowdrexp', 'rows')])
+        def update_gantt(selected_indices, rows):
+            global_indices = self.get_global_index(rows, selected_indices)
+            figure = self.recolour_gantt(rows, global_indices)
             return figure
     # <------ /stop callback management
 
@@ -314,6 +346,10 @@ class CreatePortal():
 
         data = [t1, t2]
         return data
+
+    # Utility for recolouring Gantt traces
+    def recolour_gantt(self, rows, global_indices):
+        return 1
 
     # Utility for getting the global index from index on subset
     def get_global_index(self, rows, selected_indices):
