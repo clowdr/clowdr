@@ -227,8 +227,15 @@ def share(provdir, **kwargs):
         if kwargs.get("verbose"):
             print("Local cache of directory: {}".format(provdir))
 
-    summary = op.join(provdir, 'clowdr-summary.json')
-    experiment_dict = consolidate.summary(provdir, summary)
+    if op.isfile(provdir):
+        if kwargs.get("verbose"):
+            print("Summary file provided - no need to generate.")
+        summary = provdir
+        with open(summary) as fhandle:
+            experiment_dict = json.load(fhandle)
+    else:
+        summary = op.join(provdir, 'clowdr-summary.json')
+        experiment_dict = consolidate.summary(provdir, summary)
 
     customDash = portal.CreatePortal(experiment_dict)
     app = customDash.launch()
@@ -432,7 +439,8 @@ on clusters, and in the cloud. For more information, go to our website:
                             help="Local or S3 directory where Clowdr provenance"
                                  "records and metadata are stored. This path "
                                  "was returned by running either clowdr cloud "
-                                 "or clowdr local.")
+                                 "or clowdr local. This can also be a clowdr-"
+                                 "generated summary file.")
     parser_shr.add_argument("--debug", "-d", action="store_true",
                             help="Toggles server messages and logging. This "
                                  "is intended for development purposes.")

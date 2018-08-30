@@ -96,6 +96,12 @@ class CreatePortal():
                                                         [0],
                                                         self.stat_dict)),
 
+            # Gantt container (to be updated by callbacks)
+            # dcc.Graph(id='gantt-clowdrexp',
+            #           figure=self.create_gantt(self.stat_dict, [0]),
+            #           config=config),
+            # TODO create gantt function; new callback to update gantt area
+
             # Graph container (to be populated by callbacks)
             dcc.Graph(id='graph-clowdrexp',
                       figure=self.create_figure(self.stat_dict, [0]),
@@ -137,9 +143,9 @@ class CreatePortal():
         # Callback: update figure based on selected/present data
         @self.app.callback(
             Output('graph-clowdrexp', 'figure'),
-            [Input('table-clowdrexp', 'rows'),
-             Input('table-clowdrexp', 'selected_row_indices')])
-        def update_figure(rows, selected_indices):
+            [Input('table-clowdrexp', 'selected_row_indices')],
+            [State('table-clowdrexp', 'rows')])
+        def update_figure(selected_indices, rows):
             # Create new figure based on selected rows
             global_indices = self.get_global_index(rows, selected_indices)
             figure = self.create_figure(rows, global_indices)
@@ -156,7 +162,7 @@ class CreatePortal():
                     columns=list(data_dict[0].keys()),  # Column names
                     row_selectable=True,  # Able to select independent rows
                     filterable=True,  # Able to filter columns by value
-                    debounced=True,  # Delay after filtering before callback
+                    # debounced=True,  # Delay after filtering before callback
                     sortable=True,  # Able to sort by column values
                     editable=False,  # Not able to edit values
                     resizable=True,  # Able to resize columns to fit data
@@ -205,6 +211,8 @@ class CreatePortal():
         id_list = []
         opacity = 2/(len(plotting_data)+1)
         for i, exp in enumerate(plotting_data):
+            if exp['Exit Code'] == 'Incomplete':
+                continue
             id_list += [exp['Task ID']]
             #1 fig = self.append_trace(fig, exp, i)
             data += self.append_trace(exp, i, opacity)
@@ -212,6 +220,8 @@ class CreatePortal():
         # Create the generic gantt chart
         ganttdat = []
         for i, exp in enumerate(self.experiment_dict):
+            if exp['Exit Code'] == 'Incomplete':
+                continue
             tmpfig = ff.create_gantt([{'Task': exp['Task ID'],
                                        'Start': exp['Time: Start'],
                                        'Finish': exp['Time: End']}])
