@@ -27,6 +27,7 @@ class CreatePortal():
 
         self.main_colour = '#0074D9'
         self.accent_colour = '#FF851B'
+        self.fade_colour = '#66B8FF'
 
         # Intitialize two new data tables for visualization, resulting in:
         #   - (Full) experiment table, to be used in visualizations
@@ -51,7 +52,7 @@ class CreatePortal():
                 tmpexp_tim = exp['Time: Series (s)']
                 tmpexp_cpu = exp['CPU: Series (%)']
 
-                N = 100
+                N = 200
                 timlin = np.linspace(tmpexp_tim[0], tmpexp_tim[-1], N)
                 tmpexp_tim_resamp = []
                 tidx = []
@@ -94,9 +95,9 @@ class CreatePortal():
 
         # Create look-up-table for mapping tasks to rows in the tables
         self.idx_to_task_lut = {exp['Task ID']: idx
-                                for idx, exp in enumerate(experiment_dict)}
+                                for idx, exp in enumerate(self.experiment_dict)}
         self.task_to_idx_lut = {idx: exp['Task ID']
-                                for idx, exp in enumerate(experiment_dict)}
+                                for idx, exp in enumerate(self.experiment_dict)}
         # <------ /stop data grooming
 
     def launch(self):
@@ -115,18 +116,17 @@ class CreatePortal():
             # Tabs & tables
             dcc.Tabs(id='tabs', value='stats-tab',
                      children=self.create_tabs_children('stats-tab',
-                                                        [0],
+                                                        [],
                                                         self.stat_dict)),
 
             # Gantt container (to be updated by callbacks)
             dcc.Graph(id='gantt-clowdrexp',
-                      figure=self.create_gantt(self.stat_dict, [0]),
+                      figure=self.create_gantt(),
                       config=config),
-            # TODO create gantt function; new callback to update gantt area
 
             # Graph container (to be populated by callbacks)
             dcc.Graph(id='graph-clowdrexp',
-                      figure=self.create_figure(self.stat_dict, [0]),
+                      figure=self.create_figure(self.stat_dict, []),
                       config=config)
             ], className="container")
         # <------ /stop page creation
@@ -147,19 +147,23 @@ class CreatePortal():
         # Callback: update selected rows based on available rows or click event
         @self.app.callback(
             Output('table-clowdrexp', 'selected_row_indices'),
-            [Input('graph-clowdrexp', 'clickData')],
+            [Input('gantt-clowdrexp', 'clickData')],
             [State('table-clowdrexp', 'selected_row_indices'),
-             State('table-clowdrexp', 'rows')])
-        def update_selected_rows(clickData, selected_indices, rows):
-            # global_indices = self.get_global_index(rows, selected_indices)
+             State('table-clowdrexp', 'rows'),
+             State('table-clowdrexp', 'sortColumn'),
+             State('table-clowdrexp', 'sortDirection')])
+        def update_selected_rows(clickData, selected_indices, rows, sortcol, sortdir):
+            print(sortcol, sortdir)
+            row_ids = [r['Task'] for r in rows]
+
             if clickData:
-                point = clickData['points'][0]
-                if point['customdata'] == 'task':
-                    curve = point['curveNumber'] - (len(selected_indices) * 2)
-                    if curve in selected_indices:
-                        selected_indices.remove(curve)
+                task = clickData['points'][0]['customdata']
+                taskloc = row_ids.index(task)
+                if task in row_ids:
+                    if taskloc in selected_indices:
+                        selected_indices.remove(taskloc)
                     else:
-                        selected_indices.append(curve)
+                        selected_indices.append(taskloc)
             return selected_indices
 
         # Callback: update figure based on selected/present data
@@ -169,18 +173,17 @@ class CreatePortal():
             [State('table-clowdrexp', 'rows')])
         def update_figure(selected_indices, rows):
             # Create new figure based on selected rows
-            global_indices = self.get_global_index(rows, selected_indices)
-            figure = self.create_figure(rows, global_indices)
+            figure = self.create_figure(rows, selected_indices)
             return figure
 
         # Callback: update gantt based on selected/present data
         @self.app.callback(
             Output('gantt-clowdrexp', 'figure'),
             [Input('table-clowdrexp', 'selected_row_indices'),
-             Input('table-clowdrexp', 'rows')])
-        def update_gantt(selected_indices, rows):
-            global_indices = self.get_global_index(rows, selected_indices)
-            figure = self.recolour_gantt(rows, global_indices)
+             Input('table-clowdrexp', 'rows')],
+            [State('gantt-clowdrexp', 'figure')])
+        def update_gantt(selected_indices, rows, figure):
+            figure = self.recolour_gantt(rows, selected_indices, figure)
             return figure
     # <------ /stop callback management
 
@@ -200,6 +203,8 @@ class CreatePortal():
                     resizable=True,  # Able to resize columns to fit data
                     max_rows_in_viewport=5,  # Scroll if more than 5 rows
                     selected_row_indices=selected_indices,  # selected rows
+                    sortColumn='Task',  # set sorting by task
+                    sortDirection='ASC',  # set increasing order for sort
                     id='table-clowdrexp')  # Use the same ID for callbacks
 
     # Redraws the two-tab layout and table, preserving selected data.
@@ -229,28 +234,10 @@ class CreatePortal():
                         children=invo_child)]
         return tabs
 
-    def create_figure(self, rows, global_indices):
-        plotting_data = [self.experiment_dict[idx] for idx in global_indices]
-        row_ids = [r['Task'] for r in rows]
-
-        # Initialize plotting space
-        fig = plotly.tools.make_subplots(rows=3, cols=1,
-                                         subplot_titles=('RAM Usage',
-                                                         'CPU Usage',
-                                                         'Tasks'))
-
-        data = []
-        id_list = []
-        opacity = 2/(len(plotting_data)+1)
-        for i, exp in enumerate(plotting_data):
-            if exp['Exit Code'] == 'Incomplete':
-                continue
-            id_list += [exp['Task ID']]
-            #1 fig = self.append_trace(fig, exp, i)
-            data += self.append_trace(exp, i, opacity)
-
+    # Creates gantt plot of tasks
+    def create_gantt(self):
         # Create the generic gantt chart
-        ganttdat = []
+        data  = []
         for i, exp in enumerate(self.experiment_dict):
             if exp['Exit Code'] == 'Incomplete':
                 continue
@@ -259,54 +246,87 @@ class CreatePortal():
                                        'Finish': exp['Time: End']}])
             t3 = tmpfig['data'][0]
             t3['y'] = (i, i)
-            t3['yaxis'] = 'y3'
-            t3['customdata'] = ['task'] * 2
+            t3['customdata'] = [exp['Task ID']] * 2
             t3['hoverinfo'] = 'name'
-            t3['xaxis'] = 'x2'
             t3['mode'] = 'lines'
-            if i in global_indices:
-                tcolour = self.accent_colour
-            else:
-                tcolour = self.main_colour
-
-            if exp['Task ID'] in row_ids:
-                twidth = 5
-            else:
-                twidth = 2
-            t3['line'] = {'color': tcolour, 'width': twidth}
+            t3['opacity'] = 0.7
+            t3['line'] = {'color': self.main_colour, 'width': 5}
             t3['name'] = 'Task {}'.format(exp['Task ID'])
-            ganttdat += [t3]
+            data += [t3]
 
-        data += ganttdat
         layout = {
             'showlegend': False,
-            'height': 600,
+            'height': 300,
+            'title': 'Experiment Timeline',
+            'margin': {
+                't': 60,
+                'b': 60,
+                'r': 50,
+                'l': 50
+            },
             'xaxis': {
-                'title': 'Time (s)',
+                'anchor': 'y',
                 'domain': [0, 1]
             },
-            'xaxis2': {
-                'title': 'Datetime',
-                'anchor': 'y3',
+            'yaxis': {
+                'title': 'Task',
+                'autorange': 'reversed',
+                'zeroline': False,
+                'domain': [0, 1],
+            },
+            'hovermode': 'closest'
+        }
+        fig = go.Figure(data, layout)
+        return fig
+
+    # Utility creating the main figure
+    def create_figure(self, rows, selected_indices):
+        row_ids = [r['Task'] for r in rows]
+        selected_ids = [row_ids[sids] for sids in selected_indices]
+        plotting_data = [exp
+                         for ids in selected_ids
+                         for exp in self.experiment_dict
+                         if exp['Task ID'] == ids]
+
+        # Initialize plotting space
+        fig = plotly.tools.make_subplots(rows=2, cols=1,
+                                         subplot_titles=('RAM Usage',
+                                                         'CPU Usage'))
+        data = []
+        id_list = []
+        opacity = max(0.02, 2/(len(plotting_data)+1))
+        for i, exp in enumerate(plotting_data):
+            if exp['Exit Code'] == 'Incomplete':
+                continue
+            id_list += [exp['Task ID']]
+            #1 fig = self.append_trace(fig, exp, i)
+            data += self.append_trace(exp, i, opacity)
+
+        layout = {
+            'showlegend': False,
+            'height': 500,
+            'title': 'Usage Stats',
+            'margin': {
+                't': 60,
+                'b': 60,
+                'r': 50,
+                'l': 50
+            },
+            'xaxis': {
+                'title': 'Time (s)',
                 'domain': [0, 1]
             },
             'yaxis': {
                 'title': 'RAM (MB)',
                 'rangemode': 'tozero',
-                'domain': [0.35, 0.7]
+                'domain': [0.5, 1]
             },
             'yaxis2': {
                 'title': 'CPU (%)',
                 'autorange': 'reversed',
                 'rangemode': 'tozero',
                 'side': 'left',
-                'domain': [0.0, 0.35]
-            },
-            'yaxis3': {
-                'title': 'Task',
-                'autorange': 'reversed',
-                'zeroline': False,
-                'domain': [0.85, 1],
+                'domain': [0.0, 0.5]
             },
             'hovermode': 'closest'
         }
@@ -348,8 +368,27 @@ class CreatePortal():
         return data
 
     # Utility for recolouring Gantt traces
-    def recolour_gantt(self, rows, global_indices):
-        return 1
+    def recolour_gantt(self, rows, selected_indices, figure):
+        row_ids = [r['Task'] for r in rows]
+        selected_ids = [row_ids[sids] for sids in selected_indices]
+        traces = figure['data']
+        newtraces = []
+        for i, trace in enumerate(traces):
+            if trace['customdata'][0] in selected_ids:
+                tcolour = self.accent_colour
+                opacity = 0.9
+            elif trace['customdata'][0] not in row_ids:
+                tcolour = self.fade_colour
+                opacity = 0.25
+            else:
+                tcolour = self.main_colour
+                opacity = 0.7
+            trace['line'] = {'color': tcolour, 'width': 5}
+            trace['opacity'] = opacity
+            newtraces += [trace]
+
+        figure['data'] = newtraces
+        return figure
 
     # Utility for getting the global index from index on subset
     def get_global_index(self, rows, selected_indices):
