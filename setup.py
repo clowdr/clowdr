@@ -1,7 +1,7 @@
 from setuptools import setup
 import os.path as op
 
-VERSION = "0.0.17"
+VERSION = "0.1.0"
 DEPS = [
          "boto3",
          "flask",
