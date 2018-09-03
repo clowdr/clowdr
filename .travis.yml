@@ -49,12 +49,12 @@ script:
 - clowdr -h
 # Pycodestyle command set to ignore scripts where line lengths are unavoidable,
 # and maintain the normal list of ignored formatting details +E402 (top file import)
-- pycodestyle --max-line-length=80 \
-  clowdr/*.py \
-  clowdr/endpoint/*.py \
-  clowdr/share/*.py \
-  clowdr/tests/*.py \
-  --exclude=customDash.py,AWS.py \
+- pycodestyle --max-line-length=80 
+  clowdr/*.py 
+  clowdr/endpoint/*.py 
+  clowdr/share/*.py 
+  clowdr/tests/*.py 
+  --exclude=customDash.py,AWS.py 
   --ignore=E121,E123,E126,E226,E24,E704,W503,W504,E402
 - coverage run --source clowdr setup.py pytest
 - coverage report -m

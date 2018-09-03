@@ -251,7 +251,7 @@ class TaskHandler:
                                                      tid,
                                                      "--no-stream",
                                                      "--format",
-                                                     "'{{.MemUsage}} " +\
+                                                     "'{{.MemUsage}} " +
                                                      "{{.CPUPerc}}'"
                                                     ],
                                                     stdout=PIPE)

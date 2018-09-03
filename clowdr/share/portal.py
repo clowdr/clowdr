@@ -152,7 +152,8 @@ class CreatePortal():
              State('table-clowdrexp', 'rows'),
              State('table-clowdrexp', 'sortColumn'),
              State('table-clowdrexp', 'sortDirection')])
-        def update_selected_rows(clickData, selected_indices, rows, sortcol, sortdir):
+        def update_selected_rows(clickData, selected_indices, rows,
+                                 sortcol, sortdir):
             print(sortcol, sortdir)
             row_ids = [r['Task'] for r in rows]
 
@@ -237,7 +238,7 @@ class CreatePortal():
     # Creates gantt plot of tasks
     def create_gantt(self):
         # Create the generic gantt chart
-        data  = []
+        data = []
         for i, exp in enumerate(self.experiment_dict):
             if exp['Exit Code'] == 'Incomplete':
                 continue
@@ -299,7 +300,6 @@ class CreatePortal():
             if exp['Exit Code'] == 'Incomplete':
                 continue
             id_list += [exp['Task ID']]
-            #1 fig = self.append_trace(fig, exp, i)
             data += self.append_trace(exp, i, opacity)
 
         layout = {
