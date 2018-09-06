@@ -22,8 +22,9 @@ def backoff(function, posargs, optargs, backoff_time=36000, **kwargs):
             return (0, value)
         except Exception as e:
             if kwargs.get("verbose"):
-                print("Failed ({}). Retrying in: {}s".format(type(e).__name__,
-                                                             fib_hi))
+                print(e)
+                print("Failed. Retrying in: {}s".format(type(e).__name__,
+                                                        fib_hi))
             if fib_hi > backoff_time:
                 if kwargs.get("verbose"):
                     print("Failed. Skipping!")

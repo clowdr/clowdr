@@ -1,12 +1,12 @@
 from setuptools import setup
 import os.path as op
 
-VERSION = "0.1.0"
+VERSION = "0.1.0post0"
 DEPS = [
          "boto3",
          "flask",
          "boutiques>=0.5.10",
-         "pandas>=0.23.4",
+         "pandas>=0.23",
          "slurmpy==0.0.7",
          "dash>=0.24.1",
          "dash-renderer>=0.13.0",

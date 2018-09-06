@@ -102,13 +102,13 @@ def local(descriptor, invocation, provdir, backoff_time=36000, **kwargs):
     if kwargs.get("cluster"):
         from slurmpy import Slurm
         jobname = kwargs.get("jobname") if kwargs.get("jobname") else "clowdr"
-        slurm_args = {}
-        if kwargs.get("slurm_args"):
-            for opt in kwargs.get("slurm_args").split(","):
+        clusterargs = {}
+        if kwargs.get("clusterargs"):
+            for opt in kwargs.get("clusterargs").split(","):
                 k, v = opt.split(":")[0], opt.split(":")[1:]
                 v = ":".join(v)
-                slurm_args[k] = v
-        job = Slurm(jobname, slurm_args)
+                clusterargs[k] = v
+        job = Slurm(jobname, clusterargs)
 
         script = "clowdr task {} -p {} --local"
         if kwargs.get("workdir"):
@@ -136,7 +136,8 @@ def local(descriptor, invocation, provdir, backoff_time=36000, **kwargs):
             func = job.run
             args = [script.format(tmptaskgroup, taskdir)]
             # Submit. If submission fails, retry with fibonnaci back-off
-            utils.backoff(func, args, backoff_time=backoff_time, **kwargs)
+            utils.backoff(func, args, {},
+                          backoff_time=backoff_time, **kwargs)
         else:
             runtask(taskgroup, provdir=taskdir, local=True, **kwargs)
 
