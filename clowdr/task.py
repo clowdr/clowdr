@@ -90,8 +90,7 @@ class TaskHandler:
         # Launch task
         copts = ['launch', desc_local, invo_local]
         if kwargs.get("volumes"):
-            volumes = " ".join(kwargs.get("volumes"))
-            copts += ['-v', volumes]
+            copts += ['-v'] + kwargs.get("volumes")
         if kwargs.get("user"):
             copts += ['-u']
 
