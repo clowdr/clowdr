@@ -274,7 +274,7 @@ class TaskHandler:
                 log_time.append(tim)
                 log_cpu.append(cpu)
                 log_mem.append(ram)
-                time.sleep(0.1)
+                time.sleep(1)
 
             except (psutil._exceptions.AccessDenied,
                     psutil._exceptions.NoSuchProcess,

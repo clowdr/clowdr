@@ -116,6 +116,8 @@ def local(descriptor, invocation, provdir, backoff_time=36000, **kwargs):
         if kwargs.get("volumes"):
             script += " ".join([" -v {}".format(vol)
                                 for vol in kwargs.get("volumes")])
+        if kwargs.get("verbose"):
+            script += " -V"
 
     # Groups tasks into collections to be run together (default size = 1)
     gsize = kwargs["groupby"] if kwargs.get("groupby") else 1
