@@ -229,7 +229,6 @@ class TaskHandler:
                     subproc_dict = subproc.as_dict(attrs=['pid',
                                                           'name',
                                                           'cmdline',
-                                                          'cpu_percent',
                                                           'memory_info'])
                     if subproc_dict['name'] == 'docker':
                         call = subproc_dict['cmdline'][-1]
@@ -264,11 +263,11 @@ class TaskHandler:
                                 cpu += float(_cpu.strip('%'))
 
                     else:
-                        cpu += subproc_dict['cpu_percent']
+                        cpu += subproc.cpu_percent(interval=1)
                         ram += subproc_dict['memory_info'][0] * ram_lut['B']
 
-                    if kwargs.get('verbose'):
-                        print(cpu, ram)
+                if kwargs.get('verbose'):
+                    print(cpu, ram)
 
                 tim = time.time()
                 log_time.append(tim)
@@ -279,6 +278,7 @@ class TaskHandler:
             except (psutil._exceptions.AccessDenied,
                     psutil._exceptions.NoSuchProcess,
                     TypeError, ValueError, AttributeError) as e:
+                print("Logging failed: {0}".format(e))
                 continue
 
         worker_process.join()
