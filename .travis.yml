@@ -31,11 +31,9 @@ before_install:
 - cat /etc/singularity/singularity.conf
 - cd ${TRAVIS_BUILD_DIR}/examples/
 - docker pull bids/example
-- docker run -v /var/run/docker.sock:/var/run/docker.sock -v ${HOME}:/output --privileged -t --rm singularityware/docker2singularity bids/example  1> ${HOME}/convert_log.txt
+- docker run -v /var/run/docker.sock:/var/run/docker.sock -v ${HOME}:/output --privileged --name bids-example -t --rm singularityware/docker2singularity bids/example  1> ${HOME}/convert_log.txt
 - cat ${HOME}/convert_log.txt
-- IMGNAME=$(cat ${HOME}/convert_log.txt  | grep "Singularity container built:" | awk '{ print $4 }' | sed 's/\\r//g')
-- echo ${IMGNAME}
-- mv ${IMGNAME} ./bids-example.simg
+- ls ${HOME}
 - pip install awscli
 - sudo mkdir -p /data/ds114 && sudo chmod -R 777 /data/
 - cd /data/ds114/
