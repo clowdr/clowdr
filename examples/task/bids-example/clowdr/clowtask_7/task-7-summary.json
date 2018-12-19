@@ -1,0 +1,11 @@
+{
+    "duration": 13.613110065460205,
+    "exitcode": 0,
+    "launchtime": "2018-08-29 20:01:09",
+    "outputs": [
+        "/data/ds114/derivatives/bids-example/"
+    ],
+    "stderr": "/Users/greg/code/gkiar/clowdr/examples/task/2018-08-29_19-59-39-TZ6B8VNX/clowdr/task-7-stderr.txt",
+    "stdout": "/Users/greg/code/gkiar/clowdr/examples/task/2018-08-29_19-59-39-TZ6B8VNX/clowdr/task-7-stdout.txt",
+    "usage": "/Users/greg/code/gkiar/clowdr/examples/task/2018-08-29_19-59-39-TZ6B8VNX/clowdr/task-7-usage.csv"
+}
