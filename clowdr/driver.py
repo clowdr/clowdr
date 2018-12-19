@@ -17,7 +17,8 @@ import os
 
 from clowdr.controller import metadata, launcher, rerunner
 from clowdr.task import TaskHandler
-from clowdr.server import shareapp, updateIndex
+# from clowdr.server import shareapp, updateIndex
+from clowdr.share import consolidate, portal
 from clowdr import utils
 
 
@@ -101,13 +102,13 @@ def local(descriptor, invocation, provdir, backoff_time=36000, **kwargs):
     if kwargs.get("cluster"):
         from slurmpy import Slurm
         jobname = kwargs.get("jobname") if kwargs.get("jobname") else "clowdr"
-        slurm_args = {}
-        if kwargs.get("slurm_args"):
-            for opt in kwargs.get("slurm_args").split(","):
+        clusterargs = {}
+        if kwargs.get("clusterargs"):
+            for opt in kwargs.get("clusterargs").split(","):
                 k, v = opt.split(":")[0], opt.split(":")[1:]
                 v = ":".join(v)
-                slurm_args[k] = v
-        job = Slurm(jobname, slurm_args)
+                clusterargs[k] = v
+        job = Slurm(jobname, clusterargs)
 
         script = "clowdr task {} -p {} --local"
         if kwargs.get("workdir"):
@@ -115,6 +116,8 @@ def local(descriptor, invocation, provdir, backoff_time=36000, **kwargs):
         if kwargs.get("volumes"):
             script += " ".join([" -v {}".format(vol)
                                 for vol in kwargs.get("volumes")])
+        if kwargs.get("verbose"):
+            script += " -V"
 
     # Groups tasks into collections to be run together (default size = 1)
     gsize = kwargs["groupby"] if kwargs.get("groupby") else 1
@@ -135,7 +138,8 @@ def local(descriptor, invocation, provdir, backoff_time=36000, **kwargs):
             func = job.run
             args = [script.format(tmptaskgroup, taskdir)]
             # Submit. If submission fails, retry with fibonnaci back-off
-            utils.backoff(func, args, backoff_time=backoff_time, **kwargs)
+            utils.backoff(func, args, {},
+                          backoff_time=backoff_time, **kwargs)
         else:
             runtask(taskgroup, provdir=taskdir, local=True, **kwargs)
 
@@ -217,18 +221,30 @@ def share(provdir, **kwargs):
     -------
     None
     """
-    # TODO: scrub inputs
-    shareapp.config["clowdrloc"] = provdir
-    shareapp.config["tmpdir"] = tempfile.mkdtemp()
+    if provdir.startswith("s3://"):
+        # Create temp dir for clowdrloc
+        tmploc = utils.truepath(tempfile.mkdtemp())
+        utils.get(provdir, tmploc, **kwargs)
+        tmpdir = op.join(tmploc, utils.splitS3Path(provdir)[1])
+        provdir = tmpdir
+        if kwargs.get("verbose"):
+            print("Local cache of directory: {}".format(provdir))
 
-    updateIndex()
-    print("passed here")
+    if op.isfile(provdir):
+        if kwargs.get("verbose"):
+            print("Summary file provided - no need to generate.")
+        summary = provdir
+        with open(summary) as fhandle:
+            experiment_dict = json.load(fhandle)
+    else:
+        summary = op.join(provdir, 'clowdr-summary.json')
+        experiment_dict = consolidate.summary(provdir, summary)
+
+    customDash = portal.CreatePortal(experiment_dict)
+    app = customDash.launch()
 
     host = kwargs["host"] if kwargs.get("host") else "0.0.0.0"
-    if kwargs.get("testing"):
-        shareapp.testing = True
-
-    shareapp.run(host=host, debug=kwargs.get("debug"))
+    app.run_server(host=host, debug=kwargs.get("debug"))
 
 
 def makeparser():
@@ -426,12 +442,13 @@ on clusters, and in the cloud. For more information, go to our website:
                             help="Local or S3 directory where Clowdr provenance"
                                  "records and metadata are stored. This path "
                                  "was returned by running either clowdr cloud "
-                                 "or clowdr local.")
-    parser_shr.add_argument("--dev", "-d", action="store_true",
+                                 "or clowdr local. This can also be a clowdr-"
+                                 "generated summary file.")
+    parser_shr.add_argument("--debug", "-d", action="store_true",
                             help="Toggles server messages and logging. This "
                                  "is intended for development purposes.")
-    parser_shr.add_argument("--testing", "-t", action="store_true",
-                            help="Used in testing the Flask server.")
+    parser_shr.add_argument("--verbose", "-V", action="store_true",
+                            help="Toggles verbose output statements.")
 
     parser_shr.set_defaults(func=share)
 

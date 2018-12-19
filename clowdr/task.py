@@ -8,12 +8,14 @@
 # Email: gkiar@mcin.ca
 
 from argparse import ArgumentParser
-from memory_profiler import memory_usage
+from datetime import datetime
+from time import mktime, localtime
+from subprocess import PIPE
+import multiprocessing as mp
 import numpy as np
 import os.path as op
 import subprocess
-import cProfile
-import pstats
+import psutil
 import time
 import json
 import csv
@@ -72,8 +74,9 @@ class TaskHandler:
             if(verbose):
                 print("Fetching input data...", flush=True)
             localdatadir = op.join("/data")
+            local_input_data = []
             for dataloc in input_data:
-                utils.get(dataloc, localdatadir)
+                local_input_data += utils.get(dataloc, localdatadir)
             # Move to correct location
             os.chdir(localdatadir)
         else:
@@ -87,8 +90,7 @@ class TaskHandler:
         # Launch task
         copts = ['launch', desc_local, invo_local]
         if kwargs.get("volumes"):
-            volumes = " ".join(kwargs.get("volumes"))
-            copts += ['-v', volumes]
+            copts += ['-v'] + kwargs.get("volumes")
         if kwargs.get("user"):
             copts += ['-u']
 
@@ -125,27 +127,11 @@ class TaskHandler:
             fhandle.write(self.output.stderr)
         utils.post(op.join(self.localtaskdir, stderrf), remotetaskdir)
 
-        # Write summary values to file, including:
-
-        summary_data = pd.DataFrame(columns=("task", "duration", "exitcode",
-                                             "len_stdout", "len_stderr",
-                                             "ram_max", "ram_avg", "ram_std"))
-        ramdat = np.asarray([p.ram
-                             for loc, p in self.cpu_ram_usage.iterrows()
-                             if not np.isnan(p.ram)])
-
-        summary_data.loc[0] = (self.task_id, duration, self.output.exit_code,
-                               len(self.output.stdout), len(self.output.stderr),
-                               np.max(ramdat), np.mean(ramdat), np.std(ramdat))
-
-        summardatf = "task-{}-usage_summary.csv".format(self.task_id)
-        summary_data.to_csv(op.join(self.localtaskdir, summardatf),
-                                   sep=',', index=False)
-        utils.post(op.join(self.localtaskdir, summardatf), remotetaskdir)
-
+        start_time = datetime.fromtimestamp(mktime(localtime(start_time)))
         summary = {"duration": duration,
+                   "launchtime": str(start_time),
                    "exitcode": self.output.exit_code,
-                   "outputs": outputs_present,
+                   "outputs": [],
                    "usage": op.join(remotetaskdir, usagef),
                    "stdout": op.join(remotetaskdir, stdoutf),
                    "stderr": op.join(remotetaskdir, stderrf)}
@@ -158,7 +144,9 @@ class TaskHandler:
                 if(verbose):
                     print("{} --> {}".format(local_output, output_loc),
                           flush=True)
-                summary["outputs"] += utils.post(local_output, output_loc)
+                tmpouts = utils.post(local_output, output_loc)
+                print(tmpouts)
+                summary["outputs"] += tmpouts
         else:
             if(verbose):
                 print("Skipping uploading outputs (local execution)...",
@@ -170,10 +158,18 @@ class TaskHandler:
             fhandle.write(json.dumps(summary, indent=4, sort_keys=True) + "\n")
         utils.post(op.join(self.localtaskdir, summarf), remotetaskdir)
 
-    def execWrapper(self, *options, **kwargs):
+        # If not local, delete all: inputs, outputs, and summaries
+        if not kwargs.get("local"):
+            for local_output in outputs_present:
+                utils.remove(local_output)
+            utils.remove(self.localtaskdir)
+            for local_input in local_input_data:
+                utils.remove(local_input)
+
+    def execWrapper(self, sender):
         # if reprozip: use it
         if not subprocess.Popen("type reprozip 2>/dev/null", shell=True).wait():
-            if kwargs.get("verbose"):
+            if self.runner_kwargs.get("verbose"):
                 print("Reprozip found; will use to record provenance!",
                       flush=True)
             cmd = 'reprozip usage_report --disable'
@@ -182,7 +178,7 @@ class TaskHandler:
             cmd = 'reprozip trace -w --dir={}/task-{}-reprozip/ bosh exec {}'
             p = subprocess.Popen(cmd.format(self.localtaskdir,
                                             self.task_id,
-                                            " ".join(options)),
+                                            " ".join(self.runner_args)),
                                  shell=True).wait()
 
             cmd = ('reprozip pack --dir={0}/task-{1}-reprozip/ '
@@ -190,53 +186,101 @@ class TaskHandler:
                                                   self.task_id))
             p = subprocess.Popen(cmd, shell=True).wait()
         else:
-            if kwargs.get("verbose"):
+            if self.runner_kwargs.get("verbose"):
                 print("Reprozip not found; install to record more provenance!",
                       flush=True)
-            self.output = bosh.execute(*options)
+            sender.send(bosh.execute(*self.runner_args))
 
     def provLaunch(self, options, **kwargs):
-        pr = cProfile.Profile()
-        pr.enable()
-        mem_usage = memory_usage((self.execWrapper, options, kwargs),
-                                 interval=0.5,
-                                 include_children=True,
-                                 multiprocess=True,
-                                 timestamps=True)
-        pr.disable()
-        ps = pstats.Stats(pr).sort_stats("cumulative").reverse_order()
-        cpu_cols = ['time', 'process', 'duration',
-                    'ncall', 'nrecall', 'subprocesses']
-        cpu_data = [[ps.stats[key][3], # time
-                     "{0}#{1}({2})".format(*key), # process
-                     ps.stats[key][2], # duration
-                     ps.stats[key][0], # ncall
-                     ps.stats[key][1], # nrecall
-                     ps.stats[key][4]] # subprocesses
-                    for key in ps.stats.keys()]
-        sorted_cpu_data = sorted(cpu_data, key=lambda i: i[0])
-        cpu_table = cpu_cols + sorted_cpu_data
+        self.runner_args = options
+        self.runner_kwargs = kwargs
+        timing, cpu, ram = self.monitor(self.execWrapper, **kwargs)
 
-        # To sync with RAM recording, look for rows with 'memory_profiler.py'
-        cpu_df = pd.DataFrame(sorted_cpu_data, columns=cpu_cols)
-        cpu_time = cpu_df.time
-        sync_time = [p.time
-                     for loc, p in cpu_df.iterrows()
-                     if "memory_profiler" in p.process and
-                        "__init__" in p.process][0]
+        basetime = timing[0]
 
-        ram_cols = ['time', 'ram']
-        ram_data = [[time - mem_usage[0][1] + sync_time, ram]
-                    for ram, time in mem_usage]
-        ram_df = pd.DataFrame(ram_data, columns=ram_cols)
-
-        total_df = pd.DataFrame(columns=['time'] + ram_cols[1:] + cpu_cols[1:])
-        time = np.sort(np.unique(cpu_df.time.append(ram_df.time)))
-        for t in time:
-            coincident_cpu = cpu_df.loc[cpu_df.time == t]
-            coincident_ram = ram_df.loc[ram_df.time == t]
-
-            total_df = pd.concat([total_df, coincident_cpu, coincident_ram],
-                                 sort=False, ignore_index=True)
+        total_df = pd.DataFrame(columns=['time', 'cpu', 'ram'])
+        for ttime, tcpu, tram in zip(timing, cpu, ram):
+            total_df.loc[len(total_df)] = (ttime-basetime, tcpu, tram)
 
         self.cpu_ram_usage = total_df
+
+    def monitor(self, target, **kwargs):
+        ram_lut = {'B': 1/1024/1024,
+                   'KiB': 1/1024,
+                   'MiB': 1,
+                   'GiB': 1024}
+        self.output, sender = mp.Pipe(False)
+        worker_process = mp.Process(target=target, args=(sender,))
+        worker_process.start()
+        p = psutil.Process(worker_process.pid)
+
+        log_time = []
+        log_cpu = []
+        log_mem = []
+        while worker_process.is_alive():
+            try:
+                cpu = p.cpu_percent()
+                ram = p.memory_info()[0]*ram_lut['B']
+
+                for subproc in p.children(recursive=True):
+                    if not subproc.is_running():
+                        continue
+
+                    subproc_dict = subproc.as_dict(attrs=['pid',
+                                                          'name',
+                                                          'cmdline',
+                                                          'memory_info'])
+                    if subproc_dict['name'] == 'docker':
+                        call = subproc_dict['cmdline'][-1]
+                        tcmd = psutil.Popen(["docker", "ps", "-q"], stdout=PIPE)
+                        running = tcmd.communicate()[0].decode('utf-8')
+                        running = running.split('\n')
+                        tcmd = psutil.Popen(["docker", "inspect"] + running,
+                                            stdout=PIPE, stderr=PIPE)
+                        tinf = json.loads(tcmd.communicate()[0].decode('utf-8'))
+                        for tcon in tinf:
+                            if (tcon.get("Config") and
+                               tcon.get("Config").get("Cmd") and
+                               call in tcon['Config']['Cmd']):
+                                tid = tcon['Id']
+                                tcmd = psutil.Popen([
+                                                     "docker",
+                                                     "stats",
+                                                     tid,
+                                                     "--no-stream",
+                                                     "--format",
+                                                     "'{{.MemUsage}} " +
+                                                     "{{.CPUPerc}}'"
+                                                    ],
+                                                    stdout=PIPE)
+                                tout = tcmd.communicate()[0].decode('utf-8')
+                                tout = tout.strip('\n').replace("'", "")
+
+                                _ram, _, _, _cpu = tout.split(' ')
+                                _ram, ending = re.match('([0-9.]+)([MGK]?i?B)',
+                                                        _ram).groups()
+                                ram += float(_ram) * ram_lut[ending]
+                                cpu += float(_cpu.strip('%'))
+
+                    else:
+                        cpu += subproc.cpu_percent(interval=1)
+                        ram += subproc_dict['memory_info'][0] * ram_lut['B']
+
+                if kwargs.get('verbose'):
+                    print(cpu, ram)
+
+                tim = time.time()
+                log_time.append(tim)
+                log_cpu.append(cpu)
+                log_mem.append(ram)
+                time.sleep(1)
+
+            except (psutil._exceptions.AccessDenied,
+                    psutil._exceptions.NoSuchProcess,
+                    TypeError, ValueError, AttributeError) as e:
+                print("Logging failed: {0}".format(e))
+                continue
+
+        worker_process.join()
+        self.output = self.output.recv()
+        return log_time, log_cpu, log_mem

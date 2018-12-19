@@ -31,7 +31,7 @@ class AWS(Endpoint):
     # TODO: document
 
     def setCredentials(self, **kwargs):
-        # TODO: document 
+        # TODO: document
 
         creds = pd.read_csv(self.credentials)
         self.access_key = creds['Access key ID'][0]
@@ -60,9 +60,9 @@ class AWS(Endpoint):
 
         with open(template) as fhandle:
             roles = json.load(fhandle)
-
-        policy = {"batch": "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole",
-                  "ecs":   "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"}
+        basestr = "arn:aws:iam::aws:policy/service-role/"
+        policy = {"batch": basestr + "AWSBatchServiceRole",
+                  "ecs":   basestr + "AmazonEC2ContainerServiceforEC2Role"}
 
         for rolename in roles:
             role = roles[rolename]
@@ -95,7 +95,8 @@ class AWS(Endpoint):
         sg = [sg["GroupId"]
               for sg in self.ec2.describe_security_groups()["SecurityGroups"]
               if sg["GroupName"] == "default"]
-        net = [nets["SubnetId"] for nets in self.ec2.describe_subnets()["Subnets"]]
+        net = [nets["SubnetId"]
+               for nets in self.ec2.describe_subnets()["Subnets"]]
 
         def waitUntilDone(name, status):
             while True:
@@ -114,13 +115,13 @@ class AWS(Endpoint):
             response = self.batch.describe_compute_environments(computeEnvironments=[name])
             if len(response["computeEnvironments"]):
                 if (response["computeEnvironments"][0]["status"] != "VALID" or
-                    response["computeEnvironments"][0]["state"] != "ENABLED"):
-                    raise ClientError({"Error": {"Code":"InvalidEnvironment"}},
+                   response["computeEnvironments"][0]["state"] != "ENABLED"):
+                    raise ClientError({"Error": {"Code": "InvalidEnvironment"}},
                                       "describe_compute_environments")
                 else:
                     compute["computeEnvironmentArn"] = response["computeEnvironments"][0]["computeEnvironmentArn"]
             else:
-                raise ClientError({"Error":{"Code":"NoSuchEntity"}},
+                raise ClientError({"Error": {"Code": "NoSuchEntity"}},
                                   "describe_compute_environments")
 
         except ClientError as e:
@@ -135,7 +136,7 @@ class AWS(Endpoint):
                 waitUntilDone(name, "DELETING")
 
             if (e.response["Error"]["Code"] == "NoSuchEntity" or
-                e.response["Error"]["Code"] == "InvalidEnvironment"):
+               e.response["Error"]["Code"] == "InvalidEnvironment"):
                 if kwargs.get("verbose"):
                     print("Environment '{}' not found- creating.".format(name),
                           flush=True)
@@ -163,13 +164,13 @@ class AWS(Endpoint):
             name = queue["jobQueueName"]
             response = self.batch.describe_job_queues()
             if not len(response["jobQueues"]):
-                raise ClientError({"Error":{"Code":"NoSuchEntity"}},
+                raise ClientError({"Error": {"Code": "NoSuchEntity"}},
                                   "describe_job_queues")
             else:
                 queue_names = [response["jobQueues"][i]["jobQueueName"]
                                for i in range(len(response["jobQueues"]))]
                 if name not in queue_names:
-                    raise ClientError({"Error":{"Code":"NoSuchEntity"}},
+                    raise ClientError({"Error": {"Code": "NoSuchEntity"}},
                                       "describe_job_queues")
                 queue["jobQueueArn"] = response["jobQueues"][0]["jobQueueArn"]
         except ClientError as e:
@@ -193,8 +194,8 @@ class AWS(Endpoint):
             name = job["jobDefinitionName"]
             response = self.batch.describe_job_definitions()
             if (not len(response["jobDefinitions"]) or
-                response["jobDefinitions"][0]["status"] == "INACTIVE"):
-                raise ClientError({"Error":{"Code":"NoSuchEntity"}},
+               response["jobDefinitions"][0]["status"] == "INACTIVE"):
+                raise ClientError({"Error": {"Code": "NoSuchEntity"}},
                                   "describe_job_definitions")
             else:
                 job["jobDefinitionArn"] = response["jobDefinitions"][0]["jobDefinitionArn"]
@@ -212,11 +213,12 @@ class AWS(Endpoint):
 
     def launchJob(self, taskloc):
         # TODO: document
-        orides = {"environment":[{"name":"AWS_ACCESS_KEY_ID",
-                                  "value":self.access_key},
-                                 {"name":"AWS_SECRET_ACCESS_KEY",
-                                  "value":self.secret_access}],
+        orides = {"environment":[{"name": "AWS_ACCESS_KEY_ID",
+                                  "value": self.access_key},
+                                 {"name": "AWS_SECRET_ACCESS_KEY",
+                                  "value": self.secret_access}],
                   "command":["task", taskloc, "-V"]}
+        # p1, p2 = re.match('.+/.+-([0-9a-zA-Z_]+)/clowdr/task-([A-Za-z0-9]+).json', taskloc).group(1, 2)
         p1, p2 = re.match('.+\/.+-(\w+)\/clowdr\/task-([A-Za-z0-9]+).json',
                           taskloc).group(1, 2)
         response = self.batch.submit_job(jobName="clowdr_{}-{}".format(p1, p2),

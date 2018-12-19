@@ -40,7 +40,7 @@ class TestLocal(TestCase):
 
         print("\n".join(stdout))
         self.assertFalse(status)
-        r = re.compile(".+ Processing task\(s\): (.+)")
+        r = re.compile(".+ Processing task[(]s[)]: (.+)")
 
         tasknames = [r.match(o) for o in stdout if r.match(o) is not None][0]
         tasks = tasknames.group(1).split(", ")

@@ -5,5 +5,14 @@ clowdr local \
     examples/invocation.json \
     examples/task/ \
     -bV \
-    -g 4 \
-    -v /data/ds114:/data/ds114
+    -v /data/:/data/ \
+    -g 4
+
+# clowdr cloud \
+#     examples/descriptor_d.json \
+#     examples/invocation.json \
+#     s3://misiclab/demo-clowdr/ \
+#     s3://misiclab/demo/ \
+#     aws \
+#     ~/Dropbox/keys/misiclab_aws.csv \
+#     -bV
