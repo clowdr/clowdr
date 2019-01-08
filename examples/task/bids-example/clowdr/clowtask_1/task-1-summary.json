@@ -1,11 +1,11 @@
 {
-    "cpu": "/Users/greg/code/gkiar/clowdr/examples/task/2018-07-16_16-18-57-OWOD4YJN/clowdr/task-1-cputiming.csv",
-    "duration": 10.472315311431885,
+    "duration": 8.826726913452148,
     "exitcode": 0,
-    "mem": "/Users/greg/code/gkiar/clowdr/examples/task/2018-07-16_16-18-57-OWOD4YJN/clowdr/task-1-memory.csv",
+    "launchtime": "2018-08-29 19:59:57",
     "outputs": [
         "/data/ds114/derivatives/bids-example/"
     ],
-    "stderr": "/Users/greg/code/gkiar/clowdr/examples/task/2018-07-16_16-18-57-OWOD4YJN/clowdr/task-1-stderr.txt",
-    "stdout": "/Users/greg/code/gkiar/clowdr/examples/task/2018-07-16_16-18-57-OWOD4YJN/clowdr/task-1-stdout.txt"
+    "stderr": "/Users/greg/code/gkiar/clowdr/examples/task/2018-08-29_19-59-39-TZ6B8VNX/clowdr/task-1-stderr.txt",
+    "stdout": "/Users/greg/code/gkiar/clowdr/examples/task/2018-08-29_19-59-39-TZ6B8VNX/clowdr/task-1-stdout.txt",
+    "usage": "/Users/greg/code/gkiar/clowdr/examples/task/2018-08-29_19-59-39-TZ6B8VNX/clowdr/task-1-usage.csv"
 }

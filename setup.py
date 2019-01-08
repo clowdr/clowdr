@@ -1,13 +1,21 @@
 from setuptools import setup
 import os.path as op
 
-VERSION = "0.0.13"
+VERSION = "0.1.1"
 DEPS = [
          "boto3",
          "flask",
          "boutiques>=0.5.10",
-         "slurmpy",
-         "memory-profiler"
+         "pandas>=0.23",
+         "slurmpy==0.0.7",
+         "dash>=0.24.1",
+         "dash-renderer>=0.13.0",
+         "dash-html-components>=0.11.0",
+         "dash-core-components>=0.27.1",
+         "dash-table-experiments>=0.6.0",
+         "colorlover",
+         "psutil",
+         "plotly>=3.1.1"
        ]
 
 setup(name="clowdr",
@@ -30,7 +38,10 @@ setup(name="clowdr",
                 "Natural Language :: English"
                   ],
       license="MIT",
-      packages=["clowdr", "clowdr.controller", "clowdr.endpoint"],
+      packages=["clowdr",
+                "clowdr.controller",
+                "clowdr.endpoint",
+                "clowdr.share"],
       include_package_data=True,
       package_data = {"clowdr/templates": [op.join("templates", "AWS","*")]},
       test_suite="pytest",

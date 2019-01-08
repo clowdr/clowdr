@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from shutil import copy, copytree, SameFileError
+from shutil import copy, copytree, rmtree, SameFileError
 from subprocess import Popen, PIPE, CalledProcessError
 import os.path as op
 import random as rnd
@@ -22,8 +22,9 @@ def backoff(function, posargs, optargs, backoff_time=36000, **kwargs):
             return (0, value)
         except Exception as e:
             if kwargs.get("verbose"):
-                print("Failed ({}). Retrying in: {}s".format(type(e).__name__,
-                                                             fib_hi))
+                print(e)
+                print("Failed. Retrying in: {}s".format(type(e).__name__,
+                                                        fib_hi))
             if fib_hi > backoff_time:
                 if kwargs.get("verbose"):
                     print("Failed. Skipping!")
@@ -118,6 +119,16 @@ def post(local, remote, **kwargs):
             return [op.realpath(op.join(remote, op.basename(local)))]
         else:
             return [op.realpath(remote)]
+
+
+def remove(local):
+    try:
+        if op.isfile(local):
+            os.remove(local)
+        elif op.isdir(local):
+            rmtree(local)
+    except FileNotFoundError as e:
+        pass
 
 
 def _awsget(remote, local):

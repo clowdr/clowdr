@@ -7,6 +7,7 @@
 # Created by Greg Kiar on 2018-02-28.
 # Email: gkiar@mcin.ca
 
+
 class Endpoint:
     # TODO: document
 

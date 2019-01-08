@@ -14,21 +14,6 @@
       },
     "Path": "/"
   },
-  "spot": {
-    "RoleName": "clowdr-spot",
-    "AssumeRolePolicyDocument": {
-      "Statement": [
-             {
-                 "Action": "sts:AssumeRole",
-                 "Principal": {
-                     "Service": "spotfleet.amazonaws.com"
-                 },
-                 "Effect": "Allow"
-             }
-         ]
-      },
-    "Path": "/" 
-  },
   "ecs": {
     "RoleName": "clowdr-ecs",
     "AssumeRolePolicyDocument": {

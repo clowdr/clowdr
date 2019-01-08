@@ -31,9 +31,10 @@ before_install:
 - cat /etc/singularity/singularity.conf
 - cd ${TRAVIS_BUILD_DIR}/examples/
 - docker pull bids/example
-- docker run -v /var/run/docker.sock:/var/run/docker.sock -v ${HOME}:/output --privileged -t --rm singularityware/docker2singularity bids/example  1> ${HOME}/convert_log.txt
-- IMGNAME=$(cat ${HOME}/convert_log.txt  | grep "Done. Image can be found at:" | awk '{ print $7 }' | cut -d / -f 3 | cut -d . -f 1)
-- mv ${HOME}/${IMGNAME}.img ./bids-example.simg
+- docker run -v /var/run/docker.sock:/var/run/docker.sock -v ${HOME}:/output --privileged -t --rm singularityware/docker2singularity --name bids-example bids/example 1> ${HOME}/convert_log.txt
+- cat ${HOME}/convert_log.txt
+- ls ${HOME}
+- mv ${HOME}/bids-example.simg ./bids-example.simg
 - pip install awscli
 - sudo mkdir -p /data/ds114 && sudo chmod -R 777 /data/
 - cd /data/ds114/
@@ -47,7 +48,15 @@ install:
 
 script:
 - clowdr -h
-- pycodestyle --max-line-length=80 clowdr/*.py clowdr/tests/*.py
+# Pycodestyle command set to ignore scripts where line lengths are unavoidable,
+# and maintain the normal list of ignored formatting details +E402 (top file import)
+- pycodestyle --max-line-length=80 
+  clowdr/*.py 
+  clowdr/endpoint/*.py 
+  clowdr/share/*.py 
+  clowdr/tests/*.py 
+  --exclude=customDash.py,AWS.py 
+  --ignore=E121,E123,E126,E226,E24,E704,W503,W504,E402
 - coverage run --source clowdr setup.py pytest
 - coverage report -m
 
