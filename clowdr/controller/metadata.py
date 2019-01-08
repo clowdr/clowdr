@@ -83,14 +83,17 @@ def consolidateTask(tool, invocation, clowdrloc, dataloc, **kwargs):
         if kwargs.get("bids"):
             taskdicts, invocations = bidsTasks(taskloc, taskdict)
 
-        # Case 2b: User is performing a parameter sweep over invocations
-        else:
-            taskdicts, invocations = sweepTasks(taskloc, taskdict)
-
-        # Case 2c: User is quite simply just launching a single invocation
+        # Case 2b: User is quite simply just launching a single invocation
         else:
             taskdicts = [taskdict]
             invocations = [taskdict["invocation"]]
+
+    # Post-case: User is performing a parameter sweep over invocations
+    sweep = kwargs.get("sweep")
+    if sweep:
+        for sweep_param in sweep:
+            taskdicts, invocations = sweepTasks(taskdicts, invocations,
+                                                sweep_param)
 
     # Store task definition files to disk
     taskdictnames = []
@@ -103,8 +106,31 @@ def consolidateTask(tool, invocation, clowdrloc, dataloc, **kwargs):
     return (taskdictnames, invocations)
 
 
-def sweepTasks(clowdrloc, taskdict):
-    pass
+def sweepTasks(taskdicts, invocations, sweep_param):
+    tdicts = []
+    invos = []
+
+    for ttdict, tinvo in zip(taskdics, invocations):
+        invo = json.load(open(tinvo))
+        sweep_vals = invo.get(sweep_param)
+
+        for sval in sweep_vals:
+            partstr = "sub-{}".format(part)
+
+            tempdict = deepcopy(ttdict)
+
+            invo[sweep_param] = sval
+
+            invofname = op.join(tinvo.replace(".json", "_sweep-"
+                                "{0}-{1}.json".format(sweep_param, sval)))
+            with open(invofname, 'w') as fhandle:
+                fhandle.write(json.dumps(invo))
+
+            tempdict["invocation"] = invofname
+            invos += [invofname]
+            tdicts += [tempdict]
+    return (tdicts, invos)
+
 
 def bidsTasks(clowdrloc, taskdict):
     """bidsTask
@@ -178,7 +204,8 @@ def bidsTasks(clowdrloc, taskdict):
                 invo["participant_label"] = [part]
                 invo["session_label"] = [sesh]
 
-                invofname = op.join(clowdrloc, "invocation_sub-{}_ses-{}.json".format(part, sesh))
+                invofname = op.join(clowdrloc, "invocation_"
+                                    "sub-{}_ses-{}.json".format(part, sesh))
                 with open(invofname, 'w') as fhandle:
                     fhandle.write(json.dumps(invo))
 
@@ -189,10 +216,25 @@ def bidsTasks(clowdrloc, taskdict):
 
     # Case 5: User is running BIDS participant- or session-level analysis
     #       ... and specified sessions(s) but not participant(s)
-    else:
-        print("Error: Invalid BIDS mode not supported....")
-        print("       Must specify participant label if specifying sessions!")
-        sys.exit(-1)
+    elif sessions and not participants:
+        taskdicts = []
+        invos = []
+        for sesh in sessions:
+            seshstr = "ses-{}".format(sesh)
+
+            tempdict = deepcopy(taskdict)
+            tempdict["dataloc"] = [op.join(dataloc)]
+
+            invo["session_label"] = [sesh]
+
+            invofname = op.join(clowdrloc, "invocation_ses-{}.json".format(sesh))
+            with open(invofname, 'w') as fhandle:
+                fhandle.write(json.dumps(invo))
+
+            tempdict["invocation"] = invofname
+            invos += [invofname]
+            taskdicts += [tempdict]
+        return (taskdicts, invos)
 
 
 def prepareForRemote(tasks, tmploc, clowdrloc):
