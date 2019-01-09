@@ -280,7 +280,6 @@ class TaskHandler:
                     TypeError, ValueError, AttributeError) as e:
                 if kwargs.get('verbose'):
                     print("Logging failed: {0}".format(e))
-                    print(tout)
                 continue
 
         worker_process.join()
