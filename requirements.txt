@@ -8,7 +8,6 @@ boutiques==0.5.17
 certifi==2018.11.29
 chardet==3.0.4
 Click==7.0
--e git+git@github.com:gkiar/clowdr.git@a20362e3735647e92a04e02fca2355d586e4532e#egg=clowdr
 colorama==0.3.9
 colorlover==0.2.1
 dash==0.35.1
