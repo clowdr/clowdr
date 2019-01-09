@@ -101,7 +101,7 @@ def consolidateTask(tool, invocation, clowdrloc, dataloc, **kwargs):
         taskfname = op.join(taskloc, "task-{}.json".format(idx))
         taskdictnames += [taskfname]
         with open(taskfname, 'w') as fhandle:
-            fhandle.write(json.dumps(taskdict))
+            fhandle.write(json.dumps(taskdict, indent=4, sort_keys=True))
 
     return (taskdictnames, invocations)
 
@@ -110,21 +110,18 @@ def sweepTasks(taskdicts, invocations, sweep_param):
     tdicts = []
     invos = []
 
-    for ttdict, tinvo in zip(taskdics, invocations):
+    for ttdict, tinvo in zip(taskdicts, invocations):
         invo = json.load(open(tinvo))
         sweep_vals = invo.get(sweep_param)
 
         for sval in sweep_vals:
-            partstr = "sub-{}".format(part)
-
             tempdict = deepcopy(ttdict)
-
             invo[sweep_param] = sval
 
             invofname = op.join(tinvo.replace(".json", "_sweep-"
                                 "{0}-{1}.json".format(sweep_param, sval)))
             with open(invofname, 'w') as fhandle:
-                fhandle.write(json.dumps(invo))
+                fhandle.write(json.dumps(invo, indent=4, sort_keys=True))
 
             tempdict["invocation"] = invofname
             invos += [invofname]
@@ -180,7 +177,7 @@ def bidsTasks(clowdrloc, taskdict):
 
             invofname = op.join(clowdrloc, "invocation_sub-{}.json".format(part))
             with open(invofname, 'w') as fhandle:
-                fhandle.write(json.dumps(invo))
+                fhandle.write(json.dumps(invo, indent=4, sort_keys=True))
 
             tempdict["invocation"] = invofname
             invos += [invofname]
@@ -207,7 +204,7 @@ def bidsTasks(clowdrloc, taskdict):
                 invofname = op.join(clowdrloc, "invocation_"
                                     "sub-{}_ses-{}.json".format(part, sesh))
                 with open(invofname, 'w') as fhandle:
-                    fhandle.write(json.dumps(invo))
+                    fhandle.write(json.dumps(invo, indent=4, sort_keys=True))
 
                 tempdict["invocation"] = invofname
                 invos += [invofname]
@@ -229,7 +226,7 @@ def bidsTasks(clowdrloc, taskdict):
 
             invofname = op.join(clowdrloc, "invocation_ses-{}.json".format(sesh))
             with open(invofname, 'w') as fhandle:
-                fhandle.write(json.dumps(invo))
+                fhandle.write(json.dumps(invo, indent=4, sort_keys=True))
 
             tempdict["invocation"] = invofname
             invos += [invofname]
@@ -269,7 +266,7 @@ def prepareForRemote(tasks, tmploc, clowdrloc):
                                                           tmploc))
 
         with open(task, 'w') as fhandle:
-            fhandle.write(json.dumps(task_dict))
+            fhandle.write(json.dumps(task_dict, indent=4, sort_keys=True))
 
     return 0
 

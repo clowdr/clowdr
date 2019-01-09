@@ -22,7 +22,10 @@ from clowdr.share import consolidate, portal
 from clowdr import utils
 
 
-def local(descriptor, invocation, provdir, backoff_time=36000, **kwargs):
+def local(descriptor, invocation, provdir, backoff_time=36000, sweep=[],
+          verbose=False, workdir=None, simg=None, rerun=None, run_id=None,
+          volumes=None, s3=None, cluster=None, jobname=None, clusterargs=None,
+          dev=False, groupby=None, user=False, setup=False, **kwargs):
     """cluster
     Launches a pipeline locally through the Clowdr wrappers.
 
@@ -61,30 +64,30 @@ def local(descriptor, invocation, provdir, backoff_time=36000, **kwargs):
     int
         The exit-code returned by the task being executed
     """
-    print(kwargs.get("sweep"))
-    return -1
     # TODO: scrub inputs
     descriptor = descriptor.name
     tool = utils.truepath(descriptor)
-    if kwargs.get("simg"):
-        kwargs["simg"] = utils.truepath(kwargs["simg"])
+    if simg:
+        simg = utils.truepath(simg)
 
-    if kwargs.get("verbose"):
+    if verbose:
         print("Consolidating metadata...")
 
-    dataloc = kwargs.get("s3") if kwargs.get("s3") else "localhost"
-    if kwargs.get("rerun"):
-        if not kwargs.get("run_id"):
+    dataloc = s3 if s3 else "localhost"
+    if rerun:
+        if not run_id:
             raise SystemExit("**Error: Option --rerun requires --run_id")
-        tasks = rerunner.getTasks(provdir, kwargs["run_id"], kwargs["rerun"])
+        # TODO: add option for tasks within the rerun, addition to blanket modes
+        tasks = rerunner.getTasks(provdir, run_id, rerun)
         if not len(tasks):
-            if kwargs.get("verbose"):
+            if verbose:
                 print("No tasks to run.")
             return 0
 
     else:
         [tasks, invocs] = metadata.consolidateTask(descriptor, invocation,
-                                                   provdir, dataloc, **kwargs)
+                                                   provdir, dataloc,
+                                                   sweep=sweep, **kwargs)
 
     taskdir = op.dirname(utils.truepath(tasks[0]))
     try:
@@ -93,49 +96,53 @@ def local(descriptor, invocation, provdir, backoff_time=36000, **kwargs):
         pass
     os.chdir(taskdir)
 
+    if setup:
+        print(taskdir)
+        return taskdir
+
     with open(tool) as fhandle:
         container = json.load(fhandle).get("container-image")
 
     if container:
-        if kwargs.get("verbose"):
+        if verbose:
             print("Getting container...")
         outp = utils.getContainer(taskdir, container, **kwargs)
 
-    if kwargs.get("cluster"):
+    if cluster:
         from slurmpy import Slurm
-        jobname = kwargs.get("jobname") if kwargs.get("jobname") else "clowdr"
-        clusterargs = {}
-        if kwargs.get("clusterargs"):
-            for opt in kwargs.get("clusterargs").split(","):
+        jobname = jobname if jobname else "clowdr"
+        cargs = {}
+        if clusterargs:
+            for opt in clusterargs.split(","):
                 k, v = opt.split(":")[0], opt.split(":")[1:]
                 v = ":".join(v)
-                clusterargs[k] = v
-        job = Slurm(jobname, clusterargs)
+                cargs[k] = v
+        job = Slurm(jobname, cargs)
 
         script = "clowdr task {} -p {} --local"
-        if kwargs.get("workdir"):
-            script += " -w {}".format(kwargs["workdir"])
-        if kwargs.get("volumes"):
+        if workdir:
+            script += " -w {}".format(workdir)
+        if volumes:
             script += " ".join([" -v {}".format(vol)
-                                for vol in kwargs.get("volumes")])
-        if kwargs.get("verbose"):
+                                for vol in volumes])
+        if verbose:
             script += " -V"
 
     # Groups tasks into collections to be run together (default size = 1)
-    gsize = kwargs["groupby"] if kwargs.get("groupby") else 1
+    gsize = groupby if groupby else 1
     taskgroups = [tasks[i:i+gsize] for i in range(0, len(tasks), gsize)]
 
-    if kwargs.get("dev"):
+    if dev:
         taskgroups = [taskgroups[0]]  # Just launch the first in dev mode
 
-    if kwargs.get("verbose"):
+    if verbose:
         print("Launching tasks...")
 
     for taskgroup in taskgroups:
-        if kwargs.get("verbose"):
+        if verbose:
             print("... Processing task(s): {}".format(", ".join(taskgroup)))
 
-        if kwargs.get("cluster"):
+        if cluster:
             tmptaskgroup = " ".join(taskgroup)
             func = job.run
             args = [script.format(tmptaskgroup, taskdir)]
@@ -143,9 +150,10 @@ def local(descriptor, invocation, provdir, backoff_time=36000, **kwargs):
             utils.backoff(func, args, {},
                           backoff_time=backoff_time, **kwargs)
         else:
-            runtask(taskgroup, provdir=taskdir, local=True, **kwargs)
+            runtask(taskgroup, provdir=taskdir, local=True, verbose=verbose,
+                    workdir=workdir, volumes=volumes, user=user,  **kwargs)
 
-    if kwargs.get("verbose"):
+    if verbose:
         print(taskdir)
     return taskdir
 
@@ -204,6 +212,7 @@ def cloud(descriptor, invocation, provdir, s3, cloud, credentials, **kwargs):
 
 
 def runtask(tasklist, **kwargs):
+    print(kwargs)
     for task in tasklist:
         handler = TaskHandler(task, **kwargs)
 
@@ -342,6 +351,9 @@ on clusters, and in the cloud. For more information, go to our website:
                                  "means it must be a list of lists here). This"
                                  " option does not work with directories of "
                                  "invocations, but only single files.")
+    parser_loc.add_argument("--setup", action="store_true",
+                            help="If you wish to generate metadata but not "
+                                 "launch tasks then you can use this mode.")
     parser_loc.add_argument("--cluster", "-c", choices=["slurm"],
                             help="If you wish to submit your local tasks to a "
                                  "scheduler, you must specify it here. "

@@ -12,13 +12,14 @@ from clowdr.controller import metadata
 class TestMetadataGen(TestCase):
 
     cdir = op.abspath(op.join(op.dirname(cfile), op.pardir))
-    descriptor = op.join(cdir, "examples/descriptor_d.json")
-    invocation1 = op.join(cdir, "examples/invocation.json")
-    invocation2 = op.join(cdir, "examples/invocation_ses.json")
-    invocation3 = op.join(cdir, "examples/invocation_ses_nopart.json")
-    invocation4 = op.join(cdir, "examples/invocs/")
-    invocation5 = op.join(cdir, "examples/invocation_sweep.json")
-    provdir = op.join(cdir, "examples/task/")
+    descriptor = op.join(cdir, "examples/bids-example/descriptor_d.json")
+    invocation1 = op.join(cdir, "examples/bids-example/invocation.json")
+    invocation2 = op.join(cdir, "examples/bids-example/invocation_ses.json")
+    invocation3 = op.join(cdir, "examples/bids-example/"
+                                "invocation_ses_nopart.json")
+    invocation4 = op.join(cdir, "examples/bids-example/invocs/")
+    invocation5 = op.join(cdir, "examples/bids-example/invocation_sweep.json")
+    provdir = op.join(cdir, "examples/bids-example/task/")
     dataloc1 = "localhost"
     dataloc2 = "s3://mybucket/path/"
 
@@ -52,13 +53,16 @@ class TestMetadataGen(TestCase):
             total = len(dat["participant_label"]) * len(dat["session_label"])
         self.assertTrue(len(tasks) == len(invocs) == total)
 
-        with self.assertRaises(SystemExit) as ex:
-            [tasks, invocs] = metadata.consolidateTask(self.descriptor,
-                                                       self.invocation3,
-                                                       self.provdir,
-                                                       self.dataloc1,
-                                                       verbose=True,
-                                                       bids=True)
+        [tasks, invocs] = metadata.consolidateTask(self.descriptor,
+                                                   self.invocation3,
+                                                   self.provdir,
+                                                   self.dataloc1,
+                                                   verbose=True,
+                                                   bids=True)
+        with open(self.invocation3) as f:
+            dat = json.load(f)
+            total = len(dat["session_label"])
+        self.assertTrue(len(tasks) == len(invocs) == total)
 
     def test_metadata_directory_invocs(self):
         [tasks, invocs] = metadata.consolidateTask(self.descriptor,
@@ -76,7 +80,14 @@ class TestMetadataGen(TestCase):
                                                    self.provdir,
                                                    self.dataloc1,
                                                    verbose=True,
-                                                   sweep=True)
+                                                   sweep=["participant_label",
+                                                          "analysis_level"],
+                                                   setup=True)
+
+        with open(self.invocation5) as fhandle:
+            dat = json.load(fhandle)
+            total = len(dat["participant_label"]) * len(dat["analysis_level"])
+        self.assertTrue(len(tasks) == len(invocs) == total)
 
     def test_metadata_to_remote(self):
         [tasks, invocs] = metadata.consolidateTask(self.descriptor,
