@@ -17,9 +17,11 @@ class TestRerunner(TestCase):
 
     def provide_local_call(self, groups=3):
         call_local = ["local",
-                      op.join(self.cdir, "examples/descriptor_d.json"),
-                      op.join(self.cdir, "examples/invocation.json"),
-                      op.join(self.cdir, "examples/task/"),
+                      op.join(self.cdir, "examples/bids-example/"
+                                         "descriptor_d.json"),
+                      op.join(self.cdir, "examples/bids-example/"
+                                         "invocation.json"),
+                      op.join(self.cdir, "examples/bids-example/task/"),
                       "-v", "/data/ds114/:/data/ds114",
                       "-bdV",
                       "-g", "{}".format(groups)]

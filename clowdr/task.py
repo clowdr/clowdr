@@ -278,7 +278,8 @@ class TaskHandler:
             except (psutil._exceptions.AccessDenied,
                     psutil._exceptions.NoSuchProcess,
                     TypeError, ValueError, AttributeError) as e:
-                print("Logging failed: {0}".format(e))
+                if kwargs.get('verbose'):
+                    print("Logging failed: {0}".format(e))
                 continue
 
         worker_process.join()

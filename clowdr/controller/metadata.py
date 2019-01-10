@@ -88,15 +88,45 @@ def consolidateTask(tool, invocation, clowdrloc, dataloc, **kwargs):
             taskdicts = [taskdict]
             invocations = [taskdict["invocation"]]
 
+    # Post-case: User is performing a parameter sweep over invocations
+    sweep = kwargs.get("sweep")
+    if sweep:
+        for sweep_param in sweep:
+            taskdicts, invocations = sweepTasks(taskdicts, invocations,
+                                                sweep_param)
+
     # Store task definition files to disk
     taskdictnames = []
     for idx, taskdict in enumerate(taskdicts):
         taskfname = op.join(taskloc, "task-{}.json".format(idx))
         taskdictnames += [taskfname]
         with open(taskfname, 'w') as fhandle:
-            fhandle.write(json.dumps(taskdict))
+            fhandle.write(json.dumps(taskdict, indent=4, sort_keys=True))
 
     return (taskdictnames, invocations)
+
+
+def sweepTasks(taskdicts, invocations, sweep_param):
+    tdicts = []
+    invos = []
+
+    for ttdict, tinvo in zip(taskdicts, invocations):
+        invo = json.load(open(tinvo))
+        sweep_vals = invo.get(sweep_param)
+
+        for sval in sweep_vals:
+            tempdict = deepcopy(ttdict)
+            invo[sweep_param] = sval
+
+            invofname = op.join(tinvo.replace(".json", "_sweep-"
+                                "{0}-{1}.json".format(sweep_param, sval)))
+            with open(invofname, 'w') as fhandle:
+                fhandle.write(json.dumps(invo, indent=4, sort_keys=True))
+
+            tempdict["invocation"] = invofname
+            invos += [invofname]
+            tdicts += [tempdict]
+    return (tdicts, invos)
 
 
 def bidsTasks(clowdrloc, taskdict):
@@ -147,7 +177,7 @@ def bidsTasks(clowdrloc, taskdict):
 
             invofname = op.join(clowdrloc, "invocation_sub-{}.json".format(part))
             with open(invofname, 'w') as fhandle:
-                fhandle.write(json.dumps(invo))
+                fhandle.write(json.dumps(invo, indent=4, sort_keys=True))
 
             tempdict["invocation"] = invofname
             invos += [invofname]
@@ -171,9 +201,10 @@ def bidsTasks(clowdrloc, taskdict):
                 invo["participant_label"] = [part]
                 invo["session_label"] = [sesh]
 
-                invofname = op.join(clowdrloc, "invocation_sub-{}_ses-{}.json".format(part, sesh))
+                invofname = op.join(clowdrloc, "invocation_"
+                                    "sub-{}_ses-{}.json".format(part, sesh))
                 with open(invofname, 'w') as fhandle:
-                    fhandle.write(json.dumps(invo))
+                    fhandle.write(json.dumps(invo, indent=4, sort_keys=True))
 
                 tempdict["invocation"] = invofname
                 invos += [invofname]
@@ -182,10 +213,25 @@ def bidsTasks(clowdrloc, taskdict):
 
     # Case 5: User is running BIDS participant- or session-level analysis
     #       ... and specified sessions(s) but not participant(s)
-    else:
-        print("Error: Invalid BIDS mode not supported....")
-        print("       Must specify participant label if specifying sessions!")
-        sys.exit(-1)
+    elif sessions and not participants:
+        taskdicts = []
+        invos = []
+        for sesh in sessions:
+            seshstr = "ses-{}".format(sesh)
+
+            tempdict = deepcopy(taskdict)
+            tempdict["dataloc"] = [op.join(dataloc)]
+
+            invo["session_label"] = [sesh]
+
+            invofname = op.join(clowdrloc, "invocation_ses-{}.json".format(sesh))
+            with open(invofname, 'w') as fhandle:
+                fhandle.write(json.dumps(invo, indent=4, sort_keys=True))
+
+            tempdict["invocation"] = invofname
+            invos += [invofname]
+            taskdicts += [tempdict]
+        return (taskdicts, invos)
 
 
 def prepareForRemote(tasks, tmploc, clowdrloc):
@@ -220,7 +266,7 @@ def prepareForRemote(tasks, tmploc, clowdrloc):
                                                           tmploc))
 
         with open(task, 'w') as fhandle:
-            fhandle.write(json.dumps(task_dict))
+            fhandle.write(json.dumps(task_dict, indent=4, sort_keys=True))
 
     return 0
 
