@@ -1,3 +1,9 @@
+Sphinx>=1.7.5
+sphinx-argparse>=0.2.2
+sphinx-autobuild>=0.7.1
+sphinx-rtd-theme>=0.4.0
+sphinxcontrib-autoprogram>=0.1.5
+sphinxcontrib-websupport>=1.1.0
 awscli>=1.16.1
 boto3>=1.9.1
 boutiques>=0.5.16
