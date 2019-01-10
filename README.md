@@ -15,7 +15,6 @@ Clowd is a command-line utility for iteratively developing pipelines, deploying 
   - [Installation Instructions](#installation-instructions)
   - [Docker](#docker)
   - [Singularity](#singularity)
-- [Demo](#demo)
 - [Usage](#usage)
   - [Local](#local)
   - [Cluster](#cluster)
@@ -63,11 +62,8 @@ Clowdr is also available on Singularity Hub, and can be downloaded with:
 singularity pull clowdr/clowdr
 ```
 
-## Demo
-This doesn't exist yet - sorry!
-
 ## Usage
-(*For up to date command-lines please check out our (documentation)[#documentation]*)
+(*For up to date command-lines please check out our [documentation](https://clowdr.rtfd.io)*)
 
 Below we'll explore each of the main three modes of operation for Clowdr. If in doubt, always feel free to turn back to the help-text:
 
@@ -129,7 +125,7 @@ clowdr share ./examples/task/bids-example/clowdr/ -d
 ```
 
 ## Documentation
-For detailed and up-to-date documentation, check out our read-the-docs page, at [clowdr-dev.rtfd.io](http://clowdr-dev.rtfd.io).
+For detailed and up-to-date documentation, check out our read-the-docs page, at [clowdr.rtfd.io](http://clowdr.rtfd.io).
 
 ## License
 This project is covered under the [MIT License](https://github.com/clowdr/clowdr/blob/master/LICENSE).
