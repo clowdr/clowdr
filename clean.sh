@@ -1,9 +1,9 @@
 #!/bin/bash
 
-rm -rf ./examples/task/invocation* \
-       ./examples/task/task* \
-       ./examples/task/descriptor* \
-       ./examples/task/2018* \
-       ./examples/task/clowdata \
+rm -rf ./examples/bids-example/task/invocation* \
+       ./examples/bids-example/task/task* \
+       ./examples/bids-example/task/descriptor* \
+       ./examples/bids-example/task/20* \
+       ./examples/bids-example/task/clowdata \
        ./slurm-scripts/ \
-       ./clowdr/tests/test_stdout_*.txt
+       ./clowdr/tests/test_stdout*.txt

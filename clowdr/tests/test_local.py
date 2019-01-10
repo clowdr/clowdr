@@ -20,15 +20,18 @@ class TestLocal(TestCase):
     def provide_local_call(self, groups=3, container="d"):
         call_local = ["local",
                       op.join(self.cdir,
-                              "examples/descriptor_{}.json".format(container)),
-                      op.join(self.cdir, "examples/invocation.json"),
-                      op.join(self.cdir, "examples/task/"),
+                              "examples/bids-example/"
+                              "descriptor_{}.json".format(container)),
+                      op.join(self.cdir,
+                              "examples/bids-example/invocation.json"),
+                      op.join(self.cdir, "examples/bids-example/task/"),
                       "-v", "/data/ds114/:/data/ds114",
                       "-bdV",
                       "-g", "{}".format(groups)]
         return call_local
 
     def evaluate_output(self, fname, call_local, groups):
+        print(call_local)
         with open(fname, 'w') as f:
             with redirect_stdout(f):
                 status = driver.main(args=call_local)
@@ -73,6 +76,7 @@ class TestLocal(TestCase):
         self.evaluate_output(fname, call_local, groups)
 
         call_local += ["--simg", op.join(self.cdir,
-                                         "examples/bids-example.simg")]
+                                         "examples/bids-example/"
+                                         "bids-example.simg")]
         fname = op.join(op.dirname(__file__), 'test_stdout_singularity2.txt')
         self.evaluate_output(fname, call_local, groups)
