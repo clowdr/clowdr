@@ -29,7 +29,7 @@ before_install:
 - sudo make install
 - singularity --version
 - cat /etc/singularity/singularity.conf
-- cd ${TRAVIS_BUILD_DIR}/examples/
+- cd ${TRAVIS_BUILD_DIR}/examples/bids-example/
 - docker pull bids/example
 - docker run -v /var/run/docker.sock:/var/run/docker.sock -v ${HOME}:/output --privileged -t --rm singularityware/docker2singularity --name bids-example bids/example 1> ${HOME}/convert_log.txt
 - cat ${HOME}/convert_log.txt
