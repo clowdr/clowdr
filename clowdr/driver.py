@@ -26,7 +26,7 @@ def local(descriptor, invocation, provdir, backoff_time=36000, sweep=[],
           verbose=False, workdir=None, simg=None, rerun=None, run_id=None,
           task_ids=[], volumes=[], s3=None, cluster=None, jobname=None,
           clusterargs=None, dev=False, groupby=1, user=False, setup=False,
-          **kwargs):
+          bids=False, **kwargs):
     """cluster
     Launches a pipeline locally through the Clowdr wrappers.
 
@@ -83,6 +83,8 @@ def local(descriptor, invocation, provdir, backoff_time=36000, sweep=[],
     setup : bool (default = False)
         Flag which prevents execution of tasks after the metadata task and
         invocation files are generated.
+    bids : bool (default = False)
+        Flag toggling BIDS-aware metadata preparation.
     **kwargs : dict
         Arbitrary additional keyword arguments which may be passed.
 
