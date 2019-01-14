@@ -19,22 +19,31 @@ import os
 from clowdr import utils
 
 
-def consolidateTask(tool, invocation, clowdrloc, dataloc, **kwargs):
-    """consolidate
-    Creates Clowdr task JSON files which summarize all associated metadata
+def consolidateTask(tool, invocation, clowdrloc, dataloc, bids=False, sweep=[],
+                    verbose=False, **kwargs):
+    """consolidateTask
+    Creates Clowdr task JSON files and Boutiques invocations which summarize all
+    associated metadata with the tasks being launched.
 
     Parameters
     ----------
     tool : str
-        Path to a boutiques descriptor for the tool to be run
+        Path to a boutiques descriptor for the tool to be run.
     invocation : str
-        Path to a boutiques invocation for the tool and parameters to be run
+        Path to a boutiques invocation for the tool and parameters to be run.
     clowdrloc : str
-        Path for storing Clowdr intermediate files and outputs
+        Path for storing Clowdr intermediate files and output logs.
     dataloc : str
-        Path for accessing input data
+        Path for accessing input data on an S3 bucket (must include s3://) or
+        localhost for non-cloud hosted data.
+    bids : bool (default = False)
+        Flag toggling BIDS-aware metadata preparation.
+    sweep : list (default = [])
+        List of parameters to sweep over in the provided invocations.
+    verbose : bool (default = False)
+        Flag toggling verbose output printing.
     **kwargs : dict
-        Arbitrary keyword arguments (i.e. {'verbose': True})
+        Arbitrary additional keyword arguments which may be passed.
 
     Returns
     -------
@@ -80,7 +89,7 @@ def consolidateTask(tool, invocation, clowdrloc, dataloc, **kwargs):
     # Case 2: User supplies a single invocation
     else:
         # Case 2a: User is running a BIDS app
-        if kwargs.get("bids"):
+        if bids:
             taskdicts, invocations = bidsTasks(taskloc, taskdict)
 
         # Case 2b: User is quite simply just launching a single invocation
@@ -89,7 +98,6 @@ def consolidateTask(tool, invocation, clowdrloc, dataloc, **kwargs):
             invocations = [taskdict["invocation"]]
 
     # Post-case: User is performing a parameter sweep over invocations
-    sweep = kwargs.get("sweep")
     if sweep:
         for sweep_param in sweep:
             taskdicts, invocations = sweepTasks(taskdicts, invocations,
@@ -107,6 +115,23 @@ def consolidateTask(tool, invocation, clowdrloc, dataloc, **kwargs):
 
 
 def sweepTasks(taskdicts, invocations, sweep_param):
+    """sweepTasks
+    Sweeps through provided fields for creating more tasks than specified.
+
+    Parameters
+    ----------
+    taskdicts : str
+        Dictionary of the tasks
+    invocations : str
+        Corresponding invocations for each task dictionary
+    sweep_param : str
+        Parameter to be swept over in each invocation
+
+    Returns
+    -------
+    tuple: (list, list)
+        The task dictionary JSONs, and associated Boutiques invocation files.
+    """
     tdicts = []
     invos = []
 
@@ -235,20 +260,23 @@ def bidsTasks(clowdrloc, taskdict):
 
 
 def prepareForRemote(tasks, tmploc, clowdrloc):
-    """prepare
+    """prepareForRemote
     Scans through BIDS app fields for creating more tasks than specified.
 
     Parameters
     ----------
+    tasks : list
+        List of task dictionaries on disk for Clowdr tasks.
+    tmploc : str
+        Temporary location where the invocations and task files are stored.
     clowdrloc : str
         Path for storing Clowdr intermediate files and outputs
-    taskdict : str
-        Dictionary of the tasks (pre-BIDS-ification)
 
     Returns
     -------
     tuple: (list, list)
-        The task dictionary JSONs, and associated Boutiques invocation files.
+        The task dictionary JSONs, and associated Boutiques invocation files,
+        with paths corrected to eventual remote locations.
     """
 
     # Modify tasks
@@ -267,6 +295,5 @@ def prepareForRemote(tasks, tmploc, clowdrloc):
 
         with open(task, 'w') as fhandle:
             fhandle.write(json.dumps(task_dict, indent=4, sort_keys=True))
-
     return 0
 
