@@ -19,7 +19,7 @@ from clowdr.share import customDash as cd
 
 
 class CreatePortal():
-    def __init__(self, experiment_dict):
+    def __init__(self, experiment_dict, N=100):
         # Initialize Dash app with custom wrapper that lets us set page title
         self.app = cd.CustomDash()
         # Load and groom dataset
@@ -52,7 +52,6 @@ class CreatePortal():
                 tmpexp_tim = exp['Time: Series (s)']
                 tmpexp_cpu = exp['CPU: Series (%)']
 
-                N = 200
                 timlin = np.linspace(tmpexp_tim[0], tmpexp_tim[-1], N)
                 tmpexp_tim_resamp = []
                 tidx = []
@@ -93,11 +92,24 @@ class CreatePortal():
         # Get rid of un-updated version of the dictionary
         self.experiment_dict = new_experiment_dict
 
+        # Create item download dictionary
+        self.downdict = [{'label': k, 'value': k}
+                         for k in self.experiment_dict[0].keys()
+                         if not k.startswith(("Param:",
+                                              "CPU: Max",
+                                              "RAM: Max"))]
+        self.downdict = [{'label': k, 'value': k}
+                         for k in ['Task ID', 'Exit Status', 'Output Logs',
+                                   'Error Logs', 'Tool Name', 'RAM Usage',
+                                   'CPU Usage', 'Timing', 'Parameters']]
+        self.downloaders = [v['value'] for v in self.downdict]
+
         # Create look-up-table for mapping tasks to rows in the tables
         self.idx_to_task_lut = {exp['Task ID']: idx
                                 for idx, exp in enumerate(self.experiment_dict)}
         self.task_to_idx_lut = {idx: exp['Task ID']
                                 for idx, exp in enumerate(self.experiment_dict)}
+
         # <------ /stop data grooming
 
     def launch(self):
@@ -113,22 +125,52 @@ class CreatePortal():
             # Page title/header
             html.H4('Clowdr Experiment Explorer'),
 
-            # Tabs & tables
-            dcc.Tabs(id='tabs', value='stats-tab',
-                     children=self.create_tabs_children('stats-tab',
-                                                        [],
-                                                        self.stat_dict)),
+            html.Div([
+                html.Div([
+                    # Tabs & tables
+                    dcc.Tabs(id='tabs', value='stats-tab',
+                             children=self.create_tabs_children('stats-tab',
+                                                                [],
+                                                                self.stat_dict))
+                ], className="nine columns"),
 
-            # Gantt container (to be updated by callbacks)
-            dcc.Graph(id='gantt-clowdrexp',
-                      figure=self.create_gantt(),
-                      config=config),
+                html.Div([
+                    html.Div([
+                        # Utility bar (logs, download selected)
+                        html.Div(id="DownloadText",
+                                 children="Selected Task Data:"),
+                        dcc.Dropdown(id='download-list',
+                                     options=self.downdict,
+                                     multi=True,
+                                     value=self.downloaders)
+                    ]),
+                    html.Button('Download',
+                                id="download-button",
+                                disabled=True,
+                                className="button",
+                                style={"margin-top":"10px", "color": "#ccc",
+                                       "width": "100%"})
+                ],style={"position": "absolute", "bottom": "4px", "right": 0},
+                  className="three columns")
+            ], style={"position": "relative"}, className="row"),
 
-            # Graph container (to be populated by callbacks)
-            dcc.Graph(id='graph-clowdrexp',
-                      figure=self.create_figure(self.stat_dict, []),
-                      config=config)
-            ], className="container")
+            html.Div([
+                html.Div([
+                    # Gantt container (to be updated by callbacks)
+                    dcc.Graph(id='gantt-clowdrexp',
+                              figure=self.create_gantt(),
+                              config=config),
+                ], className="five columns"),
+
+                html.Div([
+                # Graph container (to be populated by callbacks)
+                dcc.Graph(id='graph-clowdrexp',
+                          figure=self.create_figure(self.stat_dict, []),
+                          config=config)
+                ], className="seven columns")
+            ], className="row")
+        ], className="container", style={"max-width":"1080px"})
+
         # <------ /stop page creation
 
     def create_callbacks(self):
@@ -176,6 +218,38 @@ class CreatePortal():
             # Create new figure based on selected rows
             figure = self.create_figure(rows, selected_indices)
             return figure
+
+        # Callback: update download button based on selected/preesent data
+        @self.app.callback(
+            Output('download-button', 'disabled'),
+            [Input('table-clowdrexp', 'selected_row_indices')],
+            [State('download-list', 'value')])
+        def toggle_download(selected_indices, download_list_fields):
+            self.downloaders = download_list_fields
+            if len(selected_indices) > 0:
+                return False
+            else:
+                return True
+
+        @self.app.callback(
+            Output('download-button', 'style'),
+            [Input('download-button', 'disabled')],
+            [State('download-button', 'style')])
+        def change_button_appearance(disabled, style):
+            if disabled:
+                style['color'] = '#ccc'
+            else:
+                style['color'] = '#555'
+            return style
+
+        # Callback: download selected data on click
+        # TODO
+        @self.app.callback(
+            Output('DownloadText', 'children'),
+            [Input('download-button', 'n_clicks')],
+            [State('download-list', 'value')])
+        def download_data(new_click, download_list_fields):
+            return new_click
 
         # Callback: update gantt based on selected/present data
         @self.app.callback(
@@ -302,9 +376,17 @@ class CreatePortal():
             id_list += [exp['Task ID']]
             data += self.append_trace(exp, i, opacity)
 
+        if data == []:
+            data = [{"yaxis":"y", "xaxis": "x",
+                     'y': [100, 100], 'x': [0, 100], "opacity": 0,
+                     "marker": {"opacity": 0}},
+                    {"yaxis":"y2", "xaxis": "x",
+                     'y': [100, 100], 'x': [0, 100], "opacity": 0,
+                     "marker": {"opacity": 0}}]
+
         layout = {
             'showlegend': False,
-            'height': 500,
+            'height': 300,
             'title': 'Usage Stats',
             'margin': {
                 't': 60,
@@ -319,19 +401,20 @@ class CreatePortal():
             'yaxis': {
                 'title': 'RAM (MB)',
                 'rangemode': 'tozero',
-                'domain': [0.5, 1]
+                'domain': [0.5, 1],
             },
             'yaxis2': {
                 'title': 'CPU (%)',
                 'autorange': 'reversed',
                 'rangemode': 'tozero',
                 'side': 'left',
-                'domain': [0.0, 0.5]
+                'domain': [0.0, 0.5],
             },
             'hovermode': 'closest'
         }
 
-        fig = go.Figure(data, layout)
+        fig = go.Figure(data=data, layout=layout)
+        print(fig)
         return fig
 
     # Utility for adding a trace back to the graph
@@ -343,6 +426,7 @@ class CreatePortal():
             mode='lines+markers',
             line={'color': self.main_colour},
             opacity=opacity,
+            marker={"opacity":opacity},
             fill='tozeroy',
             xaxis='x',
             yaxis='y',
@@ -357,6 +441,7 @@ class CreatePortal():
             mode='lines+markers',
             line={'color': self.accent_colour},
             opacity=opacity,
+            marker={"opacity":opacity},
             fill='tozeroy',
             xaxis='x',
             yaxis='y2',

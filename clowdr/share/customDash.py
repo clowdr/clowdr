@@ -3,7 +3,7 @@
 import dash
 
 class CustomDash(dash.Dash):
-    def interpolate_index(self, **kwargs):
+    def interpolate_index(self, app_entry="", config="", scripts="", **kwargs):
         # Inspect the arguments by printing them
         return '''
 <!DOCTYPE html>
@@ -35,7 +35,7 @@ class CustomDash(dash.Dash):
     </body>
 </html>
         '''.format(
-            app_entry=kwargs['app_entry'],
-            config=kwargs['config'],
-            scripts=kwargs['scripts'])
+            app_entry=app_entry,
+            config=config,
+            scripts=scripts)
 

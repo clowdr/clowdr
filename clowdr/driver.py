@@ -249,7 +249,8 @@ def runtask(tasklist, **kwargs):
         handler = TaskHandler(task, **kwargs)
 
 
-def share(provdir, **kwargs):
+def share(provdir, prepare=False, host="0.0.0.0", port=8050, verbose=False,
+          debug=False, **kwargs):
     """share
     Launches a simple web server which showcases all runs at the clowdrloc.
 
@@ -270,11 +271,11 @@ def share(provdir, **kwargs):
         utils.get(provdir, tmploc, **kwargs)
         tmpdir = op.join(tmploc, utils.splitS3Path(provdir)[1])
         provdir = tmpdir
-        if kwargs.get("verbose"):
+        if verbose:
             print("Local cache of directory: {}".format(provdir))
 
     if op.isfile(provdir):
-        if kwargs.get("verbose"):
+        if verbose:
             print("Summary file provided - no need to generate.")
         summary = provdir
         with open(summary) as fhandle:
@@ -283,11 +284,15 @@ def share(provdir, **kwargs):
         summary = op.join(provdir, 'clowdr-summary.json')
         experiment_dict = consolidate.summary(provdir, summary)
 
-    customDash = portal.CreatePortal(experiment_dict)
+    if prepare:
+        if verbose:
+            print("Summary file location: {}".format(summary))
+        return summary
+
+    customDash = portal.CreatePortal(experiment_dict, N=100)
     app = customDash.launch()
 
-    host = kwargs["host"] if kwargs.get("host") else "0.0.0.0"
-    app.run_server(host=host, debug=kwargs.get("debug"))
+    app.run_server(host=host, debug=debug, port=port)
 
 
 def makeparser():
@@ -518,6 +523,17 @@ on clusters, and in the cloud. For more information, go to our website:
                                  "was returned by running either clowdr cloud "
                                  "or clowdr local. This can also be a clowdr-"
                                  "generated summary file.")
+    parser_shr.add_argument("--prepare", "-p", action="store_true",
+                            help="If provided, this prevents a server from "
+                                 "being launched after metadata is consolidated"
+                                 " into a single file, and the path to that "
+                                 "file is returned.")
+    parser_shr.add_argument("--host", action="store", default="0.0.0.0",
+                            help="The host to broadcast the share service at. "
+                                 "Default is 0.0.0.0.")
+    parser_shr.add_argument("--port", action="store", type=int,
+                            help="The port to broadcast the share service at. "
+                                 "Default is 8050.")
     parser_shr.add_argument("--debug", "-d", action="store_true",
                             help="Toggles server messages and logging. This "
                                  "is intended for development purposes.")
