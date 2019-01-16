@@ -5,12 +5,16 @@ import dash_core_components as dcc
 import dash_html_components as html
 import dash_table_experiments as dt
 import dash
+import flask
+import urllib.parse
+import io
 
 import plotly.figure_factory as ff
 import plotly.graph_objs as go
 import plotly
 
 from datetime import datetime, timedelta
+from copy import deepcopy
 import pandas as pd
 import numpy as np
 import json
@@ -25,15 +29,11 @@ class CreatePortal():
         # external CSS stylesheets
         external_stylesheets = [
             'https://codepen.io/chriddyp/pen/bWLwgP.css',
-            # {
-            #     'href': 'https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css',
-            #     'rel': 'stylesheet',
-            #     'integrity': 'sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO',
-            #     'crossorigin': 'anonymous'
-            # }
         ]
-        self.app = dash.Dash("Clowdr gg",
+        self.app = dash.Dash(__name__,
                              external_stylesheets=external_stylesheets)
+        self.app.title = "Clowdr Share Portal"
+        self.app.config['supress_callback_exceptions'] = False
         # Load and groom dataset
         # -----> /start data grooming
 
@@ -159,12 +159,19 @@ class CreatePortal():
                                      multi=True,
                                      value=self.downloaders)
                     ]),
-                    html.Button('Download',
-                                id="download-button",
-                                disabled=True,
-                                className="button",
-                                style={"margin-top": "10px", "color": "#ccc",
-                                       "width": "100%"})
+                    html.A(
+                        html.Button('Download',
+                                    id="download-button",
+                                    disabled=False,
+                                    className="button",
+                                    style={"margin-top": "10px",
+                                           "color": "#ccc",
+                                           "width": "100%"}),
+                        id='download-button-link',
+                        download="clowdr-experiment.json",
+                        href="",
+                        target="_blank"
+                    )
                 ], style={"position": "absolute", "bottom": "4px", "right": 0},
                   className="three columns")
             ], style={"position": "relative"}, className="row"),
@@ -236,15 +243,70 @@ class CreatePortal():
         # Callback: update download button based on selected/preesent data
         @self.app.callback(
             Output('download-button', 'disabled'),
-            [Input('table-clowdrexp', 'selected_row_indices')],
-            [State('download-list', 'value')])
+            [Input('table-clowdrexp', 'selected_row_indices'),
+             Input('download-list', 'value')])
         def toggle_download(selected_indices, download_list_fields):
             self.downloaders = download_list_fields
-            if len(selected_indices) > 0:
+            if len(selected_indices) > 0 and len(download_list_fields) > 0:
                 return False
             else:
                 return True
 
+        # Callback: update download data based on selections
+        @self.app.callback(
+            Output('download-button-link', 'href'),
+            [Input('table-clowdrexp', 'selected_row_indices'),
+             Input('download-list', 'value')],
+            [State('table-clowdrexp', 'rows')])
+        def update_download_data(selected_indices, download_list_fields, rows):
+            # Start by filtering down to tasks of interest
+            row_ids = [r['Task'] for r in rows]
+            selected_ids = [row_ids[sids] for sids in selected_indices]
+            task_data = [exp
+                         for ids in selected_ids
+                         for exp in self.experiment_dict
+                         if exp['Task ID'] == ids]
+
+            # Now, filter out unwanted columns
+            # TODO: refactor, please
+            dlf = download_list_fields
+            send_data = []
+            for task_datum in task_data:
+                tdatum = deepcopy(task_datum)
+                if 'Task ID' not in dlf:
+                    print('del taskid')
+                    del tdatum['Task ID']
+                if 'Exit Status' not in dlf:
+                    del tdatum['Exit Code']
+                if 'Output Logs' not in dlf:
+                    del tdatum['Log: Output']
+                if 'Error Logs' not in dlf:
+                    del tdatum['Log: Error']
+                if 'Tool Name' not in dlf:
+                    del tdatum['Tool Name']
+                if 'RAM Usage' not in dlf:
+                    for tkey in [tk for tk in tdatum.keys()
+                                 if tk.startswith("RAM")]:
+                        del tdatum[tkey]
+                if 'CPU Usage' not in dlf:
+                    for tkey in [tk for tk in tdatum.keys()
+                                 if tk.startswith("CPU")]:
+                        del tdatum[tkey]
+                if 'Timing' not in dlf:
+                    for tkey in [tk for tk in tdatum.keys()
+                                 if tk.startswith("Time")]:
+                        del tdatum[tkey]
+                if 'Parameters' not in dlf:
+                    for tkey in [tk for tk in tdatum.keys()
+                                 if tk.startswith("Param")]:
+                        del tdatum[tkey]
+                send_data += [tdatum]
+
+            print(task_data[0].keys())
+            tabstr = json.dumps(send_data)
+            return "/dash/downloadExperiment?value={}".format(tabstr)
+
+        # Callback: update button styling based on disabled/enabled setting
         @self.app.callback(
             Output('download-button', 'style'),
             [Input('download-button', 'disabled')],
@@ -256,14 +318,6 @@ class CreatePortal():
                 style['color'] = '#555'
             return style
 
-        # Callback: download selected data on click
-        @self.app.callback(
-            Output('DownloadText', 'children'),
-            [Input('download-button', 'n_clicks')],
-            [State('download-list', 'value')])
-        def download_data(new_click, download_list_fields):
-            return new_click
-
         # Callback: update gantt based on selected/present data
         @self.app.callback(
             Output('gantt-clowdrexp', 'figure'),
@@ -273,7 +327,22 @@ class CreatePortal():
         def update_gantt(selected_indices, rows, figure):
             figure = self.recolour_gantt(rows, selected_indices, figure)
             return figure
-    # <------ /stop callback management
+        # <------ /stop callback management
+
+        # ------> /start custom app routes
+        @self.app.server.route('/dash/downloadExperiment')
+        def download_data():
+            value = flask.request.args.get('value')
+            bytIO = io.BytesIO()
+            bytIO.write(json.dumps(json.loads(value),
+                                   indent=4,
+                                   sort_keys=True).encode('utf-8'))
+            bytIO.seek(0)
+            return flask.send_file(bytIO,
+                                   mimetype='text/json',
+                                   attachment_filename='clowdr-experiment.json',
+                                   as_attachment=True)
+    # <------ /stop custom app routes
 
     # Create helper functions to be used by callbacks & page creation
     # ------> /start helper function creation
