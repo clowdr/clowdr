@@ -531,7 +531,7 @@ on clusters, and in the cloud. For more information, go to our website:
     parser_shr.add_argument("--host", action="store", default="0.0.0.0",
                             help="The host to broadcast the share service at. "
                                  "Default is 0.0.0.0.")
-    parser_shr.add_argument("--port", action="store", type=int,
+    parser_shr.add_argument("--port", action="store", type=int, default=8050,
                             help="The port to broadcast the share service at. "
                                  "Default is 8050.")
     parser_shr.add_argument("--debug", "-d", action="store_true",

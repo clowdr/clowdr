@@ -25,12 +25,12 @@ class CreatePortal():
         # external CSS stylesheets
         external_stylesheets = [
             'https://codepen.io/chriddyp/pen/bWLwgP.css',
-            {
-                'href': 'https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css',
-                'rel': 'stylesheet',
-                'integrity': 'sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO',
-                'crossorigin': 'anonymous'
-            }
+            # {
+            #     'href': 'https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css',
+            #     'rel': 'stylesheet',
+            #     'integrity': 'sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO',
+            #     'crossorigin': 'anonymous'
+            # }
         ]
         self.app = dash.Dash("Clowdr gg",
                              external_stylesheets=external_stylesheets)
@@ -48,7 +48,10 @@ class CreatePortal():
         self.stat_dict = []
         self.invo_dict = []
         new_experiment_dict = []
-        for exp in experiment_dict:
+        for _task_id in range(len(experiment_dict)):
+            exp = [tex
+                   for tex in experiment_dict
+                   if int(tex["Task ID"]) == int(_task_id)][0]
             # Coerce task ID into integer value
             exp['Task ID'] = int(exp['Task ID'])
             if exp['Time: Start'] is not None:
@@ -142,7 +145,7 @@ class CreatePortal():
                     # Tabs & tables
                     dcc.Tabs(id='tabs', value='stats-tab',
                              children=self.create_tabs_children('stats-tab',
-                                                                [],
+                                                                [0],
                                                                 self.stat_dict))
                 ], className="nine columns"),
 
@@ -160,9 +163,9 @@ class CreatePortal():
                                 id="download-button",
                                 disabled=True,
                                 className="button",
-                                style={"margin-top":"10px", "color": "#ccc",
+                                style={"margin-top": "10px", "color": "#ccc",
                                        "width": "100%"})
-                ],style={"position": "absolute", "bottom": "4px", "right": 0},
+                ], style={"position": "absolute", "bottom": "4px", "right": 0},
                   className="three columns")
             ], style={"position": "relative"}, className="row"),
 
@@ -175,13 +178,13 @@ class CreatePortal():
                 ], className="five columns"),
 
                 html.Div([
-                # Graph container (to be populated by callbacks)
-                dcc.Graph(id='graph-clowdrexp',
-                          figure=self.create_figure(self.stat_dict, []),
-                          config=config)
+                    # Graph container (to be populated by callbacks)
+                    dcc.Graph(id='graph-clowdrexp',
+                              figure=self.create_figure(self.stat_dict, [0]),
+                              config=config)
                 ], className="seven columns")
             ], className="row")
-        ], className="container", style={"max-width":"1080px"})
+        ], className="container", style={"max-width": "1080px"})
 
         # <------ /stop page creation
 
@@ -208,7 +211,6 @@ class CreatePortal():
              State('table-clowdrexp', 'sortDirection')])
         def update_selected_rows(clickData, selected_indices, rows,
                                  sortcol, sortdir):
-            print(sortcol, sortdir)
             row_ids = [r['Task'] for r in rows]
 
             if clickData:
@@ -331,7 +333,7 @@ class CreatePortal():
                                        'Start': exp['Time: Start'],
                                        'Finish': exp['Time: End']}])
             t3 = tmpfig['data'][0]
-            t3['y'] = (i, i)
+            t3['y'] = (exp['Task ID'], exp['Task ID'])
             t3['customdata'] = [exp['Task ID']] * 2
             t3['hoverinfo'] = 'name'
             t3['mode'] = 'lines'
@@ -343,7 +345,11 @@ class CreatePortal():
         layout = {
             'showlegend': False,
             'height': 300,
-            'title': 'Experiment Timeline',
+            'title': {
+                'text': 'Experiment Timeline',
+                'y': 0.9,
+                'x': 0.5
+            },
             'margin': {
                 't': 60,
                 'b': 60,
@@ -388,17 +394,21 @@ class CreatePortal():
             data += self.append_trace(exp, i, opacity)
 
         if data == []:
-            data = [{"yaxis":"y", "xaxis": "x",
+            data = [{"yaxis": "y", "xaxis": "x",
                      'y': [100, 100], 'x': [0, 100], "opacity": 0,
                      "marker": {"opacity": 0}},
-                    {"yaxis":"y2", "xaxis": "x",
+                    {"yaxis": "y2", "xaxis": "x",
                      'y': [100, 100], 'x': [0, 100], "opacity": 0,
                      "marker": {"opacity": 0}}]
 
         layout = {
             'showlegend': False,
             'height': 300,
-            'title': 'Usage Stats',
+            'title': {
+                'text': 'Usage Stats',
+                'y': 0.9,
+                'x': 0.5
+            },
             'margin': {
                 't': 60,
                 'b': 60,
@@ -425,7 +435,6 @@ class CreatePortal():
         }
 
         fig = go.Figure(data=data, layout=layout)
-        print(fig)
         return fig
 
     # Utility for adding a trace back to the graph
@@ -437,7 +446,7 @@ class CreatePortal():
             mode='lines+markers',
             line={'color': self.main_colour},
             opacity=opacity,
-            marker={"opacity":opacity},
+            marker={"opacity": opacity},
             fill='tozeroy',
             xaxis='x',
             yaxis='y',
@@ -452,7 +461,7 @@ class CreatePortal():
             mode='lines+markers',
             line={'color': self.accent_colour},
             opacity=opacity,
-            marker={"opacity":opacity},
+            marker={"opacity": opacity},
             fill='tozeroy',
             xaxis='x',
             yaxis='y2',
