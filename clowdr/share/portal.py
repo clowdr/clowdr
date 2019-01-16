@@ -21,7 +21,19 @@ from clowdr.share import customDash as cd
 class CreatePortal():
     def __init__(self, experiment_dict, N=100):
         # Initialize Dash app with custom wrapper that lets us set page title
-        self.app = cd.CustomDash()
+        # self.app = cd.CustomDash()
+        # external CSS stylesheets
+        external_stylesheets = [
+            'https://codepen.io/chriddyp/pen/bWLwgP.css',
+            {
+                'href': 'https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css',
+                'rel': 'stylesheet',
+                'integrity': 'sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO',
+                'crossorigin': 'anonymous'
+            }
+        ]
+        self.app = dash.Dash("Clowdr gg",
+                             external_stylesheets=external_stylesheets)
         # Load and groom dataset
         # -----> /start data grooming
 
@@ -243,7 +255,6 @@ class CreatePortal():
             return style
 
         # Callback: download selected data on click
-        # TODO
         @self.app.callback(
             Output('DownloadText', 'children'),
             [Input('download-button', 'n_clicks')],
