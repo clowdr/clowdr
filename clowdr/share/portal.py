@@ -274,14 +274,19 @@ class CreatePortal():
             for task_datum in task_data:
                 tdatum = deepcopy(task_datum)
                 if 'Task ID' not in dlf:
-                    print('del taskid')
                     del tdatum['Task ID']
                 if 'Exit Status' not in dlf:
                     del tdatum['Exit Code']
                 if 'Output Logs' not in dlf:
                     del tdatum['Log: Output']
+                else:
+                    if tdatum['Log: Output']:
+                        tdatum['Log: Output'] = tdatum['Log: Output'].split('\n')
                 if 'Error Logs' not in dlf:
                     del tdatum['Log: Error']
+                else:
+                    if tdatum['Log: Error']:
+                        tdatum['Log: Error'] = tdatum['Log: Error'].split('\n')
                 if 'Tool Name' not in dlf:
                     del tdatum['Tool Name']
                 if 'RAM Usage' not in dlf:
@@ -302,7 +307,6 @@ class CreatePortal():
                         del tdatum[tkey]
                 send_data += [tdatum]
 
-            print(task_data[0].keys())
             tabstr = json.dumps(send_data)
             return "/dash/downloadExperiment?value={}".format(tabstr)
 
