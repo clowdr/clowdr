@@ -272,40 +272,40 @@ class CreatePortal():
             dlf = download_list_fields
             send_data = []
             for task_datum in task_data:
-                tdatum = deepcopy(task_datum)
+                tdat = deepcopy(task_datum)
                 if 'Task ID' not in dlf:
-                    del tdatum['Task ID']
+                    del tdat['Task ID']
                 if 'Exit Status' not in dlf:
-                    del tdatum['Exit Code']
+                    del tdat['Exit Code']
                 if 'Output Logs' not in dlf:
-                    del tdatum['Log: Output']
+                    del tdat['Log: Output']
                 else:
-                    if tdatum['Log: Output']:
-                        tdatum['Log: Output'] = tdatum['Log: Output'].split('\n')
+                    if tdat['Log: Output']:
+                        tdat['Log: Output'] = tdat['Log: Output'].split('\n')
                 if 'Error Logs' not in dlf:
-                    del tdatum['Log: Error']
+                    del tdat['Log: Error']
                 else:
-                    if tdatum['Log: Error']:
-                        tdatum['Log: Error'] = tdatum['Log: Error'].split('\n')
+                    if tdat['Log: Error']:
+                        tdat['Log: Error'] = tdat['Log: Error'].split('\n')
                 if 'Tool Name' not in dlf:
-                    del tdatum['Tool Name']
+                    del tdat['Tool Name']
                 if 'RAM Usage' not in dlf:
-                    for tkey in [tk for tk in tdatum.keys()
+                    for tkey in [tk for tk in tdat.keys()
                                  if tk.startswith("RAM")]:
-                        del tdatum[tkey]
+                        del tdat[tkey]
                 if 'CPU Usage' not in dlf:
-                    for tkey in [tk for tk in tdatum.keys()
+                    for tkey in [tk for tk in tdat.keys()
                                  if tk.startswith("CPU")]:
-                        del tdatum[tkey]
+                        del tdat[tkey]
                 if 'Timing' not in dlf:
-                    for tkey in [tk for tk in tdatum.keys()
+                    for tkey in [tk for tk in tdat.keys()
                                  if tk.startswith("Time")]:
-                        del tdatum[tkey]
+                        del tdat[tkey]
                 if 'Parameters' not in dlf:
-                    for tkey in [tk for tk in tdatum.keys()
+                    for tkey in [tk for tk in tdat.keys()
                                  if tk.startswith("Param")]:
-                        del tdatum[tkey]
-                send_data += [tdatum]
+                        del tdat[tkey]
+                send_data += [tdat]
 
             tabstr = json.dumps(send_data)
             return "/dash/downloadExperiment?value={}".format(tabstr)
