@@ -93,6 +93,8 @@ class TaskHandler:
             copts += ['-v'] + kwargs.get("volumes")
         if kwargs.get("user"):
             copts += ['-u']
+        if kwargs.get("imagepath"):
+            copts += ["--imagepath", kwargs.get("imagepath")]
 
         start_time = time.time()
         self.provLaunch(copts, verbose=verbose, **kwargs)
@@ -145,7 +147,6 @@ class TaskHandler:
                     print("{} --> {}".format(local_output, output_loc),
                           flush=True)
                 tmpouts = utils.post(local_output, output_loc)
-                print(tmpouts)
                 summary["outputs"] += tmpouts
         else:
             if(verbose):

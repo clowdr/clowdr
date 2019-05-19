@@ -157,6 +157,8 @@ def local(descriptor, invocation, provdir, backoff_time=36000, sweep=[],
         if volumes:
             script += " ".join([" -v {}".format(vol)
                                 for vol in volumes])
+        if container:
+            script += " --imagepath {}".format(outp)
         if verbose:
             script += " -V"
 
@@ -574,6 +576,12 @@ on clusters, and in the cloud. For more information, go to our website:
                                   "container. This is usually related to the "
                                   "path of any data files as specified in your "
                                   "invocation(s).")
+    parser_task.add_argument("--imagepath", action="store",
+                             help="If the Boutiques descriptor summarizes a "
+                                  "tool wrapped in Singularity, and the image "
+                                  "has already been downloaded, this option "
+                                  "allows you to specify that image file.")
+
 
     parser_task.set_defaults(func=runtask)
     return parser

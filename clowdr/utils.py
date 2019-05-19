@@ -44,7 +44,7 @@ def getContainer(savedir, container, simg=None, verbose=False, **kwargs):
         elif not index.endswith("://"):
             index = index + "://"
         if simg:
-            return get(simg, local + ".simg")
+            return get(simg, local + ".simg")[0]
         else:
             cmd = "singularity pull --name \"{}.simg\" {}{}".format(local,
                                                                     index,
