@@ -582,7 +582,6 @@ on clusters, and in the cloud. For more information, go to our website:
                                   "has already been downloaded, this option "
                                   "allows you to specify that image file.")
 
-
     parser_task.set_defaults(func=runtask)
     return parser
 
