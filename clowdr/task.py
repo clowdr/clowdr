@@ -276,8 +276,8 @@ class TaskHandler:
                 log_mem.append(ram)
                 time.sleep(1)
 
-            except (psutil._exceptions.AccessDenied,
-                    psutil._exceptions.NoSuchProcess,
+            except (psutil.AccessDenied,
+                    psutil.NoSuchProcess,
                     TypeError, ValueError, AttributeError) as e:
                 if kwargs.get('verbose'):
                     print("Logging failed: {0}".format(e))
