@@ -35,6 +35,7 @@ before_install:
 - cat ${HOME}/convert_log.txt
 - ls ${HOME}
 - mv ${HOME}/bids-example.simg ./bids-example.simg
+- pip install --upgrade attrs
 - pip install awscli
 - sudo mkdir -p /data/ds114 && sudo chmod -R 777 /data/
 - cd /data/ds114/
