@@ -109,7 +109,8 @@ def local(descriptor, invocation, provdir, backoff_time=36000, sweep=[],
             raise SystemExit("**Error: Option --rerun 'select' requires "
                              "--task_ids")
 
-        tasks = rerunner.getTasks(provdir, run_id, rerun, task_ids=task_ids)
+        tasks = rerunner.getTasks(provdir, run_id, rerun, descriptor,
+                                  task_ids=task_ids)
         if not len(tasks):
             if verbose:
                 print("No tasks to run.")
@@ -137,8 +138,11 @@ def local(descriptor, invocation, provdir, backoff_time=36000, sweep=[],
     if container:
         if verbose:
             print("Getting container...")
-        outp = utils.getContainer(taskdir, container, verbose=verbose,
-                                  simg=simg)
+        if simg is None:
+            outp = utils.getContainer(taskdir, container, verbose=verbose,
+                                      simg=simg)
+        else:
+            outp = simg
 
     if cluster:
         from slurmpy import Slurm
