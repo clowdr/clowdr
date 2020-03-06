@@ -1,9 +1,9 @@
 #!/bin/bash
 
 clowdr local \
-    examples/descriptor_d.json \
-    examples/invocation.json \
-    examples/task/ \
+    examples/bids-example/descriptor_d.json \
+    examples/bids-example/invocation.json \
+    examples/bids-example/task/ \
     -bV \
     -v /data/:/data/ \
     -g 4
