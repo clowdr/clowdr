@@ -142,7 +142,7 @@ def sweepTasks(taskdicts, invocations, sweep_param):
         for sidx, sval in enumerate(sweep_vals):
             tempdict = deepcopy(ttdict)
             invo[sweep_param] = sval
-            svalstr = sidx if len(sval) > 5 else sval
+            svalstr = sidx if len(str(sval)) > 5 else sval
 
             invofname = op.join(tinvo.replace(".json", "_sweep-"
                                 "{0}-{1}.json".format(sweep_param, svalstr)))
