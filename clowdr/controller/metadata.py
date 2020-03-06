@@ -66,7 +66,7 @@ def consolidateTask(tool, invocation, clowdrloc, dataloc, bids=False, sweep=[],
     taskdict = {}
     with open(tool) as fhandle:
         toolname = json.load(fhandle)["name"].replace(' ', '-')
-    taskloc = op.join(clowdrloc, modif, 'clowdr')
+    taskloc = op.join(clowdrloc, toolname, modif)
     os.makedirs(taskloc)
 
     taskdict["taskloc"] = op.join(clowdrloc, modif, toolname)
@@ -139,12 +139,13 @@ def sweepTasks(taskdicts, invocations, sweep_param):
         invo = json.load(open(tinvo))
         sweep_vals = invo.get(sweep_param)
 
-        for sval in sweep_vals:
+        for sidx, sval in enumerate(sweep_vals):
             tempdict = deepcopy(ttdict)
             invo[sweep_param] = sval
+            svalstr = sidx if len(sval) > 5 else sval
 
             invofname = op.join(tinvo.replace(".json", "_sweep-"
-                                "{0}-{1}.json".format(sweep_param, sval)))
+                                "{0}-{1}.json".format(sweep_param, svalstr)))
             with open(invofname, 'w') as fhandle:
                 fhandle.write(json.dumps(invo, indent=4, sort_keys=True))
 
