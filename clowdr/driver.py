@@ -189,7 +189,8 @@ def local(descriptor, invocation, provdir, backoff_time=36000, sweep=[],
                           backoff_time=backoff_time, **kwargs)
         else:
             runtask(taskgroup, provdir=taskdir, local=True, verbose=verbose,
-                    workdir=workdir, volumes=volumes, user=user,  **kwargs)
+                    workdir=workdir, volumes=volumes, user=user,
+                    imagepath=outp, **kwargs)
 
     if verbose:
         print(taskdir)
