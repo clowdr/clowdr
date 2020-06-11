@@ -8,14 +8,14 @@ DEPS = [
          "boutiques>=0.5.10",
          "pandas>=0.23",
          "slurmpy==0.0.7",
-         "dash>=0.24.1",
-         "dash-renderer>=0.13.0",
-         "dash-html-components>=0.11.0",
-         "dash-core-components>=0.27.1",
-         "dash-table-experiments>=0.6.0",
+         "dash==0.35.1",
+         "dash-core-components==0.42.1",
+         "dash-html-components==0.13.4",
+         "dash-renderer==0.16.1",
+         "dash-table-experiments==0.6.0",
          "colorlover",
          "psutil",
-         "plotly>=3.1.1"
+         "plotly==3.5.0"
        ]
 
 setup(name="clowdr",
