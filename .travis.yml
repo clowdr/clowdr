@@ -21,7 +21,7 @@ before_install:
 - cd ${HOME}
 - wget https://github.com/sylabs/singularity/releases/download/v${SINGVER}/singularity-${SINGVER}.tar.gz
 - tar xvf singularity-$SINGVER.tar.gz
-- cd singularity-$SINGVER
+- cd singularity
 - ./configure --prefix=/usr/local --sysconfdir=/etc
 - make
 - sudo make install
