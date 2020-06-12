@@ -12,7 +12,7 @@ python:
 - nightly
 
 env:
-- SINGVER=2.4.6
+- SINGVER=3.5.2
 
 before_install:
 - sudo apt-get update -qq
