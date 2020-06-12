@@ -22,9 +22,9 @@ before_install:
 - wget https://github.com/sylabs/singularity/releases/download/v${SINGVER}/singularity-${SINGVER}.tar.gz
 - tar xvf singularity-$SINGVER.tar.gz
 - cd singularity
-- ./configure --prefix=/usr/local --sysconfdir=/etc
-- make
-- sudo make install
+- ./mconfig
+- make -C builddir
+- sudo make -C builddir install
 - singularity --version
 - cat /etc/singularity/singularity.conf
 - cd ${TRAVIS_BUILD_DIR}/examples/bids-example/
