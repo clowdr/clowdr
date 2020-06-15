@@ -22,7 +22,7 @@ before_install:
 - cd ${HOME}
 
 - wget https://dl.google.com/go/go$GOVER.linux-amd64.tar.gz 
-- sudo tar -C /usr/local -xzvf go$GOVER.linus-amd64.tar.gz
+- sudo tar -C /usr/local -xzvf go$GOVER.linux-amd64.tar.gz
 - rm go$GOVER.linux-amd64.tar.gz
 
 - wget https://github.com/sylabs/singularity/releases/download/v${SINGVER}/singularity-${SINGVER}.tar.gz
