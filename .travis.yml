@@ -24,6 +24,8 @@ before_install:
 - wget https://dl.google.com/go/go$GOVER.linux-amd64.tar.gz 
 - sudo tar -C /usr/local -xzvf go$GOVER.linux-amd64.tar.gz
 - rm go$GOVER.linux-amd64.tar.gz
+- echo 'export PATH=/usr/local/go/bin:$PATH' >> ~/.bashrc
+- source ~/.bashrc
 
 - wget https://github.com/sylabs/singularity/releases/download/v${SINGVER}/singularity-${SINGVER}.tar.gz
 - tar xvf singularity-$SINGVER.tar.gz
