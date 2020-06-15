@@ -13,12 +13,19 @@ python:
 
 env:
 - SINGVER=3.5.2
+- GOVER=1.13
 
 before_install:
 - sudo apt-get update -qq
-- sudo apt-get install -y -qq python dh-autoreconf squashfs-tools build-essential
+- sudo apt-get install -y -qq python dh-autoreconf squashfs-tools build-essential libssl-dev uuid-dev libgpgme11-dev squashfs-tools \
+                              libseccomp-dev wget pkg-config git cryptsetup
 - npm install jsonlint -g 
 - cd ${HOME}
+
+- wget https://dl.google.com/go/go$GOVER.linux-amd64.tar.gz 
+- sudo tar -C /usr/local -xzvf go$GOVER.linus-amd64.tar.gz
+- rm go$GOVER.linux-amd64.tar.gz
+
 - wget https://github.com/sylabs/singularity/releases/download/v${SINGVER}/singularity-${SINGVER}.tar.gz
 - tar xvf singularity-$SINGVER.tar.gz
 - cd singularity
@@ -27,12 +34,14 @@ before_install:
 - sudo make -C builddir install
 - singularity --version
 - cat /etc/singularity/singularity.conf
+
 - cd ${TRAVIS_BUILD_DIR}/examples/bids-example/
 - docker pull bids/example
 - docker run -v /var/run/docker.sock:/var/run/docker.sock -v ${HOME}:/output --privileged -t --rm singularityware/docker2singularity --name bids-example bids/example 1> ${HOME}/convert_log.txt
 - cat ${HOME}/convert_log.txt
 - ls ${HOME}
-- mv ${HOME}/bids-example.simg ./bids-example.simg
+- mv ${HOME}/bids-example.sif ./bids-example.sif
+
 - pip install --upgrade attrs
 - pip install awscli
 - sudo mkdir -p /data/ds114 && sudo chmod -R 777 /data/
