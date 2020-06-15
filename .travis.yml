@@ -13,7 +13,7 @@ python:
 
 env:
 - SINGVER=3.5.2
-- GOVER=1.13
+  GOVER=1.13
 
 before_install:
 - sudo apt-get update -qq
