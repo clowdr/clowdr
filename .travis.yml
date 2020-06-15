@@ -28,7 +28,7 @@ before_install:
 - ls /usr/local/go/bin/
 - export PATH=/usr/local/go/bin:$PATH
 - source ~/.bashrc
-- go --version
+- go version
 
 - wget https://github.com/sylabs/singularity/releases/download/v${SINGVER}/singularity-${SINGVER}.tar.gz
 - tar xvf singularity-$SINGVER.tar.gz
