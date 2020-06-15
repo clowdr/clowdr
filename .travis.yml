@@ -17,8 +17,8 @@ env:
 
 before_install:
 - sudo apt-get update -qq
-- sudo apt-get install -y -qq python dh-autoreconf squashfs-tools build-essential libssl-dev uuid-dev libgpgme11-dev squashfs-tools \
-                              libseccomp-dev wget pkg-config git cryptsetup
+- sudo apt-get install -y -qq python dh-autoreconf squashfs-tools build-essential libssl-dev uuid-dev \
+                              libgpgme11-dev squashfs-tools libseccomp-dev wget pkg-config git cryptsetup
 - npm install jsonlint -g 
 - cd ${HOME}
 
