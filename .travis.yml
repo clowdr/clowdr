@@ -26,12 +26,14 @@ before_install:
 - rm go$GOVER.linux-amd64.tar.gz
 - echo 'export PATH=/usr/local/go/bin:$PATH' >> ~/.bashrc
 - ls /usr/local/go/bin/
+- export PATH=/usr/local/go/bin:$PATH
 - source ~/.bashrc
+- go --version
 
 - wget https://github.com/sylabs/singularity/releases/download/v${SINGVER}/singularity-${SINGVER}.tar.gz
 - tar xvf singularity-$SINGVER.tar.gz
 - cd singularity
-- source ~/.bashrc && ./mconfig
+- ./mconfig
 - make -C builddir
 - sudo make -C builddir install
 - singularity --version
