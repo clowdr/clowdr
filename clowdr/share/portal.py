@@ -5,12 +5,16 @@ import dash_core_components as dcc
 import dash_html_components as html
 import dash_table_experiments as dt
 import dash
+import flask
+import urllib.parse
+import io
 
 import plotly.figure_factory as ff
 import plotly.graph_objs as go
 import plotly
 
 from datetime import datetime, timedelta
+from copy import deepcopy
 import pandas as pd
 import numpy as np
 import json
@@ -19,9 +23,17 @@ from clowdr.share import customDash as cd
 
 
 class CreatePortal():
-    def __init__(self, experiment_dict):
+    def __init__(self, experiment_dict, N=100):
         # Initialize Dash app with custom wrapper that lets us set page title
-        self.app = cd.CustomDash()
+        # self.app = cd.CustomDash()
+        # external CSS stylesheets
+        external_stylesheets = [
+            'https://codepen.io/chriddyp/pen/bWLwgP.css',
+        ]
+        self.app = dash.Dash(__name__,
+                             external_stylesheets=external_stylesheets)
+        self.app.title = "Clowdr Share Portal"
+        self.app.config['supress_callback_exceptions'] = False
         # Load and groom dataset
         # -----> /start data grooming
 
@@ -36,7 +48,10 @@ class CreatePortal():
         self.stat_dict = []
         self.invo_dict = []
         new_experiment_dict = []
-        for exp in experiment_dict:
+        for _task_id in range(len(experiment_dict)):
+            exp = [tex
+                   for tex in experiment_dict
+                   if int(tex["Task ID"]) == int(_task_id)][0]
             # Coerce task ID into integer value
             exp['Task ID'] = int(exp['Task ID'])
             if exp['Time: Start'] is not None:
@@ -52,7 +67,6 @@ class CreatePortal():
                 tmpexp_tim = exp['Time: Series (s)']
                 tmpexp_cpu = exp['CPU: Series (%)']
 
-                N = 200
                 timlin = np.linspace(tmpexp_tim[0], tmpexp_tim[-1], N)
                 tmpexp_tim_resamp = []
                 tidx = []
@@ -93,11 +107,24 @@ class CreatePortal():
         # Get rid of un-updated version of the dictionary
         self.experiment_dict = new_experiment_dict
 
+        # Create item download dictionary
+        self.downdict = [{'label': k, 'value': k}
+                         for k in self.experiment_dict[0].keys()
+                         if not k.startswith(("Param:",
+                                              "CPU: Max",
+                                              "RAM: Max"))]
+        self.downdict = [{'label': k, 'value': k}
+                         for k in ['Task ID', 'Exit Status', 'Output Logs',
+                                   'Error Logs', 'Tool Name', 'RAM Usage',
+                                   'CPU Usage', 'Timing', 'Parameters']]
+        self.downloaders = [v['value'] for v in self.downdict]
+
         # Create look-up-table for mapping tasks to rows in the tables
         self.idx_to_task_lut = {exp['Task ID']: idx
                                 for idx, exp in enumerate(self.experiment_dict)}
         self.task_to_idx_lut = {idx: exp['Task ID']
                                 for idx, exp in enumerate(self.experiment_dict)}
+
         # <------ /stop data grooming
 
     def launch(self):
@@ -113,22 +140,59 @@ class CreatePortal():
             # Page title/header
             html.H4('Clowdr Experiment Explorer'),
 
-            # Tabs & tables
-            dcc.Tabs(id='tabs', value='stats-tab',
-                     children=self.create_tabs_children('stats-tab',
-                                                        [],
-                                                        self.stat_dict)),
+            html.Div([
+                html.Div([
+                    # Tabs & tables
+                    dcc.Tabs(id='tabs', value='stats-tab',
+                             children=self.create_tabs_children('stats-tab',
+                                                                [0],
+                                                                self.stat_dict))
+                ], className="nine columns"),
 
-            # Gantt container (to be updated by callbacks)
-            dcc.Graph(id='gantt-clowdrexp',
-                      figure=self.create_gantt(),
-                      config=config),
+                html.Div([
+                    html.Div([
+                        # Utility bar (logs, download selected)
+                        html.Div(id="DownloadText",
+                                 children="Selected Task Data:"),
+                        dcc.Dropdown(id='download-list',
+                                     options=self.downdict,
+                                     multi=True,
+                                     value=self.downloaders)
+                    ]),
+                    html.A(
+                        html.Button('Download',
+                                    id="download-button",
+                                    disabled=False,
+                                    className="button",
+                                    style={"margin-top": "10px",
+                                           "color": "#ccc",
+                                           "width": "100%"}),
+                        id='download-button-link',
+                        download="clowdr-experiment.json",
+                        href="",
+                        target="_blank"
+                    )
+                ], style={"position": "absolute", "bottom": "4px", "right": 0},
+                  className="three columns")
+            ], style={"position": "relative"}, className="row"),
 
-            # Graph container (to be populated by callbacks)
-            dcc.Graph(id='graph-clowdrexp',
-                      figure=self.create_figure(self.stat_dict, []),
-                      config=config)
-            ], className="container")
+            html.Div([
+                html.Div([
+                    # Gantt container (to be updated by callbacks)
+                    dcc.Graph(id='gantt-clowdrexp',
+                              figure=self.create_gantt(),
+                              config=config),
+                ], className="five columns"),
+
+                html.Div([
+                    # Graph container (to be populated by callbacks)
+                    dcc.Graph(id='graph-clowdrexp',
+                              figure=self.create_figure(self.stat_dict, [0]),
+                              config=config)
+                ], className="seven columns")
+            ], className="row")
+        ], className="container", style={"max-width": "1080px"})
+
         # <------ /stop page creation
 
     def create_callbacks(self):
@@ -154,7 +218,6 @@ class CreatePortal():
              State('table-clowdrexp', 'sortDirection')])
         def update_selected_rows(clickData, selected_indices, rows,
                                  sortcol, sortdir):
-            print(sortcol, sortdir)
             row_ids = [r['Task'] for r in rows]
 
             if clickData:
@@ -177,6 +240,88 @@ class CreatePortal():
             figure = self.create_figure(rows, selected_indices)
             return figure
 
+        # Callback: update download button based on selected/preesent data
+        @self.app.callback(
+            Output('download-button', 'disabled'),
+            [Input('table-clowdrexp', 'selected_row_indices'),
+             Input('download-list', 'value')])
+        def toggle_download(selected_indices, download_list_fields):
+            self.downloaders = download_list_fields
+            if len(selected_indices) > 0 and len(download_list_fields) > 0:
+                return False
+            else:
+                return True
+
+        # Callback: update download data based on selections
+        @self.app.callback(
+            Output('download-button-link', 'href'),
+            [Input('table-clowdrexp', 'selected_row_indices'),
+             Input('download-list', 'value')],
+            [State('table-clowdrexp', 'rows')])
+        def update_download_data(selected_indices, download_list_fields, rows):
+            # Start by filtering down to tasks of interest
+            row_ids = [r['Task'] for r in rows]
+            selected_ids = [row_ids[sids] for sids in selected_indices]
+            task_data = [exp
+                         for ids in selected_ids
+                         for exp in self.experiment_dict
+                         if exp['Task ID'] == ids]
+
+            # Now, filter out unwanted columns
+            # TODO: refactor, please
+            dlf = download_list_fields
+            send_data = []
+            for task_datum in task_data:
+                tdat = deepcopy(task_datum)
+                if 'Task ID' not in dlf:
+                    del tdat['Task ID']
+                if 'Exit Status' not in dlf:
+                    del tdat['Exit Code']
+                if 'Output Logs' not in dlf:
+                    del tdat['Log: Output']
+                else:
+                    if tdat['Log: Output']:
+                        tdat['Log: Output'] = tdat['Log: Output'].split('\n')
+                if 'Error Logs' not in dlf:
+                    del tdat['Log: Error']
+                else:
+                    if tdat['Log: Error']:
+                        tdat['Log: Error'] = tdat['Log: Error'].split('\n')
+                if 'Tool Name' not in dlf:
+                    del tdat['Tool Name']
+                if 'RAM Usage' not in dlf:
+                    for tkey in [tk for tk in tdat.keys()
+                                 if tk.startswith("RAM")]:
+                        del tdat[tkey]
+                if 'CPU Usage' not in dlf:
+                    for tkey in [tk for tk in tdat.keys()
+                                 if tk.startswith("CPU")]:
+                        del tdat[tkey]
+                if 'Timing' not in dlf:
+                    for tkey in [tk for tk in tdat.keys()
+                                 if tk.startswith("Time")]:
+                        del tdat[tkey]
+                if 'Parameters' not in dlf:
+                    for tkey in [tk for tk in tdat.keys()
+                                 if tk.startswith("Param")]:
+                        del tdat[tkey]
+                send_data += [tdat]
+
+            tabstr = json.dumps(send_data)
+            return "/dash/downloadExperiment?value={}".format(tabstr)
+
+        # Callback: update button styling based on disabled/enabled setting
+        @self.app.callback(
+            Output('download-button', 'style'),
+            [Input('download-button', 'disabled')],
+            [State('download-button', 'style')])
+        def change_button_appearance(disabled, style):
+            if disabled:
+                style['color'] = '#ccc'
+            else:
+                style['color'] = '#555'
+            return style
+
         # Callback: update gantt based on selected/present data
         @self.app.callback(
             Output('gantt-clowdrexp', 'figure'),
@@ -186,7 +331,22 @@ class CreatePortal():
         def update_gantt(selected_indices, rows, figure):
             figure = self.recolour_gantt(rows, selected_indices, figure)
             return figure
-    # <------ /stop callback management
+        # <------ /stop callback management
+
+        # ------> /start custom app routes
+        @self.app.server.route('/dash/downloadExperiment')
+        def download_data():
+            value = flask.request.args.get('value')
+            bytIO = io.BytesIO()
+            bytIO.write(json.dumps(json.loads(value),
+                                   indent=4,
+                                   sort_keys=True).encode('utf-8'))
+            bytIO.seek(0)
+            return flask.send_file(bytIO,
+                                   mimetype='text/json',
+                                   attachment_filename='clowdr-experiment.json',
+                                   as_attachment=True)
+    # <------ /stop custom app routes
 
     # Create helper functions to be used by callbacks & page creation
     # ------> /start helper function creation
@@ -246,7 +406,7 @@ class CreatePortal():
                                        'Start': exp['Time: Start'],
                                        'Finish': exp['Time: End']}])
             t3 = tmpfig['data'][0]
-            t3['y'] = (i, i)
+            t3['y'] = (exp['Task ID'], exp['Task ID'])
             t3['customdata'] = [exp['Task ID']] * 2
             t3['hoverinfo'] = 'name'
             t3['mode'] = 'lines'
@@ -258,7 +418,11 @@ class CreatePortal():
         layout = {
             'showlegend': False,
             'height': 300,
-            'title': 'Experiment Timeline',
+            'title': {
+                'text': 'Experiment Timeline',
+                'y': 0.9,
+                'x': 0.5
+            },
             'margin': {
                 't': 60,
                 'b': 60,
@@ -302,10 +466,22 @@ class CreatePortal():
             id_list += [exp['Task ID']]
             data += self.append_trace(exp, i, opacity)
 
+        if data == []:
+            data = [{"yaxis": "y", "xaxis": "x",
+                     'y': [100, 100], 'x': [0, 100], "opacity": 0,
+                     "marker": {"opacity": 0}},
+                    {"yaxis": "y2", "xaxis": "x",
+                     'y': [100, 100], 'x': [0, 100], "opacity": 0,
+                     "marker": {"opacity": 0}}]
+
         layout = {
             'showlegend': False,
-            'height': 500,
-            'title': 'Usage Stats',
+            'height': 300,
+            'title': {
+                'text': 'Usage Stats',
+                'y': 0.9,
+                'x': 0.5
+            },
             'margin': {
                 't': 60,
                 'b': 60,
@@ -319,19 +495,19 @@ class CreatePortal():
             'yaxis': {
                 'title': 'RAM (MB)',
                 'rangemode': 'tozero',
-                'domain': [0.5, 1]
+                'domain': [0.5, 1],
             },
             'yaxis2': {
                 'title': 'CPU (%)',
                 'autorange': 'reversed',
                 'rangemode': 'tozero',
                 'side': 'left',
-                'domain': [0.0, 0.5]
+                'domain': [0.0, 0.5],
             },
             'hovermode': 'closest'
         }
 
-        fig = go.Figure(data, layout)
+        fig = go.Figure(data=data, layout=layout)
         return fig
 
     # Utility for adding a trace back to the graph
@@ -343,6 +519,7 @@ class CreatePortal():
             mode='lines+markers',
             line={'color': self.main_colour},
             opacity=opacity,
+            marker={"opacity": opacity},
             fill='tozeroy',
             xaxis='x',
             yaxis='y',
@@ -357,6 +534,7 @@ class CreatePortal():
             mode='lines+markers',
             line={'color': self.accent_colour},
             opacity=opacity,
+            marker={"opacity": opacity},
             fill='tozeroy',
             xaxis='x',
             yaxis='y2',

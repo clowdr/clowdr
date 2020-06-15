@@ -24,47 +24,75 @@ from clowdr import utils
 
 def local(descriptor, invocation, provdir, backoff_time=36000, sweep=[],
           verbose=False, workdir=None, simg=None, rerun=None, run_id=None,
-          volumes=None, s3=None, cluster=None, jobname=None, clusterargs=None,
-          dev=False, groupby=None, user=False, setup=False, **kwargs):
+          task_ids=[], volumes=[], s3=None, cluster=None, jobname=None,
+          clusterargs=None, dev=False, groupby=1, user=False, setup=False,
+          bids=False, **kwargs):
     """cluster
     Launches a pipeline locally through the Clowdr wrappers.
 
     Parameters
     ----------
-    tool : str
-        Path to a boutiques descriptor for the tool to be run
+    descriptor : str
+        Path to a boutiques descriptor for the tool to be run.
     invocation : str
-        Path to a boutiques invocation for the tool and parameters to be run
-    clowdrloc : str
-        Path for storing Clowdr intermediate files and outputs
-    dataloc : str
-        Path for accessing input data. If local, provide the hostname and
-        optionally a path. If on S3, provide an S3 path.
-    cluster : str
-        Scheduler on the cluster being used. Currently, the only supported mode
-        is slurm.
+        Path to a boutiques invocation for the tool and parameters to be run.
+    provdir : str
+        Path for storing Clowdr intermediate files and output logs.
+    backoff_time : int (default = 36000)
+        Maximum delay time before attempting resubmission of jobs that failed to
+        be submitted to a scheduler, in seconds.
+    sweep : list (default = [])
+        List of parameters to sweep over in the provided invocations.
+    verbose : bool (default = False)
+        Flag toggling verbose output printing
+    workdir : str (default = None)
+        Working directory to be used in execution, if different from provdir.
+    simg : str (default = None)
+        Path to local copy of Singularity image to be used during execution.
+    rerun : str (default = None)
+        One of "all", "select", "failed", and "incomplete," which enables
+        re-launching tasks from a previous execution either individually or in
+        commonly-desired groups.
+    run_id : str (default = None)
+        Required when using rerun, above, this specifies the experiment ID to be
+        re-run. This is the directory created for metadata, of the form:
+            year-month-day_hour-minute-second-8digitID.
+    task_ids : list (default = [])
+        If re-running with the "select" mode, a list of task IDs within the
+        directory specified by run_id which are to be re-run.
+    volumes : list (default = [])
+        List of volume mount-path strings, specified using the standard:
+            /path/on/host/:/path/in/container/
+    s3 : str (default = None)
+        Path for accessing input data on an S3 bucket. Must include s3://.
+    cluster : str (default = None)
+        Scheduler on the cluster being used. Currently only slurm is supported.
+    jobname : str (default = None)
+        Base-name for the jobs as they will appear in the scheduler.
+    clusterargs : str (default = None)
+        Comma-separated list of arguments to be provided to the cluster on job
+        submission. Such as: time:4:00,mem:2048,account:ABC
+    dev : bool (default = False)
+        Flag to toggle dev mode which only runs the first execution in the set.
+    groupby : int (default = 1)
+        Value which dictates the grouping of tasks. Particularly useful when
+        tasks are short or a cluster restricts the number of unique jobs.
+    user : bool (default = False)
+        When running with Docker, toggles whether or not the host-user's UID is
+        used within the container.
+    setup : bool (default = False)
+        Flag which prevents execution of tasks after the metadata task and
+        invocation files are generated.
+    bids : bool (default = False)
+        Flag toggling BIDS-aware metadata preparation.
     **kwargs : dict
-        Arbitrary keyword arguments. Currently supported arguments:
-        - account : str
-            Account for the cluster scheduler
-        - jobname : str
-            Base-name for the jobs as they will appear in the scheduler
-        - backoff_time: int
-            Time limit for wait times when resubmitting jobs to a scheduler
-        - verbose : bool
-            Toggle verbose output printing
-        - dev : bool
-            Toggle dev mode (only runs first execution in the specified set)
-
-        Additionally, transfers all keyword arguments accepted by both of
-        "controller.metadata.consolidateTask" and "task.TaskHandler"
+        Arbitrary additional keyword arguments which may be passed.
 
     Returns
     -------
-    int
-        The exit-code returned by the task being executed
+    str
+        The path to the created directory containing Clowdr experiment metadata.
     """
-    # TODO: scrub inputs
     descriptor = descriptor.name
     tool = utils.truepath(descriptor)
     if simg:
@@ -77,8 +105,12 @@ def local(descriptor, invocation, provdir, backoff_time=36000, sweep=[],
     if rerun:
         if not run_id:
             raise SystemExit("**Error: Option --rerun requires --run_id")
-        # TODO: add option for tasks within the rerun, addition to blanket modes
-        tasks = rerunner.getTasks(provdir, run_id, rerun)
+        if rerun == "select" and not task_ids:
+            raise SystemExit("**Error: Option --rerun 'select' requires "
+                             "--task_ids")
+
+        tasks = rerunner.getTasks(provdir, run_id, rerun, descriptor,
+                                  task_ids=task_ids)
         if not len(tasks):
             if verbose:
                 print("No tasks to run.")
@@ -86,8 +118,8 @@ def local(descriptor, invocation, provdir, backoff_time=36000, sweep=[],
 
     else:
         [tasks, invocs] = metadata.consolidateTask(descriptor, invocation,
-                                                   provdir, dataloc,
-                                                   sweep=sweep, **kwargs)
+                                                   provdir, dataloc, bids=bids,
+                                                   sweep=sweep, verbose=verbose)
 
     taskdir = op.dirname(utils.truepath(tasks[0]))
     try:
@@ -106,7 +138,11 @@ def local(descriptor, invocation, provdir, backoff_time=36000, sweep=[],
     if container:
         if verbose:
             print("Getting container...")
-        outp = utils.getContainer(taskdir, container, **kwargs)
+        if simg is None:
+            outp = utils.getContainer(taskdir, container, verbose=verbose,
+                                      simg=simg)
+        else:
+            outp = simg
 
     if cluster:
         from slurmpy import Slurm
@@ -125,6 +161,8 @@ def local(descriptor, invocation, provdir, backoff_time=36000, sweep=[],
         if volumes:
             script += " ".join([" -v {}".format(vol)
                                 for vol in volumes])
+        if container:
+            script += " --imagepath {}".format(outp)
         if verbose:
             script += " -V"
 
@@ -151,7 +189,8 @@ def local(descriptor, invocation, provdir, backoff_time=36000, sweep=[],
                           backoff_time=backoff_time, **kwargs)
         else:
             runtask(taskgroup, provdir=taskdir, local=True, verbose=verbose,
-                    workdir=workdir, volumes=volumes, user=user,  **kwargs)
+                    workdir=workdir, volumes=volumes, user=user,
+                    imagepath=outp, **kwargs)
 
     if verbose:
         print(taskdir)
@@ -217,7 +256,8 @@ def runtask(tasklist, **kwargs):
         handler = TaskHandler(task, **kwargs)
 
 
-def share(provdir, **kwargs):
+def share(provdir, prepare=False, host="0.0.0.0", port=8050, verbose=False,
+          debug=False, **kwargs):
     """share
     Launches a simple web server which showcases all runs at the clowdrloc.
 
@@ -238,11 +278,11 @@ def share(provdir, **kwargs):
         utils.get(provdir, tmploc, **kwargs)
         tmpdir = op.join(tmploc, utils.splitS3Path(provdir)[1])
         provdir = tmpdir
-        if kwargs.get("verbose"):
+        if verbose:
             print("Local cache of directory: {}".format(provdir))
 
     if op.isfile(provdir):
-        if kwargs.get("verbose"):
+        if verbose:
             print("Summary file provided - no need to generate.")
         summary = provdir
         with open(summary) as fhandle:
@@ -251,11 +291,15 @@ def share(provdir, **kwargs):
         summary = op.join(provdir, 'clowdr-summary.json')
         experiment_dict = consolidate.summary(provdir, summary)
 
-    customDash = portal.CreatePortal(experiment_dict)
+    if prepare:
+        if verbose:
+            print("Summary file location: {}".format(summary))
+        return summary
+
+    customDash = portal.CreatePortal(experiment_dict, N=100)
     app = customDash.launch()
 
-    host = kwargs["host"] if kwargs.get("host") else "0.0.0.0"
-    app.run_server(host=host, debug=kwargs.get("debug"))
+    app.run_server(host=host, debug=debug, port=port)
 
 
 def makeparser():
@@ -380,20 +424,21 @@ on clusters, and in the cloud. For more information, go to our website:
                                  "tool wrapped in Docker, toggles propagating "
                                  "the current user within the container.")
     parser_loc.add_argument("--rerun", "-R",
-                            choices=["all", "failed", "incomplete"],
+                            choices=["all", "select", "failed", "incomplete"],
                             help="Allows user to re-run jobs in a previous "
                                  "execution that either failed or didn't "
                                  "finish, etc. This requires the --run_id "
-                                 "argument to also be supplied. Three choices "
-                                 "are: 'all' to re-run all tasks, 'failed' to "
-                                 "re-run tasks which finished with a non-zero "
+                                 "argument to also be supplied. Four choices "
+                                 "are: 'all' to re-run all tasks, 'select' to "
+                                 "re-run specific tasks, 'failed' to re-run "
+                                 "tasks which finished with a non-zero "
                                  "exit-code, 'incomplete' to re-run tasks "
-                                 "which have not yet indicated job completion."
-                                 " While the descriptor and invocations will be"
-                                 " adopted from the previous executions, other "
+                                 "which have not yet indicated job completion. "
+                                 "While the descriptor and invocations will be "
+                                 "adopted from the previous executions, other "
                                  "options such as clusterargs or volume can "
                                  "be set to different values, if they were the "
-                                 "source or errors. Pairing the incomplete mode"
+                                 "source of errors. Pairing the incomplete mode"
                                  " with the --dev flag allows you to walk "
                                  "through your dataset one group at a time.")
     parser_loc.add_argument("--run_id", action="store",
@@ -402,6 +447,11 @@ on clusters, and in the cloud. For more information, go to our website:
                                  "execution you wish to relaunch. These IDs/"
                                  "directories are in the form: year-month-day_"
                                  "hour-minute-second-8digitID.")
+    parser_loc.add_argument("--task_ids", action="store", nargs="+",
+                            help="Pairs with --rerun. This list of task IDs are"
+                                 " the task numbers within the directory "
+                                 "supplied with --run_id and provdir. These "
+                                 "IDs are integers greater than or equal to 0.")
     parser_loc.add_argument("--s3", action="store",
                             help="Amazon S3 bucket and path for remote data. "
                                  "Accepted in the format: s3://{bucket}/{path}")
@@ -480,6 +530,17 @@ on clusters, and in the cloud. For more information, go to our website:
                                  "was returned by running either clowdr cloud "
                                  "or clowdr local. This can also be a clowdr-"
                                  "generated summary file.")
+    parser_shr.add_argument("--prepare", "-p", action="store_true",
+                            help="If provided, this prevents a server from "
+                                 "being launched after metadata is consolidated"
+                                 " into a single file, and the path to that "
+                                 "file is returned.")
+    parser_shr.add_argument("--host", action="store", default="0.0.0.0",
+                            help="The host to broadcast the share service at. "
+                                 "Default is 0.0.0.0.")
+    parser_shr.add_argument("--port", action="store", type=int, default=8050,
+                            help="The port to broadcast the share service at. "
+                                 "Default is 8050.")
     parser_shr.add_argument("--debug", "-d", action="store_true",
                             help="Toggles server messages and logging. This "
                                  "is intended for development purposes.")
@@ -520,6 +581,11 @@ on clusters, and in the cloud. For more information, go to our website:
                                   "container. This is usually related to the "
                                   "path of any data files as specified in your "
                                   "invocation(s).")
+    parser_task.add_argument("--imagepath", action="store",
+                             help="If the Boutiques descriptor summarizes a "
+                                  "tool wrapped in Singularity, and the image "
+                                  "has already been downloaded, this option "
+                                  "allows you to specify that image file.")
 
     parser_task.set_defaults(func=runtask)
     return parser

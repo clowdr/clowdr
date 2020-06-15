@@ -16,8 +16,12 @@ import re
 from clowdr import utils
 
 
-def getTasks(provdir, runid, rerun_mode):
-    runpath = utils.truepath(op.join(provdir, runid, 'clowdr'))
+def getTasks(provdir, runid, rerun_mode, tool, task_ids=[]):
+    tool = utils.truepath(tool)
+    with open(tool) as fhandle:
+        toolname = json.load(fhandle)["name"].replace(' ', '-')
+    runpath = utils.truepath(op.join(provdir, toolname, runid))
+    print(runpath)
 
     files = os.listdir(runpath)
     r_all = re.compile('^.*task-([0-9]+)[.]json$')
@@ -26,6 +30,14 @@ def getTasks(provdir, runid, rerun_mode):
 
     if rerun_mode == "all":
         return all_tasks
+
+    if rerun_mode == "select":
+        select_tasks = [tsk
+                        for tsk_id in task_ids
+                        for tsk in all_tasks
+                        if "task-{0}.json".format(tsk_id) in tsk]
+        select_tasks = sorted(select_tasks)
+        return select_tasks
 
     all_ids = set([r_all.match(f).group(1)
                    for f in all_tasks

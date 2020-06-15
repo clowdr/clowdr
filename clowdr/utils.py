@@ -13,7 +13,8 @@ import os
 import re
 
 
-def backoff(function, posargs, optargs, backoff_time=36000, **kwargs):
+def backoff(function, posargs, optargs, backoff_time=36000, verbose=False,
+            **kwargs):
     fib_lo = 0
     fib_hi = 1
     while True:
@@ -21,19 +22,19 @@ def backoff(function, posargs, optargs, backoff_time=36000, **kwargs):
             value = function(*posargs, **optargs)
             return (0, value)
         except Exception as e:
-            if kwargs.get("verbose"):
+            if verbose:
                 print(e)
                 print("Failed. Retrying in: {}s".format(type(e).__name__,
                                                         fib_hi))
             if fib_hi > backoff_time:
-                if kwargs.get("verbose"):
+                if verbose:
                     print("Failed. Skipping!")
                 return (-1, str(e))
             time.sleep(fib_hi)
             fib_lo, fib_hi = fib_hi, fib_lo + fib_hi
 
 
-def getContainer(savedir, container, **kwargs):
+def getContainer(savedir, container, simg=None, verbose=False, **kwargs):
     if container["type"] == "singularity":
         name = container.get("image")
         local = name.replace("/", "-").replace(":", "-")
@@ -42,17 +43,17 @@ def getContainer(savedir, container, **kwargs):
             index = "shub://"
         elif not index.endswith("://"):
             index = index + "://"
-        if kwargs.get("simg"):
-            return get(kwargs["simg"], local + ".simg")
+        if simg:
+            return get(simg, local + ".simg")[0]
         else:
             cmd = "singularity pull --name \"{}.simg\" {}{}".format(local,
                                                                     index,
                                                                     name)
-            if kwargs.get("verbose"):
+            if verbose:
                 print(cmd)
             p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
             stdout = p.communicate()
-            if kwargs.get("verbose"):
+            if verbose:
                 try:
                     print(stdout.decode('utf-8'))
                 except Exception as e:
@@ -77,7 +78,7 @@ def splitS3Path(path):
                     path).group(1, 2)
 
 
-def get(remote, local, **kwargs):
+def get(remote, local, verbose=False, **kwargs):
     try:
         if remote.startswith("s3://"):
             return _awsget(remote, local)
@@ -86,14 +87,14 @@ def get(remote, local, **kwargs):
         else:
             return [op.realpath(copy(remote, local))]
     except SameFileError as e:
-        if kwargs.get("verbose"):
+        if verbose:
             print("SameFileWarning: some files may not have been moved")
         if op.isdir(local) and op.isfile(remote):
             return [op.realpath(op.join(local, op.basename(remote)))]
         else:
             return [op.realpath(local)]
     except FileExistsError as e:
-        if kwargs.get("verbose"):
+        if verbose:
             print("FileExistsWarning: some files may not have been moved")
         if op.isdir(local) and op.isfile(remote):
             return [op.realpath(op.join(local, op.basename(remote)))]
@@ -101,7 +102,7 @@ def get(remote, local, **kwargs):
             return [op.realpath(local)]
 
 
-def post(local, remote, **kwargs):
+def post(local, remote, verbose=False, **kwargs):
     try:
         if remote.startswith("s3://"):
             return _awspost(local, remote)
@@ -113,7 +114,7 @@ def post(local, remote, **kwargs):
         else:
             return [op.realpath(copy(local, remote))]
     except SameFileError as e:
-        if kwargs.get("verbose"):
+        if verbose:
             print("SameFileWarning: some files may not have been moved")
         if op.isdir(remote) and op.isfile(local):
             return [op.realpath(op.join(remote, op.basename(local)))]
